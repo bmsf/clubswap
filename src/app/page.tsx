@@ -1,469 +1,635 @@
-import Link from 'next/link'
-import { ArrowRight, Shield, Zap, Star, Check, MapPin, Clock, Package } from 'lucide-react'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/shared/theme-toggle'
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
-const BRANDS = [
-  'Titleist',
-  'Callaway',
-  'TaylorMade',
-  'Ping',
-  'Mizuno',
-  'Cleveland',
-  'Cobra',
-  'Wilson Staff',
-]
-
-const STATS = [
-  { value: '45 000+', label: 'Registrerte brukere' },
-  { value: '12 000+', label: 'Aktive annonser' },
-  { value: '98 %', label: 'Fornøyde kjøpere' },
-  { value: '4.8 / 5', label: 'Snittkarakter' },
-]
-
-const TESTIMONIALS = [
-  {
-    quote: 'Solgte hele køllesettet mitt på to dager. Aldri trodd det skulle gå så raskt!',
-    name: 'Erik Johansen',
-    meta: 'Hcp. 12 · Oslo',
-    initials: 'EJ',
-  },
-  {
-    quote: 'Fant en perle av en putter til halv pris. ClubSwap er gull verdt for alle golfere.',
-    name: 'Marte Lindqvist',
-    meta: 'Hcp. 24 · Bergen',
-    initials: 'ML',
-  },
-  {
-    quote: 'Enkelt, trygt og raskt. Anbefaler ClubSwap til alle golfvenner jeg kjenner.',
-    name: 'Thomas Bakke',
-    meta: 'Hcp. 8 · Trondheim',
-    initials: 'TB',
-  },
-]
-
-// ─── Logo ─────────────────────────────────────────────────────────────────────
-
-function Logo() {
+function IconSidebarToggle() {
   return (
-    <Link
-      href="/"
-      className="text-foreground flex items-center gap-2.5 text-lg font-bold tracking-tight"
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      <span className="bg-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
-        <span className="h-3.5 w-3.5 rounded-full bg-white" />
-      </span>
-      ClubSwap
-    </Link>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <line x1="9" y1="3" x2="9" y2="21" />
+    </svg>
   )
 }
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
-
-function Navbar() {
+function IconSearch() {
   return (
-    <header className="border-border bg-background/95 sticky top-0 z-50 border-b backdrop-blur-sm">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
-        <Logo />
-
-        <nav className="hidden items-center gap-7 md:flex">
-          {['Kjøp', 'Selg', 'Merker', 'Om oss'].map((item) => (
-            <Link
-              key={item}
-              href="#"
-              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
-            >
-              {item}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Link
-            href="#"
-            className="text-muted-foreground hover:text-foreground hidden text-sm font-medium transition-colors sm:block"
-          >
-            Logg inn
-          </Link>
-          <Button size="sm">Legg ut annonse</Button>
-        </div>
-      </div>
-    </header>
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
   )
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────────────
-
-function Hero() {
+function IconHome() {
   return (
-    <section className="bg-background py-24">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="flex flex-col gap-16 lg:flex-row lg:items-start">
-          {/* Headline */}
-          <h1 className="text-foreground text-5xl leading-[1.08] font-[550] tracking-tighter sm:text-6xl lg:w-3/5 lg:text-7xl">
-            Kjøp og selg golfutstyr med tillit.
-          </h1>
-
-          {/* Right column */}
-          <div className="flex flex-col items-start gap-8 lg:w-2/5 lg:pt-2">
-            <p className="text-muted-foreground text-lg leading-relaxed">
-              Norges største markedsplass for brukt golfutstyr. Registrer deg gratis og nå tusenvis
-              av golfere over hele landet.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <Button size="lg">Utforsk annonser</Button>
-              <Button variant="outline" size="lg">
-                Selg utstyr
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
   )
 }
 
-// ─── Logo Cloud ───────────────────────────────────────────────────────────────
-
-function LogoCloud() {
+function IconTag() {
   return (
-    <section className="border-border bg-muted/40 border-y py-14">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <p className="text-muted-foreground mb-10 text-center text-xs font-semibold tracking-widest uppercase">
-          Utstyr fra landets fremste merker
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-5">
-          {BRANDS.map((brand) => (
-            <span
-              key={brand}
-              className="text-muted-foreground/40 hover:text-muted-foreground/70 cursor-default text-lg font-semibold transition-colors select-none"
-            >
-              {brand}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+      <line x1="7" y1="7" x2="7.01" y2="7" />
+    </svg>
   )
 }
 
-// ─── Features ─────────────────────────────────────────────────────────────────
-
-function Features() {
+function IconPlus() {
   return (
-    <section className="bg-background py-28">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-20 text-center">
-          <p className="text-primary mb-3 text-xs font-semibold tracking-widest uppercase">
-            Hvorfor ClubSwap
-          </p>
-          <h2 className="text-foreground mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-            Bygget for golfere
-          </h2>
-          <p className="text-muted-foreground mx-auto max-w-xl text-lg">
-            Vi har gjort det enkelt å finne, kjøpe og selge golfutstyr på én plattform.
-          </p>
-        </div>
-
-        {/* Feature 1 — Sell fast */}
-        <div className="mb-24 grid items-center gap-16 lg:grid-cols-2">
-          <div>
-            <div className="bg-primary/10 mb-6 flex h-12 w-12 items-center justify-center rounded-xl">
-              <Zap className="text-primary h-6 w-6" />
-            </div>
-            <h3 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
-              Selg utstyret ditt på minutter
-            </h3>
-            <p className="text-muted-foreground mb-8 text-lg leading-relaxed">
-              Legg ut annonsen din på under to minutter. Ta et bilde, skriv en beskrivelse og sett
-              prisen — vi tar oss av resten.
-            </p>
-            <ul className="space-y-4">
-              {[
-                'Enkel opplasting fra mobil eller PC',
-                'Nå over 45 000 aktive kjøpere øyeblikkelig',
-                'Gratis å legge ut — betal kun ved salg',
-              ].map((item) => (
-                <li key={item} className="text-foreground flex items-start gap-3 text-sm">
-                  <span className="bg-primary/10 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
-                    <Check className="text-primary h-3 w-3" />
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Listing card mockup */}
-          <div className="lg:pl-8">
-            <div className="border-border bg-card rounded-2xl border p-6 shadow-xl">
-              <div className="mb-5 flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-green-400" />
-                <span className="text-muted-foreground text-xs font-medium">
-                  Ny annonse publisert
-                </span>
-              </div>
-              <div className="bg-muted mb-5 flex aspect-4/3 items-center justify-center rounded-xl">
-                <Package className="text-muted-foreground/20 h-14 w-14" />
-              </div>
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="bg-primary/10 text-primary mb-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium">
-                    Som ny
-                  </span>
-                  <h4 className="text-foreground font-semibold">Titleist T100 Jernett 4–PW</h4>
-                  <p className="text-muted-foreground mt-1 text-sm">Stiff flex · Originale greps</p>
-                </div>
-                <p className="text-primary ml-4 shrink-0 text-xl font-bold">4 500 kr</p>
-              </div>
-              <div className="border-border text-muted-foreground mt-5 flex items-center gap-1.5 border-t pt-4 text-xs">
-                <MapPin className="h-3.5 w-3.5 shrink-0" />
-                <span>Oslo</span>
-                <span className="text-border mx-1.5">·</span>
-                <Clock className="h-3.5 w-3.5 shrink-0" />
-                <span>Lagt ut for 2 minutter siden</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature 2 — Trade with trust */}
-        <div className="grid items-center gap-16 lg:grid-cols-2">
-          {/* Trust card mockup */}
-          <div className="order-2 lg:order-1 lg:pr-8">
-            <div className="border-border bg-card rounded-2xl border p-8 shadow-xl">
-              <div className="mb-6 flex items-center gap-4">
-                <div className="bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full">
-                  <Shield className="text-primary h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="text-foreground font-semibold">Kjøperbeskyttelse</h4>
-                  <p className="text-muted-foreground text-sm">Aktiv på alle transaksjoner</p>
-                </div>
-              </div>
-              <div className="divide-border divide-y">
-                {[
-                  'Verifiserte brukerprofiler',
-                  'Sikker betaling via Vipps',
-                  '14 dagers åpent kjøp',
-                  'Kundeservice på norsk',
-                ].map((item) => (
-                  <div key={item} className="flex items-center gap-3 py-3.5">
-                    <span className="bg-primary/10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
-                      <Check className="text-primary h-3.5 w-3.5" />
-                    </span>
-                    <span className="text-foreground text-sm font-medium">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <div className="bg-primary/10 mb-6 flex h-12 w-12 items-center justify-center rounded-xl">
-              <Shield className="text-primary h-6 w-6" />
-            </div>
-            <h3 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
-              Handle med full tillit
-            </h3>
-            <p className="text-muted-foreground mb-8 text-lg leading-relaxed">
-              Tryggheten din er vår prioritet. Vi har bygget et system med verifiserte brukere,
-              sikre betalingsløsninger og kjøperbeskyttelse på alle transaksjoner.
-            </p>
-            <ul className="space-y-4">
-              {[
-                'Alle brukere er ID-verifisert ved registrering',
-                'Betalingen holdes trygt til varen er mottatt',
-                'Meld fra om problemer — vi hjelper deg alltid',
-              ].map((item) => (
-                <li key={item} className="text-foreground flex items-start gap-3 text-sm">
-                  <span className="bg-primary/10 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
-                    <Check className="text-primary h-3 w-3" />
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
   )
 }
 
-// ─── Stats ────────────────────────────────────────────────────────────────────
-
-function Stats() {
+function IconUser() {
   return (
-    <section className="bg-primary py-20">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-10 text-center lg:grid-cols-4">
-          {STATS.map(({ value, label }) => (
-            <div key={label}>
-              <p className="mb-2 text-4xl font-bold text-white lg:text-5xl">{value}</p>
-              <p className="text-sm leading-snug text-white/70">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
   )
 }
 
-// ─── Testimonials ─────────────────────────────────────────────────────────────
-
-function Testimonials() {
+function IconMail() {
   return (
-    <section className="bg-background py-28">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mb-16 text-center">
-          <p className="text-primary mb-3 text-xs font-semibold tracking-widest uppercase">
-            Tilbakemeldinger
-          </p>
-          <h2 className="text-foreground mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-            Elsket av golfere
-          </h2>
-          <p className="text-muted-foreground mx-auto max-w-xl text-lg">
-            Over 45 000 golfere stoler på ClubSwap for kjøp og salg av utstyr.
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          {TESTIMONIALS.map(({ quote, name, meta, initials }) => (
-            <div key={name} className="border-border bg-card flex flex-col rounded-2xl border p-8">
-              <div className="mb-5 flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="fill-primary text-primary h-4 w-4" />
-                ))}
-              </div>
-              <p className="text-foreground mb-6 flex-1 leading-relaxed">&ldquo;{quote}&rdquo;</p>
-              <div className="border-border flex items-center gap-3 border-t pt-6">
-                <div className="bg-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-                  <span className="text-primary-foreground text-xs font-bold">{initials}</span>
-                </div>
-                <div>
-                  <p className="text-foreground text-sm font-semibold">{name}</p>
-                  <p className="text-muted-foreground text-xs">{meta}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+      <polyline points="22,6 12,13 2,6" />
+    </svg>
   )
 }
 
-// ─── CTA Section ──────────────────────────────────────────────────────────────
-
-function CTASection() {
+function IconHeart() {
   return (
-    <section className="bg-foreground py-24">
-      <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
-        <h2 className="mb-5 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-          Klar til å finne din neste favorittkølle?
-        </h2>
-        <p className="mb-10 text-lg leading-relaxed text-white/70">
-          Bli med over 45 000 golfere som allerede bruker ClubSwap. Det er gratis å registrere seg.
-        </p>
-        <div className="flex flex-col justify-center gap-3 sm:flex-row">
-          <Button className="text-foreground h-12 gap-2 bg-white px-8 text-base hover:bg-white/90">
-            Registrer deg gratis
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            className="h-12 px-8 text-base text-white hover:bg-white/10 hover:text-white"
-          >
-            Se alle annonser
-          </Button>
-        </div>
-      </div>
-    </section>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
   )
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
-
-function Footer() {
-  const cols = {
-    Markedsplass: ['Kjøp utstyr', 'Selg utstyr', 'Alle merker', 'Kategorier', 'Nye annonser'],
-    Selskap: ['Om oss', 'Karriere', 'Presse', 'Blogg'],
-    Support: ['Kontakt oss', 'Vanlige spørsmål', 'Vilkår', 'Personvern'],
-  }
-
+function IconSettings() {
   return (
-    <footer className="border-border bg-muted/30 border-t">
-      <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
-        <div className="mb-16 grid grid-cols-2 gap-12 lg:grid-cols-4">
-          {/* Brand */}
-          <div className="col-span-2 lg:col-span-1">
-            <Logo />
-            <p className="text-muted-foreground mt-4 max-w-50 text-sm leading-relaxed">
-              Norges ledende markedsplass for kjøp og salg av brukt golfutstyr.
-            </p>
-          </div>
-
-          {Object.entries(cols).map(([title, items]) => (
-            <div key={title}>
-              <h4 className="text-foreground mb-4 text-sm font-semibold">{title}</h4>
-              <ul className="space-y-3">
-                {items.map((item) => (
-                  <li key={item}>
-                    <Link
-                      href="#"
-                      className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                    >
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="border-border flex flex-col items-center justify-between gap-4 border-t pt-8 sm:flex-row">
-          <p className="text-muted-foreground text-sm">
-            © 2025 ClubSwap. Alle rettigheter forbeholdt.
-          </p>
-          <div className="flex gap-6">
-            {['Vilkår', 'Personvern', 'Cookies'].map((item) => (
-              <Link
-                key={item}
-                href="#"
-                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-              >
-                {item}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-    </footer>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
   )
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+function IconGolfClub() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="5" y1="3" x2="19" y2="21" />
+      <path d="M5 3C5 3 3 8 8 10" />
+    </svg>
+  )
+}
+
+function IconArrowRight() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  )
+}
+
+function IconSun() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  )
+}
+
+function IconMoon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  )
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const navItems = [
+  { icon: <IconHome />, label: 'Utforsk', active: true },
+  { icon: <IconTag />, label: 'Mine annonser' },
+  { icon: <IconPlus />, label: 'Selg en kølle' },
+  { icon: <IconHeart />, label: 'Lagrede' },
+  { icon: <IconMail />, label: 'Meldinger', badge: 3 },
+  { icon: <IconUser />, label: 'Profil' },
+]
+
+const savedItems = [
+  { label: 'TaylorMade M5 Driver', category: 'DRIVER' },
+  { label: 'Callaway Apex Irons', category: 'JERN' },
+  { label: 'Titleist SM9 Wedge', category: 'WEDGE' },
+]
+
+// Condition badge classes — fully Tailwind, dark: variant aware
+const CONDITION_CLASSES: Record<string, string> = {
+  Ny: 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950',
+  'Meget god':
+    'text-sky-700 dark:text-sky-400 border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-950',
+  God: 'text-primary border-primary/30 bg-primary/8',
+  Akseptabel:
+    'text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950',
+}
+
+const LISTINGS = [
+  {
+    id: 1,
+    name: 'Stealth 2 Driver',
+    brand: 'TaylorMade',
+    condition: 'Meget god',
+    price: 2490,
+    location: 'Oslo',
+    posted: '2t siden',
+    emoji: '🏌️',
+  },
+  {
+    id: 2,
+    name: 'Apex Pro Irons 4–PW',
+    brand: 'Callaway',
+    condition: 'God',
+    price: 3800,
+    location: 'Bergen',
+    posted: '5t siden',
+    emoji: '⛳',
+  },
+  {
+    id: 3,
+    name: 'SM9 Wedge 56°',
+    brand: 'Titleist',
+    condition: 'Ny',
+    price: 1290,
+    location: 'Trondheim',
+    posted: '1d siden',
+    emoji: '🏒',
+  },
+  {
+    id: 4,
+    name: 'Paradym Driver',
+    brand: 'Callaway',
+    condition: 'Meget god',
+    price: 2950,
+    location: 'Stavanger',
+    posted: '1d siden',
+    emoji: '🏌️',
+  },
+  {
+    id: 5,
+    name: 'T200 Irons 5–GW',
+    brand: 'Titleist',
+    condition: 'God',
+    price: 4200,
+    location: 'Kristiansand',
+    posted: '2d siden',
+    emoji: '⛳',
+  },
+  {
+    id: 6,
+    name: 'Qi10 Driver',
+    brand: 'TaylorMade',
+    condition: 'Akseptabel',
+    price: 1750,
+    location: 'Drammen',
+    posted: '3d siden',
+    emoji: '🏌️',
+  },
+  {
+    id: 7,
+    name: 'Cleveland RTX6 58°',
+    brand: 'Cleveland',
+    condition: 'Meget god',
+    price: 890,
+    location: 'Tromsø',
+    posted: '3d siden',
+    emoji: '🏒',
+  },
+  {
+    id: 8,
+    name: 'Scotty Cameron Putter',
+    brand: 'Titleist',
+    condition: 'God',
+    price: 3100,
+    location: 'Fredrikstad',
+    posted: '4d siden',
+    emoji: '🏌️',
+  },
+]
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [dark, setDark] = useState(false)
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (dark) {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+  }, [dark])
+
+  const W = sidebarOpen ? 240 : 60
+
   return (
-    <div className="bg-background min-h-screen">
-      <Navbar />
-      <main>
-        <Hero />
-        <LogoCloud />
-        <Features />
-        <Stats />
-        <Testimonials />
-        <CTASection />
-      </main>
-      <Footer />
+    <div className="bg-background text-foreground flex h-screen overflow-hidden">
+      {/* ── Left Sidebar ───────────────────────────────────────────────────── */}
+      <aside
+        className="bg-background text-foreground flex shrink-0 flex-col overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ width: W }}
+      >
+        {/* Logo + toggle */}
+        <div className="flex h-16 shrink-0 items-center justify-between px-3">
+          <div className="flex min-w-0 items-center overflow-hidden">
+            {sidebarOpen && (
+              <span className="text-foreground text-sm font-semibold whitespace-nowrap">
+                ClubSwap
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors"
+            aria-label="Åpne/lukk meny"
+          >
+            <IconSidebarToggle />
+          </button>
+        </div>
+
+        {/* Search */}
+        {sidebarOpen && (
+          <div className="mb-4 shrink-0 px-3">
+            <div className="bg-muted border-border text-muted-foreground flex h-9 items-center gap-2 rounded-lg border px-3 text-sm">
+              <IconSearch />
+              <span className="flex-1">Søk</span>
+              <span className="bg-background border-border rounded border px-1.5 py-0.5 font-mono text-xs">
+                ⌘K
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Nav section */}
+        <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2">
+          {sidebarOpen && (
+            <p className="text-muted-foreground mb-1 px-2 text-[11px] font-medium tracking-widest uppercase">
+              Navigasjon
+            </p>
+          )}
+
+          {navItems.map((item, i) => (
+            <button
+              key={i}
+              className={[
+                'flex h-9 w-full shrink-0 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
+                sidebarOpen ? '' : 'justify-center',
+                item.active
+                  ? 'bg-muted text-highlight font-medium'
+                  : 'text-highlight hover:bg-muted',
+              ].join(' ')}
+            >
+              <span className="shrink-0">{item.icon}</span>
+              {sidebarOpen && (
+                <>
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge != null && (
+                    <span className="bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
+                      {item.badge}
+                    </span>
+                  )}
+                </>
+              )}
+            </button>
+          ))}
+
+          {/* Saved section */}
+          {sidebarOpen && (
+            <>
+              <p className="text-muted-foreground mt-4 mb-1 px-2 text-[11px] font-medium tracking-widest uppercase">
+                Lagrede
+              </p>
+              {savedItems.map((item, i) => (
+                <button
+                  key={i}
+                  className="text-highlight hover:bg-muted flex h-9 w-full shrink-0 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors"
+                >
+                  <IconGolfClub />
+                  <span className="flex-1 truncate text-left">{item.label}</span>
+                  <span className="text-muted-foreground shrink-0 text-[10px]">
+                    {item.category}
+                  </span>
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* Settings + user */}
+        <div className="border-border flex shrink-0 flex-col gap-0.5 border-t px-2 pt-3 pb-4">
+          {/* Theme toggle */}
+          <button
+            onClick={() => setDark(!dark)}
+            className={[
+              'text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
+              sidebarOpen ? '' : 'justify-center',
+            ].join(' ')}
+            aria-label="Bytt fargetema"
+          >
+            {dark ? <IconSun /> : <IconMoon />}
+            {sidebarOpen && <span>{dark ? 'Lyst tema' : 'Mørkt tema'}</span>}
+          </button>
+
+          <button
+            className={[
+              'text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
+              sidebarOpen ? '' : 'justify-center',
+            ].join(' ')}
+          >
+            <IconSettings />
+            {sidebarOpen && <span>Innstillinger</span>}
+          </button>
+
+          <div
+            className={[
+              'mt-1 flex h-11 items-center gap-2.5 rounded-lg px-2.5',
+              sidebarOpen ? '' : 'justify-center',
+            ].join(' ')}
+          >
+            <div className="bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+              BF
+            </div>
+            {sidebarOpen && (
+              <div className="flex min-w-0 flex-col">
+                <span className="text-highlight text-sm leading-tight font-medium">
+                  Bjørn-Magnus
+                </span>
+                <span className="text-highlight/50 text-xs leading-tight">Golfspiller</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Main content ───────────────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col overflow-hidden p-3">
+        <main className="bg-card border-border flex flex-1 flex-col overflow-hidden rounded-2xl border">
+          {/* Top nav */}
+          <header className="border-border flex h-16 shrink-0 items-center border-b px-20">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
+              <span>ClubSwap</span>
+              <span className="text-border">›</span>
+              <span className="text-foreground font-medium">Hjem</span>
+            </div>
+          </header>
+
+          {/* Scrollable body: hero + listings */}
+          <motion.div
+            className="flex-1 overflow-y-auto"
+            style={{ scrollbarWidth: 'none' }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            {/* Hero */}
+            <section className="border-border flex items-start gap-6 border-b px-20 py-16">
+              {/* Left: heading — 3/5 */}
+              <div className="w-1/2 shrink-0">
+                <h1 className="text-foreground text-5xl leading-[1.1] font-normal tracking-tight">
+                  Markedsplass for golf.
+                  <br />
+                  <span className="text-highlight">Finn ditt neste utstyr.</span>
+                </h1>
+              </div>
+
+              {/* Right: supporting text + search — 2/5 */}
+              <div className="flex flex-1 flex-col gap-5">
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Kjøp, selg og bytt brukte golfkøller med spillere over hele Norge – raskt og
+                  enkelt.
+                </p>
+
+                {/* Search bar */}
+                <div className="border-border bg-background focus-within:border-primary/40 flex h-14 w-full items-center gap-3 rounded-xl border px-4 transition-colors">
+                  <span className="text-muted-foreground">
+                    <IconSearch />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Søk etter kølle, merke eller type..."
+                    className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
+                  />
+                  <Button size="sm">Søk</Button>
+                </div>
+
+                {/* Secondary CTA */}
+                <button className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors">
+                  Se annonser
+                  <IconArrowRight />
+                </button>
+              </div>
+            </section>
+
+            {/* Listings grid */}
+            <section className="overflow-auto px-20 pt-10 pb-12">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-muted-foreground text-sm font-semibold tracking-widest uppercase">
+                  Siste annonser
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {LISTINGS.map((listing) => (
+                  <article
+                    key={listing.id}
+                    className="border-border bg-background hover:border-primary/30 hover:bg-muted/30 flex cursor-pointer flex-col overflow-hidden rounded-xl border transition-colors"
+                  >
+                    {/* Photo placeholder */}
+                    <div className="bg-muted flex h-44 w-full shrink-0 items-center justify-center">
+                      <span className="text-3xl opacity-40">{listing.emoji}</span>
+                    </div>
+
+                    {/* Card body */}
+                    <div className="flex flex-col gap-2 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-muted-foreground mb-0.5 text-xs">{listing.brand}</p>
+                          <p className="text-foreground truncate text-sm leading-snug font-semibold">
+                            {listing.name}
+                          </p>
+                        </div>
+                        <span
+                          className={[
+                            'mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                            CONDITION_CLASSES[listing.condition] ?? '',
+                          ].join(' ')}
+                        >
+                          {listing.condition}
+                        </span>
+                      </div>
+
+                      <p className="text-foreground text-base font-bold">
+                        {listing.price.toLocaleString('nb-NO')} kr
+                      </p>
+
+                      <p className="text-muted-foreground text-xs">
+                        {listing.location} · {listing.posted}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              {/* See all link */}
+              <div className="mt-8 flex justify-center">
+                <button className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm font-medium transition-colors">
+                  Se alle annonser
+                  <IconArrowRight />
+                </button>
+              </div>
+            </section>
+          </motion.div>
+        </main>
+      </div>
     </div>
   )
 }
