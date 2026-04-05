@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
+import { createClient } from '@/supabase/client'
+import { loggUt } from '@/app/(auth)/actions'
+import { AuthModal } from '@/components/auth-modal'
+import type { User } from '@supabase/supabase-js'
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -166,24 +170,6 @@ function IconSettings() {
   )
 }
 
-function IconGolfClub() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="5" y1="3" x2="19" y2="21" />
-      <path d="M5 3C5 3 3 8 8 10" />
-    </svg>
-  )
-}
-
 function IconArrowRight() {
   return (
     <svg
@@ -255,12 +241,6 @@ const navItems = [
   { icon: <IconUser />, label: 'Profil' },
 ]
 
-const savedItems = [
-  { label: 'TaylorMade M5 Driver', category: 'DRIVER' },
-  { label: 'Callaway Apex Irons', category: 'JERN' },
-  { label: 'Titleist SM9 Wedge', category: 'WEDGE' },
-]
-
 // Condition badge classes — fully Tailwind, dark: variant aware
 const CONDITION_CLASSES: Record<string, string> = {
   Ny: 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950',
@@ -271,7 +251,16 @@ const CONDITION_CLASSES: Record<string, string> = {
     'text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950',
 }
 
-const LISTINGS = [
+const LISTINGS: {
+  id: number
+  name: string
+  brand: string
+  condition: string
+  price: number
+  location: string
+  posted: string
+  image?: string
+}[] = [
   {
     id: 1,
     name: 'Stealth 2 Driver',
@@ -280,7 +269,6 @@ const LISTINGS = [
     price: 2490,
     location: 'Oslo',
     posted: '2t siden',
-    emoji: '🏌️',
   },
   {
     id: 2,
@@ -290,7 +278,6 @@ const LISTINGS = [
     price: 3800,
     location: 'Bergen',
     posted: '5t siden',
-    emoji: '⛳',
   },
   {
     id: 3,
@@ -300,7 +287,6 @@ const LISTINGS = [
     price: 1290,
     location: 'Trondheim',
     posted: '1d siden',
-    emoji: '🏒',
   },
   {
     id: 4,
@@ -310,7 +296,6 @@ const LISTINGS = [
     price: 2950,
     location: 'Stavanger',
     posted: '1d siden',
-    emoji: '🏌️',
   },
   {
     id: 5,
@@ -320,7 +305,6 @@ const LISTINGS = [
     price: 4200,
     location: 'Kristiansand',
     posted: '2d siden',
-    emoji: '⛳',
   },
   {
     id: 6,
@@ -330,7 +314,6 @@ const LISTINGS = [
     price: 1750,
     location: 'Drammen',
     posted: '3d siden',
-    emoji: '🏌️',
   },
   {
     id: 7,
@@ -340,7 +323,6 @@ const LISTINGS = [
     price: 890,
     location: 'Tromsø',
     posted: '3d siden',
-    emoji: '🏒',
   },
   {
     id: 8,
@@ -350,15 +332,60 @@ const LISTINGS = [
     price: 3100,
     location: 'Fredrikstad',
     posted: '4d siden',
-    emoji: '🏌️',
   },
 ]
+
+function ListingImage({ src, alt }: { src?: string; alt: string }) {
+  if (src) {
+    return (
+      <div className="w-full" style={{ aspectRatio: '4/3' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt} className="h-full w-full object-cover" />
+      </div>
+    )
+  }
+  return (
+    <div
+      className="bg-muted/60 flex w-full flex-col items-center justify-center gap-1.5 rounded-t-xl"
+      style={{ aspectRatio: '4/3' }}
+    >
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 32 32"
+        fill="none"
+        className="text-muted-foreground/40"
+        aria-hidden="true"
+      >
+        {/* Grip */}
+        <rect x="15" y="2" width="2" height="14" rx="1" fill="currentColor" />
+        {/* Shaft angle */}
+        <line
+          x1="16"
+          y1="16"
+          x2="24"
+          y2="26"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        {/* Club head */}
+        <rect x="20" y="24" width="8" height="5" rx="1.5" fill="currentColor" />
+      </svg>
+      <span className="text-muted-foreground/60 text-xs">Intet bilde</span>
+    </div>
+  )
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [dark, setDark] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [profilMeny, setProfilMeny] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalFane, setModalFane] = useState<'logg-inn' | 'registrer'>('logg-inn')
 
   useEffect(() => {
     const root = document.documentElement
@@ -368,6 +395,17 @@ export default function HomePage() {
       root.classList.remove('dark')
     }
   }, [dark])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   const W = sidebarOpen ? 240 : 60
 
@@ -441,27 +479,6 @@ export default function HomePage() {
               )}
             </button>
           ))}
-
-          {/* Saved section */}
-          {sidebarOpen && (
-            <>
-              <p className="text-muted-foreground mt-4 mb-1 px-2 text-[11px] font-medium tracking-widest uppercase">
-                Lagrede
-              </p>
-              {savedItems.map((item, i) => (
-                <button
-                  key={i}
-                  className="text-highlight hover:bg-muted flex h-9 w-full shrink-0 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors"
-                >
-                  <IconGolfClub />
-                  <span className="flex-1 truncate text-left">{item.label}</span>
-                  <span className="text-muted-foreground shrink-0 text-[10px]">
-                    {item.category}
-                  </span>
-                </button>
-              ))}
-            </>
-          )}
         </div>
 
         {/* Settings + user */}
@@ -489,24 +506,103 @@ export default function HomePage() {
             {sidebarOpen && <span>Innstillinger</span>}
           </button>
 
-          <div
-            className={[
-              'mt-1 flex h-11 items-center gap-2.5 rounded-lg px-2.5',
-              sidebarOpen ? '' : 'justify-center',
-            ].join(' ')}
-          >
-            <div className="bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-              BF
+          {user ? (
+            <div className="relative mt-1">
+              {profilMeny && (
+                <div className="bg-background border-border absolute right-0 bottom-full left-0 mb-1 rounded-lg border p-1 shadow-lg">
+                  <form action={loggUt}>
+                    <button
+                      type="submit"
+                      className="text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors"
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      {sidebarOpen && <span>Logg ut</span>}
+                    </button>
+                  </form>
+                </div>
+              )}
+              <button
+                onClick={() => setProfilMeny(!profilMeny)}
+                className={[
+                  'hover:bg-muted flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 transition-colors',
+                  sidebarOpen ? '' : 'justify-center',
+                ].join(' ')}
+              >
+                <div className="bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+                  {(user.user_metadata?.full_name as string | undefined)
+                    ?.split(' ')
+                    .map((n: string) => n[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase() ??
+                    user.email?.[0]?.toUpperCase() ??
+                    '?'}
+                </div>
+                {sidebarOpen && (
+                  <div className="flex min-w-0 flex-col text-left">
+                    <span className="text-highlight truncate text-sm leading-tight font-medium">
+                      {(user.user_metadata?.full_name as string | undefined) ?? user.email}
+                    </span>
+                    <span className="text-highlight/50 text-xs leading-tight">Golfspiller</span>
+                  </div>
+                )}
+              </button>
             </div>
-            {sidebarOpen && (
-              <div className="flex min-w-0 flex-col">
-                <span className="text-highlight text-sm leading-tight font-medium">
-                  Bjørn-Magnus
-                </span>
-                <span className="text-highlight/50 text-xs leading-tight">Golfspiller</span>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div
+              className={[
+                'mt-1 flex flex-col gap-1.5 px-1',
+                sidebarOpen ? '' : 'items-center',
+              ].join(' ')}
+            >
+              {sidebarOpen ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setModalFane('logg-inn')
+                      setModalOpen(true)
+                    }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-8 w-full cursor-pointer items-center justify-center rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Logg inn
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModalFane('registrer')
+                      setModalOpen(true)
+                    }}
+                    className="text-highlight hover:bg-muted flex h-8 w-full cursor-pointer items-center justify-center rounded-lg border text-sm transition-colors"
+                  >
+                    Registrer deg
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setModalFane('logg-inn')
+                    setModalOpen(true)
+                  }}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-colors"
+                  aria-label="Logg inn"
+                >
+                  <IconUser />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 
@@ -548,6 +644,11 @@ export default function HomePage() {
                   enkelt.
                 </p>
 
+                {/* Primary CTA */}
+                <Button variant="primary" size="lg" className="w-fit">
+                  Legg ut utstyr gratis
+                </Button>
+
                 {/* Search bar */}
                 <div className="border-border bg-background focus-within:border-primary/40 flex h-14 w-full items-center gap-3 rounded-xl border px-4 transition-colors">
                   <span className="text-muted-foreground">
@@ -583,10 +684,7 @@ export default function HomePage() {
                     key={listing.id}
                     className="border-border bg-background hover:border-primary/30 hover:bg-muted/30 flex cursor-pointer flex-col overflow-hidden rounded-xl border transition-colors"
                   >
-                    {/* Photo placeholder */}
-                    <div className="bg-muted flex h-44 w-full shrink-0 items-center justify-center">
-                      <span className="text-3xl opacity-40">{listing.emoji}</span>
-                    </div>
+                    <ListingImage src={listing.image} alt={listing.name} />
 
                     {/* Card body */}
                     <div className="flex flex-col gap-2 p-4">
@@ -630,6 +728,13 @@ export default function HomePage() {
           </motion.div>
         </main>
       </div>
+
+      <AuthModal
+        key={modalFane}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        initialFane={modalFane}
+      />
     </div>
   )
 }
