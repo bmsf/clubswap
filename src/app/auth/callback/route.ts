@@ -14,5 +14,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/logg-inn?feil=bekreftelse`)
+  return NextResponse.redirect(`${origin}/?feil=bekreftelse`)
 }

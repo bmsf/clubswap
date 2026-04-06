@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
 import { createClient } from '@/supabase/client'
 import { loggUt } from '@/app/(auth)/actions'
 import { AuthModal } from '@/components/auth-modal'
+import { useAuthModal } from '@/store/auth-modal'
 import type { User } from '@supabase/supabase-js'
+
+const PROTECTED_ROUTES = ['/selg', '/annonser', '/lagrede', '/meldinger', '/profil']
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -170,24 +173,6 @@ function IconSettings() {
   )
 }
 
-function IconArrowRight() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </svg>
-  )
-}
-
 function IconSun() {
   return (
     <svg
@@ -232,173 +217,52 @@ function IconMoon() {
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
+const ROUTE_LABEL: Record<string, string> = {
+  '/': 'Utforsk',
+  '/annonser': 'Mine annonser',
+  '/selg': 'Selg en kølle',
+  '/lagrede': 'Lagrede',
+  '/meldinger': 'Meldinger',
+  '/profil': 'Profil',
+}
+
 const navItems = [
-  { icon: <IconHome />, label: 'Utforsk', active: true },
-  { icon: <IconTag />, label: 'Mine annonser' },
-  { icon: <IconPlus />, label: 'Selg en kølle' },
-  { icon: <IconHeart />, label: 'Lagrede' },
-  { icon: <IconMail />, label: 'Meldinger', badge: 3 },
-  { icon: <IconUser />, label: 'Profil' },
+  { icon: <IconHome />, label: 'Utforsk', href: '/' },
+  { icon: <IconTag />, label: 'Mine annonser', href: '/annonser' },
+  { icon: <IconPlus />, label: 'Selg en kølle', href: '/selg' },
+  { icon: <IconHeart />, label: 'Lagrede', href: '/lagrede' },
+  { icon: <IconMail />, label: 'Meldinger', href: '/meldinger' },
+  { icon: <IconUser />, label: 'Profil', href: '/profil' },
 ]
-
-// Condition badge classes — fully Tailwind, dark: variant aware
-const CONDITION_CLASSES: Record<string, string> = {
-  Ny: 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950',
-  'Meget god':
-    'text-sky-700 dark:text-sky-400 border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-950',
-  God: 'text-primary border-primary/30 bg-primary/8',
-  Akseptabel:
-    'text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950',
-}
-
-const LISTINGS: {
-  id: number
-  name: string
-  brand: string
-  condition: string
-  price: number
-  location: string
-  posted: string
-  image?: string
-}[] = [
-  {
-    id: 1,
-    name: 'Stealth 2 Driver',
-    brand: 'TaylorMade',
-    condition: 'Meget god',
-    price: 2490,
-    location: 'Oslo',
-    posted: '2t siden',
-  },
-  {
-    id: 2,
-    name: 'Apex Pro Irons 4–PW',
-    brand: 'Callaway',
-    condition: 'God',
-    price: 3800,
-    location: 'Bergen',
-    posted: '5t siden',
-  },
-  {
-    id: 3,
-    name: 'SM9 Wedge 56°',
-    brand: 'Titleist',
-    condition: 'Ny',
-    price: 1290,
-    location: 'Trondheim',
-    posted: '1d siden',
-  },
-  {
-    id: 4,
-    name: 'Paradym Driver',
-    brand: 'Callaway',
-    condition: 'Meget god',
-    price: 2950,
-    location: 'Stavanger',
-    posted: '1d siden',
-  },
-  {
-    id: 5,
-    name: 'T200 Irons 5–GW',
-    brand: 'Titleist',
-    condition: 'God',
-    price: 4200,
-    location: 'Kristiansand',
-    posted: '2d siden',
-  },
-  {
-    id: 6,
-    name: 'Qi10 Driver',
-    brand: 'TaylorMade',
-    condition: 'Akseptabel',
-    price: 1750,
-    location: 'Drammen',
-    posted: '3d siden',
-  },
-  {
-    id: 7,
-    name: 'Cleveland RTX6 58°',
-    brand: 'Cleveland',
-    condition: 'Meget god',
-    price: 890,
-    location: 'Tromsø',
-    posted: '3d siden',
-  },
-  {
-    id: 8,
-    name: 'Scotty Cameron Putter',
-    brand: 'Titleist',
-    condition: 'God',
-    price: 3100,
-    location: 'Fredrikstad',
-    posted: '4d siden',
-  },
-]
-
-function ListingImage({ src, alt }: { src?: string; alt: string }) {
-  if (src) {
-    return (
-      <div className="w-full" style={{ aspectRatio: '4/3' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="h-full w-full object-cover" />
-      </div>
-    )
-  }
-  return (
-    <div
-      className="bg-muted/60 flex w-full flex-col items-center justify-center gap-1.5 rounded-t-xl"
-      style={{ aspectRatio: '4/3' }}
-    >
-      <svg
-        width="32"
-        height="32"
-        viewBox="0 0 32 32"
-        fill="none"
-        className="text-muted-foreground/40"
-        aria-hidden="true"
-      >
-        {/* Grip */}
-        <rect x="15" y="2" width="2" height="14" rx="1" fill="currentColor" />
-        {/* Shaft angle */}
-        <line
-          x1="16"
-          y1="16"
-          x2="24"
-          y2="26"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        {/* Club head */}
-        <rect x="20" y="24" width="8" height="5" rx="1.5" fill="currentColor" />
-      </svg>
-      <span className="text-muted-foreground/60 text-xs">Intet bilde</span>
-    </div>
-  )
-}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function HomePage() {
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [dark, setDark] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [authLoaded, setAuthLoaded] = useState(false)
+  const [unreadMessages] = useState<number>(0)
   const [profilMeny, setProfilMeny] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [modalFane, setModalFane] = useState<'logg-inn' | 'registrer'>('logg-inn')
+
+  const { openModal } = useAuthModal()
 
   useEffect(() => {
     const root = document.documentElement
-    if (dark) {
-      root.classList.add('dark')
-    } else {
-      root.classList.remove('dark')
-    }
+    if (dark) root.classList.add('dark')
+    else root.classList.remove('dark')
   }, [dark])
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      setAuthLoaded(true)
+    })
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -407,11 +271,36 @@ export default function HomePage() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Open auth modal when middleware redirects here with ?fra=
+  useEffect(() => {
+    if (!authLoaded) return
+    const fra = searchParams.get('fra')
+    if (fra && !user) {
+      openModal('logg-inn', fra)
+      router.replace('/')
+    }
+  }, [authLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close profile menu on navigation
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProfilMeny(false)
+  }, [pathname])
+
   const W = sidebarOpen ? 240 : 60
+  const breadcrumb = ROUTE_LABEL[pathname] ?? 'ClubSwap'
+
+  function handleNavClick(href: string) {
+    if (PROTECTED_ROUTES.includes(href) && !user) {
+      openModal('logg-inn', href)
+    } else {
+      router.push(href)
+    }
+  }
 
   return (
     <div className="bg-background text-foreground flex h-screen overflow-hidden">
-      {/* ── Left Sidebar ───────────────────────────────────────────────────── */}
+      {/* ── Left Sidebar ─────────────────────────────────────────────────────── */}
       <aside
         className="bg-background text-foreground flex shrink-0 flex-col overflow-hidden transition-all duration-300 ease-in-out"
         style={{ width: W }}
@@ -447,7 +336,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Nav section */}
+        {/* Nav */}
         <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2">
           {sidebarOpen && (
             <p className="text-muted-foreground mb-1 px-2 text-[11px] font-medium tracking-widest uppercase">
@@ -455,35 +344,36 @@ export default function HomePage() {
             </p>
           )}
 
-          {navItems.map((item, i) => (
-            <button
-              key={i}
-              className={[
-                'flex h-9 w-full shrink-0 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
-                sidebarOpen ? '' : 'justify-center',
-                item.active
-                  ? 'bg-muted text-highlight font-medium'
-                  : 'text-highlight hover:bg-muted',
-              ].join(' ')}
-            >
-              <span className="shrink-0">{item.icon}</span>
-              {sidebarOpen && (
-                <>
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {item.badge != null && (
-                    <span className="bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-                      {item.badge}
-                    </span>
-                  )}
-                </>
-              )}
-            </button>
-          ))}
+          {navItems.map((item) => {
+            const active = pathname === item.href
+            return (
+              <button
+                key={item.href}
+                onClick={() => handleNavClick(item.href)}
+                className={[
+                  'flex h-9 w-full shrink-0 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
+                  sidebarOpen ? '' : 'justify-center',
+                  active ? 'bg-muted text-highlight font-medium' : 'text-highlight hover:bg-muted',
+                ].join(' ')}
+              >
+                <span className="shrink-0">{item.icon}</span>
+                {sidebarOpen && (
+                  <>
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {item.label === 'Meldinger' && user && unreadMessages > 0 && (
+                      <span className="bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
+                        {unreadMessages}
+                      </span>
+                    )}
+                  </>
+                )}
+              </button>
+            )
+          })}
         </div>
 
-        {/* Settings + user */}
+        {/* Bottom: theme + settings + user */}
         <div className="border-border flex shrink-0 flex-col gap-0.5 border-t px-2 pt-3 pb-4">
-          {/* Theme toggle */}
           <button
             onClick={() => setDark(!dark)}
             className={[
@@ -571,19 +461,13 @@ export default function HomePage() {
               {sidebarOpen ? (
                 <>
                   <button
-                    onClick={() => {
-                      setModalFane('logg-inn')
-                      setModalOpen(true)
-                    }}
+                    onClick={() => openModal('logg-inn')}
                     className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-8 w-full cursor-pointer items-center justify-center rounded-lg text-sm font-medium transition-colors"
                   >
                     Logg inn
                   </button>
                   <button
-                    onClick={() => {
-                      setModalFane('registrer')
-                      setModalOpen(true)
-                    }}
+                    onClick={() => openModal('registrer')}
                     className="text-highlight hover:bg-muted flex h-8 w-full cursor-pointer items-center justify-center rounded-lg border text-sm transition-colors"
                   >
                     Registrer deg
@@ -591,10 +475,7 @@ export default function HomePage() {
                 </>
               ) : (
                 <button
-                  onClick={() => {
-                    setModalFane('logg-inn')
-                    setModalOpen(true)
-                  }}
+                  onClick={() => openModal('logg-inn')}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-colors"
                   aria-label="Logg inn"
                 >
@@ -606,135 +487,31 @@ export default function HomePage() {
         </div>
       </aside>
 
-      {/* ── Main content ───────────────────────────────────────────────────── */}
+      {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden p-3">
         <main className="bg-card border-border flex flex-1 flex-col overflow-hidden rounded-2xl border">
-          {/* Top nav */}
           <header className="border-border flex h-16 shrink-0 items-center border-b px-20">
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <span>ClubSwap</span>
               <span className="text-border">›</span>
-              <span className="text-foreground font-medium">Hjem</span>
+              <span className="text-foreground font-medium">{breadcrumb}</span>
             </div>
           </header>
 
-          {/* Scrollable body: hero + listings */}
           <motion.div
+            key={pathname}
             className="flex-1 overflow-y-auto"
             style={{ scrollbarWidth: 'none' }}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
           >
-            {/* Hero */}
-            <section className="border-border flex items-start gap-6 border-b px-20 py-16">
-              {/* Left: heading — 3/5 */}
-              <div className="w-1/2 shrink-0">
-                <h1 className="text-foreground text-5xl leading-[1.1] font-normal tracking-tight">
-                  Markedsplass for golf.
-                  <br />
-                  <span className="text-highlight">Finn ditt neste utstyr.</span>
-                </h1>
-              </div>
-
-              {/* Right: supporting text + search — 2/5 */}
-              <div className="flex flex-1 flex-col gap-5">
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  Kjøp, selg og bytt brukte golfkøller med spillere over hele Norge – raskt og
-                  enkelt.
-                </p>
-
-                {/* Primary CTA */}
-                <Button variant="primary" size="lg" className="w-fit">
-                  Legg ut utstyr gratis
-                </Button>
-
-                {/* Search bar */}
-                <div className="border-border bg-background focus-within:border-primary/40 flex h-14 w-full items-center gap-3 rounded-xl border px-4 transition-colors">
-                  <span className="text-muted-foreground">
-                    <IconSearch />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Søk etter kølle, merke eller type..."
-                    className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
-                  />
-                  <Button size="sm">Søk</Button>
-                </div>
-
-                {/* Secondary CTA */}
-                <button className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors">
-                  Se annonser
-                  <IconArrowRight />
-                </button>
-              </div>
-            </section>
-
-            {/* Listings grid */}
-            <section className="overflow-auto px-20 pt-10 pb-12">
-              <div className="mb-5 flex items-center justify-between">
-                <h2 className="text-muted-foreground text-sm font-semibold tracking-widest uppercase">
-                  Siste annonser
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {LISTINGS.map((listing) => (
-                  <article
-                    key={listing.id}
-                    className="border-border bg-background hover:border-primary/30 hover:bg-muted/30 flex cursor-pointer flex-col overflow-hidden rounded-xl border transition-colors"
-                  >
-                    <ListingImage src={listing.image} alt={listing.name} />
-
-                    {/* Card body */}
-                    <div className="flex flex-col gap-2 p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-muted-foreground mb-0.5 text-xs">{listing.brand}</p>
-                          <p className="text-foreground truncate text-sm leading-snug font-semibold">
-                            {listing.name}
-                          </p>
-                        </div>
-                        <span
-                          className={[
-                            'mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                            CONDITION_CLASSES[listing.condition] ?? '',
-                          ].join(' ')}
-                        >
-                          {listing.condition}
-                        </span>
-                      </div>
-
-                      <p className="text-foreground text-base font-bold">
-                        {listing.price.toLocaleString('nb-NO')} kr
-                      </p>
-
-                      <p className="text-muted-foreground text-xs">
-                        {listing.location} · {listing.posted}
-                      </p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-
-              {/* See all link */}
-              <div className="mt-8 flex justify-center">
-                <button className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm font-medium transition-colors">
-                  Se alle annonser
-                  <IconArrowRight />
-                </button>
-              </div>
-            </section>
+            {children}
           </motion.div>
         </main>
       </div>
 
-      <AuthModal
-        key={modalFane}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        initialFane={modalFane}
-      />
+      <AuthModal />
     </div>
   )
 }

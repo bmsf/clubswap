@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PROTECTED_ROUTES = ['/selg', '/annonser', '/lagrede', '/meldinger', '/profil']
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -30,20 +32,14 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Beskyttede ruter — krev innlogging
-  const beskyttede = ['/profil', '/mine-annonser', '/meldinger', '/innstillinger']
-  if (beskyttede.some((p) => pathname.startsWith(p)) && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/logg-inn'
-    url.searchParams.set('neste', pathname)
-    return NextResponse.redirect(url)
-  }
-
-  // Auth-sider — omdiriger innloggede brukere til forsiden
-  const authSider = ['/logg-inn', '/registrer']
-  if (authSider.some((p) => pathname.startsWith(p)) && user) {
+  // Beskyttede ruter — vis auth-modal på forsiden i stedet for å omdirigere til /logg-inn
+  const isProtected = PROTECTED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + '/')
+  )
+  if (isProtected && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
+    url.searchParams.set('fra', pathname)
     return NextResponse.redirect(url)
   }
 

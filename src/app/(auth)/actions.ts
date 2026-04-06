@@ -16,7 +16,8 @@ export async function loggInn(_: unknown, formData: FormData) {
     return { feil: 'Feil e-post eller passord.' }
   }
 
-  redirect('/')
+  const fra = (formData.get('fra') as string | null) ?? '/'
+  redirect(fra.startsWith('/') ? fra : '/')
 }
 
 export async function registrer(_: unknown, formData: FormData) {
@@ -37,7 +38,8 @@ export async function registrer(_: unknown, formData: FormData) {
     return { feil: 'Noe gikk galt. Prøv igjen.' }
   }
 
-  redirect('/logg-inn?bekreftet=1')
+  const fra = (formData.get('fra') as string | null) ?? '/'
+  redirect(fra.startsWith('/') ? fra : '/')
 }
 
 export async function loggUt() {
@@ -46,20 +48,23 @@ export async function loggUt() {
   redirect('/')
 }
 
-export async function loggInnMedGoogle() {
+export async function loggInnMedGoogle(formData: FormData) {
   const headersList = await headers()
   const origin = headersList.get('origin') ?? `https://${headersList.get('host')}`
   const supabase = await createClient()
 
+  const fra = (formData.get('fra') as string | null) ?? '/'
+  const neste = fra.startsWith('/') ? fra : '/'
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback?neste=${encodeURIComponent(neste)}`,
     },
   })
 
   if (error || !data.url) {
-    redirect('/logg-inn?feil=google')
+    redirect('/?feil=google')
   }
 
   redirect(data.url)
