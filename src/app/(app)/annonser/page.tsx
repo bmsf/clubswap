@@ -1,5 +1,5 @@
 import { createClient } from '@/supabase/server'
-import { Tag, MapPin, Package } from 'lucide-react'
+import { TagIcon, MapPinIcon, ArchiveBoxIcon } from '@heroicons/react/16/solid'
 import Link from 'next/link'
 import { AnnonseKortHandlinger } from '@/components/annonse-kort-handlinger'
 import { Button } from '@/components/ui/button'
@@ -40,7 +40,7 @@ export default async function AnnonserPage() {
       {!annonser || annonser.length === 0 ? (
         <div className="border-border flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed px-12 py-16 text-center">
           <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
-            <Tag className="text-muted-foreground h-5 w-5" />
+            <TagIcon className="text-muted-foreground h-5 w-5" />
           </div>
           <p className="text-foreground font-medium">Ingen annonser ennå</p>
           <p className="text-muted-foreground text-sm">Annonser du legger ut vil dukke opp her.</p>
@@ -71,7 +71,7 @@ export default async function AnnonserPage() {
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <Package className="text-muted-foreground h-10 w-10" />
+                      <ArchiveBoxIcon className="text-muted-foreground h-10 w-10" />
                     </div>
                   )}
                   {annonse.tilstand && (
@@ -90,12 +90,12 @@ export default async function AnnonserPage() {
                   <p className="text-foreground truncate font-medium">
                     {annonse.merke} {annonse.modell}
                   </p>
-                  <p className="text-primary text-base font-semibold">
+                  <p className="text-primary font-mono text-base font-semibold">
                     {annonse.pris.toLocaleString('nb-NO')} kr
                   </p>
                   {annonse.selges_fra && (
                     <p className="text-muted-foreground flex items-center gap-1 text-xs">
-                      <MapPin className="h-3 w-3" />
+                      <MapPinIcon className="h-3 w-3" />
                       {annonse.selges_fra}
                     </p>
                   )}

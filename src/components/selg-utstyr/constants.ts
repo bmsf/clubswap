@@ -2,6 +2,23 @@ import { z } from 'zod'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export interface KolleItem {
+  id: string
+  kategori: Category
+  merke: string
+  modell: string
+  aarsmodell?: string
+  hand?: 'right' | 'left'
+  skaftType?: 'steel' | 'graphite' | 'none'
+  skaftModell?: string
+  selectedSkaft?: { id: string; brand: string; model: string; category: string }
+  shaftFlex?: 'L' | 'A' | 'R' | 'S' | 'X'
+  loft?: string
+  headcover?: boolean
+  confirmed?: boolean
+  manuell?: boolean
+}
+
 export type Category =
   | 'driver'
   | 'fairway_wood'
@@ -50,6 +67,12 @@ export const schema = z.object({
 
 export type FormData = z.infer<typeof schema>
 
+// Create mode: merke/modell come from koller state, not RHF — skip their validation
+export const createModeSchema = schema.extend({
+  merke: z.string().default(''),
+  modell: z.string().default(''),
+})
+
 // ── Category ──────────────────────────────────────────────────────────────────
 
 export const CATEGORY_TO_DB: Record<Category, string> = {
@@ -79,6 +102,17 @@ export const KATEGORI_OPTIONS = [
   { value: 'rangefinder', label: 'Avstandsmåler' },
   { value: 'other', label: 'Annet' },
 ]
+
+// Maps equipment category to shaft DB category
+export const SHAFT_KATEGORI_MAP: Partial<Record<Category, string>> = {
+  driver: 'driver_fairway',
+  fairway_wood: 'driver_fairway',
+  hybrid: 'driver_fairway',
+  iron_set: 'iron',
+  single_iron: 'iron',
+  wedge: 'wedge',
+  putter: 'putter',
+}
 
 // Categories with shaft specifications
 export const HAR_SKAFT = new Set<Category>([
@@ -133,17 +167,35 @@ export const TILSTANDER: {
 
 // ── Shaft options ─────────────────────────────────────────────────────────────
 
-export const DRIVER_LOFT_OPTIONS = [
-  '7.5°',
-  '8.5°',
-  '9°',
-  '9.5°',
-  '10°',
-  '10.5°',
-  '11°',
-  '11.5°',
-  '12°',
-  '13°',
+export const DRIVER_LOFT_OPTIONS = ['9°', '9.5°', '10°', '10.5°', '11°', '11.5°', '12°']
+
+export const KJENTE_SKAFT: { navn: string; type: 'steel' | 'graphite' }[] = [
+  { navn: 'Fujikura Ventus Blue', type: 'graphite' },
+  { navn: 'Fujikura Ventus Red', type: 'graphite' },
+  { navn: 'Fujikura Ventus Black', type: 'graphite' },
+  { navn: 'Fujikura Speeder', type: 'graphite' },
+  { navn: 'Mitsubishi Tensei AV', type: 'graphite' },
+  { navn: 'Mitsubishi Tensei CK Pro Orange', type: 'graphite' },
+  { navn: 'Mitsubishi Diamana', type: 'graphite' },
+  { navn: 'Project X HZRDUS Smoke', type: 'graphite' },
+  { navn: 'Project X EvenFlow', type: 'graphite' },
+  { navn: 'Aldila Rogue', type: 'graphite' },
+  { navn: 'Aldila Synergy', type: 'graphite' },
+  { navn: 'Graphite Design Tour AD', type: 'graphite' },
+  { navn: 'True Temper Dynamic Gold', type: 'steel' },
+  { navn: 'True Temper Project X', type: 'steel' },
+  { navn: 'KBS Tour', type: 'steel' },
+  { navn: 'KBS C-Taper', type: 'steel' },
+  { navn: 'KBS $ Taper', type: 'steel' },
+  { navn: 'Nippon NS Pro 950', type: 'steel' },
+  { navn: 'Nippon NS Pro Modus3', type: 'steel' },
+  { navn: 'Aerotech SteelFiber', type: 'steel' },
+]
+
+export const SKAFT_TYPE_OPTIONS: { value: 'steel' | 'graphite' | 'none'; label: string }[] = [
+  { value: 'steel', label: 'Stål' },
+  { value: 'graphite', label: 'Grafitt' },
+  { value: 'none', label: 'Uten skaft' },
 ]
 
 export const SHAFT_FLEX_OPTIONS: { value: 'L' | 'A' | 'R' | 'S' | 'X'; label: string }[] = [

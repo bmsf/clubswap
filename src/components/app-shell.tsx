@@ -7,232 +7,53 @@ import { createClient } from '@/supabase/client'
 import { loggUt } from '@/app/(auth)/actions'
 import { AuthModal } from '@/components/auth-modal'
 import { useAuthModal } from '@/store/auth-modal'
+import { BekreftSlettModal } from '@/components/annonse-kort-handlinger'
 import type { User } from '@supabase/supabase-js'
+import {
+  Bars3Icon,
+  MagnifyingGlassIcon,
+  HomeIcon,
+  TagIcon,
+  PlusIcon,
+  UserIcon,
+  EnvelopeIcon,
+  HeartIcon,
+  Cog6ToothIcon,
+  SunIcon,
+  MoonIcon,
+  ArrowRightStartOnRectangleIcon,
+} from '@heroicons/react/16/solid'
 
 const PROTECTED_ROUTES = ['/selg', '/annonser', '/lagrede', '/meldinger', '/profil']
-
-// ── Icons ─────────────────────────────────────────────────────────────────────
-
-function IconSidebarToggle() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="3" />
-      <line x1="9" y1="3" x2="9" y2="21" />
-    </svg>
-  )
-}
-
-function IconSearch() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  )
-}
-
-function IconHome() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  )
-}
-
-function IconTag() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-      <line x1="7" y1="7" x2="7.01" y2="7" />
-    </svg>
-  )
-}
-
-function IconPlus() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-    >
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  )
-}
-
-function IconUser() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  )
-}
-
-function IconMail() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-      <polyline points="22,6 12,13 2,6" />
-    </svg>
-  )
-}
-
-function IconHeart() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  )
-}
-
-function IconSettings() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  )
-}
-
-function IconSun() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" />
-      <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-    </svg>
-  )
-}
-
-function IconMoon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  )
-}
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const ROUTE_LABEL: Record<string, string> = {
   '/': 'Utforsk',
   '/annonser': 'Mine annonser',
-  '/selg': 'Selg en kølle',
+  '/selg': 'Ny annonse',
   '/lagrede': 'Lagrede',
   '/meldinger': 'Meldinger',
   '/profil': 'Profil',
 }
 
+type Breadcrumb = { label: string; href?: string }
+
+function getBreadcrumbs(pathname: string): Breadcrumb[] {
+  if (/^\/annonser\/[^/]+\/rediger$/.test(pathname)) {
+    return [{ label: 'Mine annonser', href: '/annonser' }, { label: 'Rediger annonse' }]
+  }
+  const label = ROUTE_LABEL[pathname]
+  return label ? [{ label }] : [{ label: 'ClubSwap' }]
+}
+
 const navItems = [
-  { icon: <IconHome />, label: 'Utforsk', href: '/' },
-  { icon: <IconTag />, label: 'Mine annonser', href: '/annonser' },
-  { icon: <IconPlus />, label: 'Selg en kølle', href: '/selg' },
-  { icon: <IconHeart />, label: 'Lagrede', href: '/lagrede' },
-  { icon: <IconMail />, label: 'Meldinger', href: '/meldinger' },
-  { icon: <IconUser />, label: 'Profil', href: '/profil' },
+  { icon: <HomeIcon className="h-4 w-4" />, label: 'Utforsk', href: '/' },
+  { icon: <TagIcon className="h-4 w-4" />, label: 'Mine annonser', href: '/annonser' },
+  { icon: <PlusIcon className="h-4 w-4" />, label: 'Ny annonse', href: '/selg' },
+  { icon: <HeartIcon className="h-4 w-4" />, label: 'Lagrede', href: '/lagrede' },
+  { icon: <EnvelopeIcon className="h-4 w-4" />, label: 'Meldinger', href: '/meldinger' },
+  { icon: <UserIcon className="h-4 w-4" />, label: 'Profil', href: '/profil' },
 ]
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -288,7 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   const W = sidebarOpen ? 240 : 60
-  const breadcrumb = ROUTE_LABEL[pathname] ?? 'ClubSwap'
+  const breadcrumbs = getBreadcrumbs(pathname)
 
   function handleNavClick(href: string) {
     if (PROTECTED_ROUTES.includes(href) && !user) {
@@ -319,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors"
             aria-label="Åpne/lukk meny"
           >
-            <IconSidebarToggle />
+            <Bars3Icon className="h-4 w-4" />
           </button>
         </div>
 
@@ -327,7 +148,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {sidebarOpen && (
           <div className="mb-4 shrink-0 px-3">
             <div className="bg-muted border-border text-muted-foreground flex h-9 items-center gap-2 rounded-lg border px-3 text-sm">
-              <IconSearch />
+              <MagnifyingGlassIcon className="h-3.5 w-3.5 shrink-0" />
               <span className="flex-1">Søk</span>
               <span className="bg-background border-border rounded border px-1.5 py-0.5 font-mono text-xs">
                 ⌘K
@@ -382,7 +203,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ].join(' ')}
             aria-label="Bytt fargetema"
           >
-            {dark ? <IconSun /> : <IconMoon />}
+            {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
             {sidebarOpen && <span>{dark ? 'Lyst tema' : 'Mørkt tema'}</span>}
           </button>
 
@@ -392,7 +213,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               sidebarOpen ? '' : 'justify-center',
             ].join(' ')}
           >
-            <IconSettings />
+            <Cog6ToothIcon className="h-4 w-4" />
             {sidebarOpen && <span>Innstillinger</span>}
           </button>
 
@@ -405,20 +226,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       type="submit"
                       className="text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors"
                     >
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
+                      <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
                       {sidebarOpen && <span>Logg ut</span>}
                     </button>
                   </form>
@@ -479,7 +287,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-colors"
                   aria-label="Logg inn"
                 >
-                  <IconUser />
+                  <UserIcon className="h-4 w-4" />
                 </button>
               )}
             </div>
@@ -493,8 +301,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <header className="border-border flex h-16 shrink-0 items-center border-b px-20">
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <span>ClubSwap</span>
-              <span className="text-border">›</span>
-              <span className="text-foreground font-medium">{breadcrumb}</span>
+              {breadcrumbs.map((crumb, i) => (
+                <span key={i} className="flex items-center gap-2">
+                  <span className="text-border">›</span>
+                  {crumb.href ? (
+                    <a href={crumb.href} className="hover:text-foreground transition-colors">
+                      {crumb.label}
+                    </a>
+                  ) : (
+                    <span className="text-foreground font-medium">{crumb.label}</span>
+                  )}
+                </span>
+              ))}
             </div>
           </header>
 
@@ -512,6 +330,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <AuthModal />
+      <BekreftSlettModal />
     </div>
   )
 }

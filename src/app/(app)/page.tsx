@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Search, ArrowRight } from 'lucide-react'
+import { MagnifyingGlassIcon, ArrowRightIcon } from '@heroicons/react/16/solid'
 import { useAuthModal } from '@/store/auth-modal'
 import { createClient } from '@/supabase/client'
 
@@ -171,7 +171,7 @@ export default function UtforskPage() {
       {/* Hero */}
       <section className="border-border flex items-start gap-6 border-b px-20 py-16">
         <div className="w-1/2 shrink-0">
-          <h1 className="text-foreground text-5xl leading-[1.1] font-normal tracking-tight">
+          <h1 className="text-foreground text-5xl leading-[1.1] font-semibold tracking-tight">
             Markedsplass for golf.
             <br />
             Kjøp din neste{' '}
@@ -205,7 +205,7 @@ export default function UtforskPage() {
           </Button>
 
           <div className="border-border bg-background focus-within:border-primary/40 flex h-14 w-full items-center gap-3 rounded-xl border px-4 transition-colors">
-            <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+            <MagnifyingGlassIcon className="text-muted-foreground h-4 w-4 shrink-0" />
             <input
               type="text"
               placeholder="Søk etter kølle, merke eller type..."
@@ -216,7 +216,7 @@ export default function UtforskPage() {
 
           <button className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors">
             Se annonser
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRightIcon className="h-4 w-4" />
           </button>
         </div>
       </section>
@@ -255,7 +255,7 @@ export default function UtforskPage() {
                   </span>
                 </div>
 
-                <p className="text-foreground text-base font-bold">
+                <p className="text-foreground font-mono text-base font-bold">
                   {listing.price.toLocaleString('nb-NO')} kr
                 </p>
 
@@ -270,7 +270,7 @@ export default function UtforskPage() {
         <div className="mt-8 flex justify-center">
           <button className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm font-medium transition-colors">
             Se alle annonser
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRightIcon className="h-4 w-4" />
           </button>
         </div>
       </section>

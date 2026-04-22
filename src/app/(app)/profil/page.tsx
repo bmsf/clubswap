@@ -1,4 +1,4 @@
-import { User } from 'lucide-react'
+import { UserIcon } from '@heroicons/react/16/solid'
 
 export default function ProfilPage() {
   return (
@@ -12,7 +12,7 @@ export default function ProfilPage() {
 
       <div className="border-border flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed px-12 py-16 text-center">
         <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
-          <User className="text-muted-foreground h-5 w-5" />
+          <UserIcon className="text-muted-foreground h-5 w-5" />
         </div>
         <p className="text-foreground font-medium">Profilside kommer snart</p>
         <p className="text-muted-foreground text-sm">

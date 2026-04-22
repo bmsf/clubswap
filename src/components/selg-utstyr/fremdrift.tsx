@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { CheckIcon } from '@heroicons/react/16/solid'
 import { cn } from '@/lib/utils'
 
 export function Fremdrift({
@@ -20,19 +21,26 @@ export function Fremdrift({
       <div className="mb-3 flex justify-between">
         {steg.map((s, i) => (
           <div key={s.id} className="flex flex-col items-center">
-            <motion.button
-              type="button"
-              onClick={() => i < currentStep && onGaTil(i)}
-              className={cn(
-                'h-3.5 w-3.5 rounded-full transition-colors duration-300',
-                i < currentStep
-                  ? 'bg-primary cursor-pointer'
-                  : i === currentStep
-                    ? 'bg-primary ring-primary/20 ring-4'
-                    : 'bg-muted cursor-default'
+            <div className="relative flex h-3.5 w-3.5 items-center justify-center">
+              {i === currentStep && (
+                <span className="bg-primary/25 absolute inset-0 animate-ping rounded-full" />
               )}
-              whileTap={i < currentStep ? { scale: 0.9 } : {}}
-            />
+              <motion.button
+                type="button"
+                onClick={() => i < currentStep && onGaTil(i)}
+                className={cn(
+                  'relative flex h-3.5 w-3.5 items-center justify-center rounded-full transition-colors duration-300',
+                  i < currentStep
+                    ? 'bg-primary cursor-pointer'
+                    : i === currentStep
+                      ? 'bg-primary'
+                      : 'bg-muted cursor-default'
+                )}
+                whileTap={i < currentStep ? { scale: 0.9 } : {}}
+              >
+                {i < currentStep && <CheckIcon className="h-2.5 w-2.5 text-white" />}
+              </motion.button>
+            </div>
             <span
               className={cn(
                 'mt-1.5 hidden text-xs sm:block',

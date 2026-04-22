@@ -1,4 +1,4 @@
-import { Heart } from 'lucide-react'
+import { HeartIcon } from '@heroicons/react/16/solid'
 
 export default function LagredeePage() {
   return (
@@ -12,7 +12,7 @@ export default function LagredeePage() {
 
       <div className="border-border flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed px-12 py-16 text-center">
         <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
-          <Heart className="text-muted-foreground h-5 w-5" />
+          <HeartIcon className="text-muted-foreground h-5 w-5" />
         </div>
         <p className="text-foreground font-medium">Ingen lagrede annonser</p>
         <p className="text-muted-foreground text-sm">

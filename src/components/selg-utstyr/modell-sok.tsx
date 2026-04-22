@@ -7,9 +7,13 @@ import { type Category, KJENTE_MODELLER } from './constants'
 export function ModellSok({
   kategori,
   onVelg,
+  onManuell,
+  placeholder,
 }: {
-  kategori: Category
-  onVelg: (brand: string, model: string, year?: number) => void
+  kategori?: Category
+  onVelg: (brand: string, model: string, year?: number, category?: Category) => void
+  onManuell?: () => void
+  placeholder?: string
 }) {
   const [sokeTekst, setSokeTekst] = useState('')
   const [resultater, setResultater] = useState<typeof KJENTE_MODELLER>([])
@@ -27,7 +31,7 @@ export function ModellSok({
       const q = tekst.toLowerCase()
       const treff = KJENTE_MODELLER.filter(
         (m) =>
-          m.category === kategori &&
+          (kategori === undefined || m.category === kategori) &&
           (`${m.brand} ${m.model}`.toLowerCase().includes(q) ||
             m.brand.toLowerCase().includes(q) ||
             m.model.toLowerCase().includes(q))
@@ -56,7 +60,7 @@ export function ModellSok({
         onChange={(e) => setSokeTekst(e.target.value)}
         onFocus={() => sokeTekst && setVis(true)}
         onBlur={() => setTimeout(() => setVis(false), 150)}
-        placeholder="Søk etter modell, f.eks. TaylorMade Stealth 2 Driver"
+        placeholder={placeholder ?? 'Søk etter modell, f.eks. TaylorMade Stealth 2 Driver'}
       />
       {vis && (
         <div className="border-border bg-background absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border shadow-lg">
@@ -67,7 +71,7 @@ export function ModellSok({
                   key={i}
                   type="button"
                   onMouseDown={() => {
-                    onVelg(r.brand, r.model, r.year)
+                    onVelg(r.brand, r.model, r.year, r.category)
                     setSokeTekst(`${r.brand} ${r.model}`)
                     setVis(false)
                   }}
@@ -77,14 +81,21 @@ export function ModellSok({
                     <span className="text-foreground font-medium">{r.brand}</span>{' '}
                     <span className="text-muted-foreground">{r.model}</span>
                   </span>
-                  {r.year && <span className="text-muted-foreground text-xs">{r.year}</span>}
+                  {r.year && (
+                    <span className="text-muted-foreground font-mono text-xs">{r.year}</span>
+                  )}
                 </button>
               ))}
               <button
                 type="button"
                 onMouseDown={() => {
-                  setManuell(true)
-                  setVis(false)
+                  if (onManuell) {
+                    onManuell()
+                    setVis(false)
+                  } else {
+                    setManuell(true)
+                    setVis(false)
+                  }
                 }}
                 className="hover:bg-muted border-border w-full cursor-pointer border-t px-4 py-2.5 text-left text-sm text-violet-600 transition-colors dark:text-violet-400"
               >
@@ -97,8 +108,13 @@ export function ModellSok({
               <button
                 type="button"
                 onMouseDown={() => {
-                  setManuell(true)
-                  setVis(false)
+                  if (onManuell) {
+                    onManuell()
+                    setVis(false)
+                  } else {
+                    setManuell(true)
+                    setVis(false)
+                  }
                 }}
                 className="mt-1 cursor-pointer text-sm text-violet-600 dark:text-violet-400"
               >
