@@ -150,9 +150,9 @@ export default function UtforskPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-border flex items-start gap-6 border-b px-20 py-16">
-        <div className="w-1/2 shrink-0">
-          <h1 className="text-foreground text-5xl leading-[1.1] font-semibold tracking-tight">
+      <section className="border-border flex flex-col gap-6 border-b px-4 py-8 md:flex-row md:items-start md:px-20 md:py-16">
+        <div className="w-full md:w-1/2 md:shrink-0">
+          <h1 className="text-foreground text-4xl leading-[1.1] font-[550] tracking-tight md:text-5xl">
             Markedsplass for golf.
             <br />
             Kjøp din neste{' '}
@@ -186,13 +186,13 @@ export default function UtforskPage() {
             />
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Kjøp, selg og bytt brukte golfkøller med spillere over hele Norge – raskt og enkelt.
+            Kjøp, selg og bytt brukt golfutstyr med spillere over hele Norge – raskt og enkelt.
           </p>
         </div>
       </section>
 
       {/* Listings grid */}
-      <section className="overflow-auto px-20 pt-10 pb-12">
+      <section className="overflow-auto px-4 pt-8 pb-10 md:px-20 md:pt-10 md:pb-12">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-muted-foreground text-sm font-semibold tracking-widest uppercase">
             Siste annonser
