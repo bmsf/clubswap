@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui/button'
 import { MagnifyingGlassIcon, ArrowRightIcon } from '@heroicons/react/16/solid'
-import { useAuthModal } from '@/store/auth-modal'
-import { createClient } from '@/supabase/client'
+import { Input } from '@/components/ui/input'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -142,29 +140,12 @@ function ListingImage({ src, alt }: { src?: string; alt: string }) {
 
 export default function UtforskPage() {
   const [titleNumber, setTitleNumber] = useState(0)
-  const [user, setUser] = useState<null | { id: string }>(null)
-  const { openModal } = useAuthModal()
-
   useEffect(() => {
     const timeout = setTimeout(() => {
       setTitleNumber((prev) => (prev === TITLES.length - 1 ? 0 : prev + 1))
     }, 2000)
     return () => clearTimeout(timeout)
   }, [titleNumber])
-
-  useEffect(() => {
-    createClient()
-      .auth.getUser()
-      .then(({ data }) => setUser(data.user))
-  }, [])
-
-  function handleLeggUtClick() {
-    if (user) {
-      window.location.href = '/selg'
-    } else {
-      openModal('logg-inn', '/selg')
-    }
-  }
 
   return (
     <>
@@ -196,28 +177,17 @@ export default function UtforskPage() {
         </div>
 
         <div className="flex flex-1 flex-col gap-5">
+          <div className="border-border bg-background focus-within:border-primary/50 flex w-full items-center gap-3 rounded-xl border px-4 transition-colors">
+            <MagnifyingGlassIcon className="text-muted-foreground h-4 w-4 shrink-0" />
+            <Input
+              type="text"
+              placeholder="Søk etter kølle, merke eller type..."
+              className="flex-1 border-none px-0 focus:border-none"
+            />
+          </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Kjøp, selg og bytt brukte golfkøller med spillere over hele Norge – raskt og enkelt.
           </p>
-
-          <Button variant="primary" size="lg" className="w-fit" onClick={handleLeggUtClick}>
-            Legg ut utstyr gratis
-          </Button>
-
-          <div className="border-border bg-background focus-within:border-primary/40 flex h-14 w-full items-center gap-3 rounded-xl border px-4 transition-colors">
-            <MagnifyingGlassIcon className="text-muted-foreground h-4 w-4 shrink-0" />
-            <input
-              type="text"
-              placeholder="Søk etter kølle, merke eller type..."
-              className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
-            />
-            <Button size="sm">Søk</Button>
-          </div>
-
-          <button className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors">
-            Se annonser
-            <ArrowRightIcon className="h-4 w-4" />
-          </button>
         </div>
       </section>
 

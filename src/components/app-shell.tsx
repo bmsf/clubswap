@@ -8,6 +8,7 @@ import { loggUt } from '@/app/(auth)/actions'
 import { AuthModal } from '@/components/auth-modal'
 import { useAuthModal } from '@/store/auth-modal'
 import { BekreftSlettModal } from '@/components/annonse-kort-handlinger'
+import { Button } from '@/components/ui/button'
 import type { User } from '@supabase/supabase-js'
 import {
   Bars3Icon,
@@ -268,27 +269,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               {sidebarOpen ? (
                 <>
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="w-full"
                     onClick={() => openModal('logg-inn')}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-8 w-full cursor-pointer items-center justify-center rounded-lg text-sm font-medium transition-colors"
                   >
                     Logg inn
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
                     onClick={() => openModal('registrer')}
-                    className="text-highlight hover:bg-muted flex h-8 w-full cursor-pointer items-center justify-center rounded-lg border text-sm transition-colors"
                   >
                     Registrer deg
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <button
+                <Button
+                  variant="primary"
+                  size="icon"
                   onClick={() => openModal('logg-inn')}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg transition-colors"
                   aria-label="Logg inn"
                 >
                   <UserIcon className="h-4 w-4" />
-                </button>
+                </Button>
               )}
             </div>
           )}

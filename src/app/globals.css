@@ -38,6 +38,8 @@
   --color-pill-border: hsl(var(--pill-border));
   --color-highlight: hsl(var(--highlight));
   --color-highlight-btn: hsl(var(--highlight-btn));
+  --color-primary-btn: hsl(var(--primary-btn));
+  --color-primary-btn-fg: hsl(var(--primary-btn-fg));
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -80,6 +82,10 @@
   /* ── Highlight: warm amber-brown for light mode — stands out from near-black text ── */
   --highlight: 0 0% 11%;           /* #1d1d1d */
   --highlight-btn: 36 24% 77%;     /* #d2c7b6 */
+
+  /* ── Primary button: near-black with warm parchment text ── */
+  --primary-btn: 0 0% 11%;         /* #1d1d1d */
+  --primary-btn-fg: 42 40% 91%;   /* #f0eadb — 12.9:1 contrast, palette-native */
 
   /* ── Accent ── */
   --accent: 42 45% 95%;
@@ -147,6 +153,10 @@
   --pill-border: 0 0% 24%;
   --highlight: 36 42% 90%;         /* #f0e7da */
   --highlight-btn: 36 24% 77%;     /* #d2c7b6 */
+
+  /* ── Primary button: warm tan matching screenshot ── */
+  --primary-btn: 36 24% 77%;       /* #d2c7b6 — matches screenshot */
+  --primary-btn-fg: 0 0% 11%;
 
   /* ── Borders & inputs ── */
   --border: 0 0% 21%;
