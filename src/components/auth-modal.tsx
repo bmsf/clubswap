@@ -83,13 +83,8 @@ export function AuthModal() {
 
         {/* Hoved-innhold */}
         <div className="flex flex-col items-center px-7 pt-8 pb-6">
-          {/* Logo */}
-          <div className="bg-primary mb-4 flex h-12 w-12 items-center justify-center rounded-xl shadow-md">
-            <span className="text-primary-foreground text-base font-bold tracking-tight">CS</span>
-          </div>
-
           <h1 className="text-foreground mb-1 text-[1.1rem] font-bold">
-            {erRegistrering ? 'Opprett konto' : 'Logg inn hos ClubSwap'}
+            {erRegistrering ? 'Opprett konto' : 'Logg inn på Golftorget'}
           </h1>
           <p className="text-muted-foreground mb-6 text-center text-xs leading-relaxed">
             {erRegistrering

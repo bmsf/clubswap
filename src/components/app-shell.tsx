@@ -46,7 +46,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     return [{ label: 'Mine annonser', href: '/annonser' }, { label: 'Rediger annonse' }]
   }
   const label = ROUTE_LABEL[pathname]
-  return label ? [{ label }] : [{ label: 'ClubSwap' }]
+  return label ? [{ label }] : [{ label: 'Golftorget' }]
 }
 
 const navItems = [
@@ -136,7 +136,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex min-w-0 items-center overflow-hidden">
             {sidebarOpen && (
               <span className="text-foreground text-sm font-semibold whitespace-nowrap">
-                ClubSwap
+                Golftorget
               </span>
             )}
           </div>
@@ -317,7 +317,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Bars3Icon className="h-5 w-5" />
             </button>
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <span>ClubSwap</span>
+              <span>Golftorget</span>
               {breadcrumbs.map((crumb, i) => (
                 <span key={i} className="flex items-center gap-2">
                   <span className="text-border">›</span>
@@ -366,7 +366,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               {/* Logo + close */}
               <div className="flex h-14 shrink-0 items-center justify-between px-3">
-                <span className="text-foreground text-sm font-semibold">ClubSwap</span>
+                <span className="text-foreground text-sm font-semibold">Golftorget</span>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors"

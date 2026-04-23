@@ -8,7 +8,7 @@ const monaSans = Mona_Sans({ subsets: ['latin'], variable: '--font-mona-sans' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
-  title: 'ClubSwap',
+  title: 'Golftorget',
   description: '',
 }
 
