@@ -12,17 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ListingCard } from '@/components/ui/card-7'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
-
-const CONDITION_CLASSES: Record<string, string> = {
-  Ny: 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950',
-  'Meget god':
-    'text-sky-700 dark:text-sky-400 border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-950',
-  God: 'text-primary border-primary/30 bg-primary/8',
-  Akseptabel:
-    'text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950',
-}
 
 const LISTINGS = [
   {
@@ -148,37 +140,6 @@ function matchesQuery(listing: (typeof LISTINGS)[number], query: string) {
   )
 }
 
-function ListingImage({ alt }: { alt: string }) {
-  return (
-    <div
-      className="bg-muted/60 flex w-full flex-col items-center justify-center gap-1.5 rounded-t-xl"
-      style={{ aspectRatio: '4/3' }}
-    >
-      <svg
-        width="32"
-        height="32"
-        viewBox="0 0 32 32"
-        fill="none"
-        className="text-muted-foreground/40"
-        aria-hidden="true"
-      >
-        <rect x="15" y="2" width="2" height="14" rx="1" fill="currentColor" />
-        <line
-          x1="16"
-          y1="16"
-          x2="24"
-          y2="26"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <rect x="20" y="24" width="8" height="5" rx="1.5" fill="currentColor" />
-      </svg>
-      <span className="text-muted-foreground/60 text-xs">Intet bilde</span>
-    </div>
-  )
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SearchPage({ params }: { params: Promise<{ query: string }> }) {
@@ -266,7 +227,7 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
         )}
 
         {/* Category tabs */}
-        <div className="mt-8 flex touch-pan-x justify-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mt-8 flex touch-pan-x gap-1.5 overflow-x-auto [scrollbar-width:none] lg:justify-center [&::-webkit-scrollbar]:hidden">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
@@ -394,38 +355,17 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {filteredListings.map((listing) => (
-              <article
+              <ListingCard
                 key={listing.id}
-                className="border-border bg-background hover:border-primary/30 hover:bg-muted/30 flex cursor-pointer flex-col overflow-hidden rounded-xl border transition-colors"
-              >
-                <ListingImage alt={listing.name} />
-                <div className="flex flex-col gap-2 p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-muted-foreground mb-0.5 text-xs">{listing.brand}</p>
-                      <p className="text-foreground truncate text-sm leading-snug font-semibold">
-                        {listing.name}
-                      </p>
-                    </div>
-                    <span
-                      className={[
-                        'mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                        CONDITION_CLASSES[listing.condition] ?? '',
-                      ].join(' ')}
-                    >
-                      {listing.condition}
-                    </span>
-                  </div>
-                  <p className="text-foreground font-mono text-base font-bold">
-                    {listing.price.toLocaleString('nb-NO')} kr
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {listing.location} · {listing.posted}
-                  </p>
-                </div>
-              </article>
+                name={listing.name}
+                brand={listing.brand}
+                condition={listing.condition}
+                price={listing.price}
+                location={listing.location}
+                posted={listing.posted}
+              />
             ))}
           </div>
         )}
