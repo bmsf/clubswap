@@ -186,6 +186,7 @@
   }
   html {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
+    overscroll-behavior: none;
   }
 
   body {
@@ -193,6 +194,7 @@
     background: radial-gradient(ellipse at 50% 0%, var(--bg-gradient-center), var(--bg-gradient-edge));
     background-attachment: fixed;
     min-height: 100vh;
+    overscroll-behavior: none;
   }
 
   /* Surface card helper — white card with palette-consistent border + shadow */

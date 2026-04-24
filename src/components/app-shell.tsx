@@ -125,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="bg-background text-foreground flex h-screen overflow-hidden">
+    <div className="bg-background text-foreground flex h-screen overflow-hidden overscroll-none">
       {/* ── Left Sidebar (desktop only) ──────────────────────────────────────── */}
       <aside
         className="bg-background text-foreground hidden shrink-0 flex-col overflow-hidden transition-all duration-300 ease-in-out md:flex"
@@ -335,7 +335,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <motion.div
             key={pathname}
-            className="flex-1 overflow-y-auto"
+            className="flex-1 touch-pan-y overflow-y-auto overscroll-none"
             style={{ scrollbarWidth: 'none' }}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

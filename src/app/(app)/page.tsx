@@ -101,7 +101,7 @@ const LISTINGS = [
 
 // ── Animated title words ──────────────────────────────────────────────────────
 
-const TITLES = ['driver', 'golfbag', 'jernkølle', 'putter']
+const TITLES = ['driver', 'golfbag', 'putter']
 
 // ── Search categories & popular terms ─────────────────────────────────────────
 
@@ -228,48 +228,44 @@ export default function UtforskPage() {
   return (
     <>
       {/* Hero */}
-      <section className="border-border flex flex-col gap-6 border-b px-4 py-12 md:px-12 md:py-16 lg:flex-row lg:items-center lg:px-20 lg:py-24">
-        <div className="w-full lg:w-1/2 lg:shrink-0">
-          <h1 className="text-foreground text-4xl leading-[1.1] font-[550] tracking-tight lg:text-5xl">
+      <section className="border-border grid grid-cols-1 gap-8 border-b px-6 py-16 lg:grid-cols-2 lg:items-start lg:px-20 lg:py-24">
+        <div className="text-center lg:text-left">
+          <h1 className="text-foreground mt-0 text-[clamp(1.75rem,8vw,2.6rem)] leading-[1.1] font-[550] tracking-tight lg:text-[2rem] xl:text-5xl">
             Markedsplass for golf.
             <br />
-            <span className="whitespace-nowrap">
-              Kjøp din neste{' '}
-              <span className="relative inline-flex h-[1.2em] min-w-50 overflow-hidden align-bottom">
-                {TITLES.map((title, index) => (
-                  <motion.span
-                    key={index}
-                    className="absolute bottom-0"
-                    initial={{ opacity: 0, y: -60 }}
-                    transition={{ type: 'spring', stiffness: 50 }}
-                    animate={
-                      titleNumber === index
-                        ? { y: 0, opacity: 1 }
-                        : { y: titleNumber > index ? -80 : 80, opacity: 0 }
-                    }
-                  >
-                    {title}
-                  </motion.span>
-                ))}
-              </span>
+            Kjøp din neste{' '}
+            <span className="relative inline-flex h-[1.2em] min-w-[38vw] overflow-hidden align-bottom lg:min-w-28 xl:min-w-44">
+              {TITLES.map((title, index) => (
+                <motion.span
+                  key={index}
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0"
+                  initial={{ opacity: 0, y: -60 }}
+                  transition={{ type: 'spring', stiffness: 50 }}
+                  animate={
+                    titleNumber === index
+                      ? { y: 0, opacity: 1 }
+                      : { y: titleNumber > index ? -80 : 80, opacity: 0 }
+                  }
+                >
+                  {title}
+                </motion.span>
+              ))}
             </span>
           </h1>
-          <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
-            Kjøp, selg og bytt brukt golfutstyr med spillere over hele Norge –
-            <br />
-            raskt og enkelt.
+          <p className="text-muted-foreground mx-auto mt-4 max-w-sm text-sm leading-relaxed lg:mx-0 lg:max-w-none">
+            Kjøp, selg og bytt brukt golfutstyr med spillere over hele Norge – raskt og enkelt.
           </p>
         </div>
 
-        <div className="flex flex-1 flex-col gap-4">
+        <div className="flex flex-col items-center gap-4 lg:mt-3 lg:items-stretch">
           {/* Category tabs */}
-          <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-full touch-pan-x gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={cn(
-                  'rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
+                  'rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
                   activeCategory === cat.id
                     ? 'bg-foreground text-background'
                     : 'text-muted-foreground hover:text-foreground'
@@ -281,7 +277,7 @@ export default function UtforskPage() {
           </div>
 
           {/* Search bar */}
-          <div className="bg-muted/50 flex w-full max-w-xl items-center gap-3 rounded-full px-5 py-3 dark:bg-[#1c1c1c]">
+          <div className="bg-muted/50 flex w-full items-center gap-3 rounded-full px-5 py-3 lg:max-w-xl dark:bg-[#1c1c1c]">
             <input
               type="text"
               value={searchQuery}
@@ -295,7 +291,7 @@ export default function UtforskPage() {
           </div>
 
           {/* Popular searches */}
-          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-full touch-pan-x items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <span className="text-muted-foreground shrink-0 text-xs font-semibold">Populært:</span>
             {POPULAR_SEARCHES.map((term) => (
               <button
@@ -316,9 +312,9 @@ export default function UtforskPage() {
       </section>
 
       {/* Filter bar — full width */}
-      <div className="px-4 pt-10 pb-3 md:px-12 lg:px-20">
-        <div className="flex items-center gap-3">
-          {/* Sort dropdown — left */}
+      <div className="flex flex-col gap-6 px-4 pt-10 pb-3 md:px-12 lg:px-20">
+        {/* Row 1 (mobile): sort left, filter button right */}
+        <div className="flex items-center justify-between gap-3 lg:hidden">
           <Select value={sortBy} onValueChange={(v) => v && setSortBy(v)}>
             <SelectTrigger className="h-auto! shrink-0 rounded-xl px-5! py-2! text-sm font-medium">
               <SelectValue>{SORT_LABELS[sortBy]}</SelectValue>
@@ -330,14 +326,61 @@ export default function UtforskPage() {
               <SelectItem value="pris-hoy">Pris: høy til lav</SelectItem>
             </SelectContent>
           </Select>
+          <button className="border-border text-muted-foreground hover:text-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-xl border px-4 text-sm font-medium transition-colors">
+            <ListFilter className="h-3.5 w-3.5" />
+            Filter
+          </button>
+        </div>
 
-          {/* Condition filter chips — middle, scrollable */}
-          <div className="relative flex flex-1 overflow-hidden">
-            <div
-              ref={chipsRef}
-              onScroll={handleChipsScroll}
-              className="flex flex-1 overflow-x-auto px-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        {/* Row 2 (mobile): filter chips scrollable */}
+        <div className="relative flex overflow-hidden lg:hidden">
+          <div
+            ref={chipsRef}
+            onScroll={handleChipsScroll}
+            className="flex touch-pan-x overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <div className="flex items-center gap-2 pr-2">
+              {FILTER_CHIPS.map((chip) => (
+                <button
+                  key={chip.id}
+                  onClick={() => setActiveFilter(chip.id)}
+                  className={cn(
+                    'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
+                    activeFilter === chip.id
+                      ? 'bg-muted text-foreground font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {canScrollRight && (
+            <button
+              onClick={() => chipsRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
+              className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex w-8 items-center justify-center transition-colors"
             >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Desktop: all in one row */}
+        <div className="hidden items-center gap-3 lg:flex">
+          <Select value={sortBy} onValueChange={(v) => v && setSortBy(v)}>
+            <SelectTrigger className="h-auto! shrink-0 rounded-xl px-5! py-2! text-sm font-medium">
+              <SelectValue>{SORT_LABELS[sortBy]}</SelectValue>
+            </SelectTrigger>
+            <SelectContent align="start">
+              <SelectItem value="nyeste">Nyeste først</SelectItem>
+              <SelectItem value="eldste">Eldste først</SelectItem>
+              <SelectItem value="pris-lav">Pris: lav til høy</SelectItem>
+              <SelectItem value="pris-hoy">Pris: høy til lav</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative flex flex-1 overflow-hidden">
+            <div className="flex flex-1 touch-pan-x overflow-x-auto px-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex min-w-full items-center justify-evenly gap-2">
                 {FILTER_CHIPS.map((chip) => (
                   <button
@@ -355,17 +398,7 @@ export default function UtforskPage() {
                 ))}
               </div>
             </div>
-            {canScrollRight && (
-              <button
-                onClick={() => chipsRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
-                className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex w-8 items-center justify-center transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
           </div>
-
-          {/* Filter button — right */}
           <button className="border-border text-muted-foreground hover:text-foreground flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors">
             <ListFilter className="h-3.5 w-3.5" />
             Filter
