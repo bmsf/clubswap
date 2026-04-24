@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { use, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { MagnifyingGlassIcon, ArrowRightIcon } from '@heroicons/react/16/solid'
+import { MagnifyingGlassIcon } from '@heroicons/react/16/solid'
 import { cn } from '@/lib/utils'
 import { ListFilter, ChevronRight } from 'lucide-react'
 import {
@@ -100,11 +99,7 @@ const LISTINGS = [
   },
 ]
 
-// ── Animated title words ──────────────────────────────────────────────────────
-
-const TITLES = ['driver', 'golfbag', 'putter']
-
-// ── Search categories & popular terms ─────────────────────────────────────────
+const POPULAR_SEARCHES = ['TaylorMade', 'Titleist', 'Callaway', 'Putter', 'Wedge 56°']
 
 const CATEGORIES = [
   { id: 'alt', label: 'Alt utstyr' },
@@ -113,8 +108,6 @@ const CATEGORIES = [
   { id: 'puttere', label: 'Puttere' },
   { id: 'bagger', label: 'Bagger' },
 ]
-
-const POPULAR_SEARCHES = ['TaylorMade', 'Titleist', 'Callaway', 'Putter', 'Wedge 56°']
 
 const FILTER_CHIPS = [
   { id: 'alle', label: 'Alle' },
@@ -144,17 +137,18 @@ const SORT_LABELS: Record<string, string> = {
   'pris-hoy': 'Pris: høy til lav',
 }
 
-// ── Components ────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function ListingImage({ src, alt }: { src?: string; alt: string }) {
-  if (src) {
-    return (
-      <div className="w-full" style={{ aspectRatio: '4/3' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="h-full w-full object-cover" />
-      </div>
-    )
-  }
+function matchesQuery(listing: (typeof LISTINGS)[number], query: string) {
+  const q = query.toLowerCase()
+  return (
+    listing.name.toLowerCase().includes(q) ||
+    listing.brand.toLowerCase().includes(q) ||
+    listing.condition.toLowerCase().includes(q)
+  )
+}
+
+function ListingImage({ alt }: { alt: string }) {
   return (
     <div
       className="bg-muted/60 flex w-full flex-col items-center justify-center gap-1.5 rounded-t-xl"
@@ -187,18 +181,14 @@ function ListingImage({ src, alt }: { src?: string; alt: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function UtforskPage() {
-  const router = useRouter()
-  const [titleNumber, setTitleNumber] = useState(0)
-  const [activeCategory, setActiveCategory] = useState('alt')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState('nyeste')
+export default function SearchPage({ params }: { params: Promise<{ query: string }> }) {
+  const { query: rawQuery } = use(params)
+  const query = decodeURIComponent(rawQuery)
 
-  const handleSearch = (query: string) => {
-    const q = query.trim()
-    if (!q) return
-    router.push(`/search/${encodeURIComponent(q)}`)
-  }
+  const router = useRouter()
+  const [searchInput, setSearchInput] = useState(query)
+  const [activeCategory, setActiveCategory] = useState('alt')
+  const [sortBy, setSortBy] = useState('nyeste')
   const [activeFilter, setActiveFilter] = useState('alle')
   const [canScrollRight, setCanScrollRight] = useState(false)
   const chipsRef = useRef<HTMLDivElement>(null)
@@ -209,23 +199,16 @@ export default function UtforskPage() {
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
   }
 
-  useEffect(() => {
-    handleChipsScroll()
-    const el = chipsRef.current
-    el?.addEventListener('resize', handleChipsScroll)
-    return () => el?.removeEventListener('resize', handleChipsScroll)
-  }, [])
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setTitleNumber((prev) => (prev === TITLES.length - 1 ? 0 : prev + 1))
-    }, 2000)
-    return () => clearTimeout(timeout)
-  }, [titleNumber])
+  const handleSearch = (q: string) => {
+    const trimmed = q.trim()
+    if (!trimmed) return
+    router.push(`/search/${encodeURIComponent(trimmed)}`)
+  }
 
   const filteredListings = LISTINGS.filter((l) => {
-    if (activeFilter === 'alle') return true
-    return l.condition === activeFilter || l.brand === activeFilter
+    const matchesFilter =
+      activeFilter === 'alle' || l.condition === activeFilter || l.brand === activeFilter
+    return matchesFilter && matchesQuery(l, query)
   }).sort((a, b) => {
     if (sortBy === 'pris-lav') return a.price - b.price
     if (sortBy === 'pris-hoy') return b.price - a.price
@@ -233,94 +216,77 @@ export default function UtforskPage() {
     return b.id - a.id
   })
 
+  const relatedTerms = POPULAR_SEARCHES.filter(
+    (t) => t.toLowerCase() !== query.toLowerCase()
+  ).slice(0, 4)
+
   return (
     <>
-      {/* Hero */}
-      <section className="border-border grid grid-cols-1 gap-8 border-b px-6 py-16 lg:grid-cols-2 lg:items-start lg:px-20 lg:py-24">
-        <div className="text-center lg:text-left">
-          <h1 className="text-foreground mt-0 text-[clamp(1.75rem,8vw,2.6rem)] leading-[1.1] font-[550] tracking-tight lg:text-[2rem] xl:text-5xl">
-            Markedsplass for golf.
-            <br />
-            Kjøp din neste{' '}
-            <span className="relative inline-flex h-[1.2em] min-w-[38vw] overflow-hidden align-bottom lg:min-w-28 xl:min-w-44">
-              {TITLES.map((title, index) => (
-                <motion.span
-                  key={index}
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0"
-                  initial={{ opacity: 0, y: -60 }}
-                  transition={{ type: 'spring', stiffness: 50 }}
-                  animate={
-                    titleNumber === index
-                      ? { y: 0, opacity: 1 }
-                      : { y: titleNumber > index ? -80 : 80, opacity: 0 }
-                  }
-                >
-                  {title}
-                </motion.span>
-              ))}
-            </span>
-          </h1>
-          <p className="text-muted-foreground mx-auto mt-4 max-w-sm text-sm leading-relaxed lg:mx-0 lg:max-w-none">
-            Kjøp, selg og bytt brukt golfutstyr med spillere over hele Norge – raskt og enkelt.
-          </p>
+      {/* Search header */}
+      <section className="border-border border-b px-6 py-12 text-center lg:px-20 lg:py-16">
+        <h1 className="text-foreground text-[clamp(2rem,6vw,3rem)] font-[650] tracking-tight capitalize">
+          {query}
+        </h1>
+        <p className="text-muted-foreground mt-2 text-sm">
+          De beste annonsene for &ldquo;{query}&rdquo;
+        </p>
+
+        {/* Inline search bar */}
+        <div className="bg-muted/50 mx-auto mt-6 flex max-w-md items-center gap-3 rounded-full px-5 py-3 dark:bg-[#1c1c1c]">
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchInput)}
+            placeholder="Søk etter kølle, merke eller type..."
+            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
+          />
+          <button
+            onClick={() => handleSearch(searchInput)}
+            className="bg-primary-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-85"
+          >
+            <MagnifyingGlassIcon className="text-primary-btn-fg h-3.5 w-3.5" />
+          </button>
         </div>
 
-        <div className="flex flex-col items-center gap-4 lg:mt-3 lg:items-stretch">
-          {/* Category tabs */}
-          <div className="flex w-full touch-pan-x gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={cn(
-                  'rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
-                  activeCategory === cat.id
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Search bar */}
-          <div className="bg-muted/50 flex w-full items-center gap-3 rounded-full px-5 py-3 lg:max-w-xl dark:bg-[#1c1c1c]">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-              placeholder="Søk etter kølle, merke eller type..."
-              className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
-            />
-            <button
-              onClick={() => handleSearch(searchQuery)}
-              className="bg-primary-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-85"
-            >
-              <MagnifyingGlassIcon className="text-primary-btn-fg h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          {/* Popular searches */}
-          <div className="flex w-full touch-pan-x items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <span className="text-muted-foreground shrink-0 text-xs font-semibold">Populært:</span>
-            {POPULAR_SEARCHES.map((term) => (
+        {/* Related searches */}
+        {relatedTerms.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <span className="text-muted-foreground text-xs font-semibold">Relatert:</span>
+            {relatedTerms.map((term) => (
               <button
                 key={term}
                 onClick={() => handleSearch(term)}
-                className="border-border text-muted-foreground hover:border-primary/40 hover:text-foreground shrink-0 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition-colors"
+                className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 transition-colors hover:underline"
               >
                 {term}
               </button>
             ))}
           </div>
+        )}
+
+        {/* Category tabs */}
+        <div className="mt-8 flex touch-pan-x justify-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={cn(
+                'rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
+                activeCategory === cat.id
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {cat.label}
+            </button>
+          ))}
         </div>
       </section>
 
-      {/* Filter bar — full width */}
-      <div className="flex flex-col gap-6 px-4 pt-10 pb-3 md:px-12 lg:px-20">
-        {/* Row 1 (mobile): sort left, filter button right */}
+      {/* Filter bar */}
+      <div className="flex flex-col gap-6 px-4 pt-8 pb-3 md:px-12 lg:px-20">
+        {/* Mobile: sort left, filter right */}
         <div className="flex items-center justify-between gap-3 lg:hidden">
           <Select value={sortBy} onValueChange={(v) => v && setSortBy(v)}>
             <SelectTrigger className="h-auto! shrink-0 rounded-xl px-5! py-2! text-sm font-medium">
@@ -339,7 +305,7 @@ export default function UtforskPage() {
           </button>
         </div>
 
-        {/* Row 2 (mobile): filter chips scrollable */}
+        {/* Mobile: scrollable chips */}
         <div className="relative flex overflow-hidden lg:hidden">
           <div
             ref={chipsRef}
@@ -413,52 +379,56 @@ export default function UtforskPage() {
         </div>
       </div>
 
-      {/* Listings grid */}
+      {/* Results grid */}
       <section className="px-4 pt-8 pb-10 md:px-12 md:pt-10 md:pb-12 lg:px-20">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredListings.map((listing) => (
-            <article
-              key={listing.id}
-              className="border-border bg-background hover:border-primary/30 hover:bg-muted/30 flex cursor-pointer flex-col overflow-hidden rounded-xl border transition-colors"
+        {filteredListings.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-muted-foreground text-sm">
+              Ingen annonser funnet for &ldquo;{query}&rdquo;.
+            </p>
+            <button
+              onClick={() => router.push('/')}
+              className="text-primary mt-3 text-sm font-medium hover:underline"
             >
-              <ListingImage alt={listing.name} />
-
-              <div className="flex flex-col gap-2 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-muted-foreground mb-0.5 text-xs">{listing.brand}</p>
-                    <p className="text-foreground truncate text-sm leading-snug font-semibold">
-                      {listing.name}
-                    </p>
+              Se alle annonser
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredListings.map((listing) => (
+              <article
+                key={listing.id}
+                className="border-border bg-background hover:border-primary/30 hover:bg-muted/30 flex cursor-pointer flex-col overflow-hidden rounded-xl border transition-colors"
+              >
+                <ListingImage alt={listing.name} />
+                <div className="flex flex-col gap-2 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-muted-foreground mb-0.5 text-xs">{listing.brand}</p>
+                      <p className="text-foreground truncate text-sm leading-snug font-semibold">
+                        {listing.name}
+                      </p>
+                    </div>
+                    <span
+                      className={[
+                        'mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                        CONDITION_CLASSES[listing.condition] ?? '',
+                      ].join(' ')}
+                    >
+                      {listing.condition}
+                    </span>
                   </div>
-                  <span
-                    className={[
-                      'mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                      CONDITION_CLASSES[listing.condition] ?? '',
-                    ].join(' ')}
-                  >
-                    {listing.condition}
-                  </span>
+                  <p className="text-foreground font-mono text-base font-bold">
+                    {listing.price.toLocaleString('nb-NO')} kr
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {listing.location} · {listing.posted}
+                  </p>
                 </div>
-
-                <p className="text-foreground font-mono text-base font-bold">
-                  {listing.price.toLocaleString('nb-NO')} kr
-                </p>
-
-                <p className="text-muted-foreground text-xs">
-                  {listing.location} · {listing.posted}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <div className="mt-8 flex justify-center">
-          <button className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm font-medium transition-colors">
-            Se alle annonser
-            <ArrowRightIcon className="h-4 w-4" />
-          </button>
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </>
   )
