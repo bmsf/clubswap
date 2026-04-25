@@ -55,7 +55,10 @@ const CATEGORIES = [
   { id: 'bagger', label: 'Bagger' },
 ]
 
-const POPULAR_SEARCHES = ['TaylorMade', 'Titleist', 'Callaway', 'Putter', 'Wedge 56°']
+type CategoryConfig = {
+  placeholder: string
+  popular: string[]
+}
 
 const FILTER_CHIPS = [
   { id: 'alle', label: 'Alle' },
@@ -70,13 +73,30 @@ const FILTER_CHIPS = [
   { id: 'Meget god', label: 'Meget god' },
   { id: 'God', label: 'God' },
   { id: 'Akseptabel', label: 'Akseptabel' },
-  { id: 'driver', label: 'Driver' },
-  { id: 'jernkolle', label: 'Jernkølle' },
-  { id: 'putter', label: 'Putter' },
-  { id: 'wedge', label: 'Wedge' },
-  { id: 'hybrid', label: 'Hybrid' },
-  { id: 'bag', label: 'Golfbag' },
 ]
+
+const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
+  alt: {
+    placeholder: 'Søk etter kølle, merke eller type...',
+    popular: ['TaylorMade', 'Titleist', 'Callaway', 'Putter', 'Wedge 56°'],
+  },
+  drivere: {
+    placeholder: 'Søk etter driver, loft eller shaft...',
+    popular: ['TaylorMade Qi10', 'Callaway Paradym', 'Titleist TSR2', 'Ping G430', 'Cobra Aerojet'],
+  },
+  jernkoller: {
+    placeholder: 'Søk etter jernkøller, sett eller enkeltjern...',
+    popular: ['Titleist T100', 'TaylorMade P7MB', 'Callaway Apex', 'Ping i230', 'Mizuno JPX'],
+  },
+  puttere: {
+    placeholder: 'Søk etter putter, stil eller merke...',
+    popular: ['Scotty Cameron', 'Odyssey', 'TaylorMade Spider', 'Ping Sigma', 'Cleveland HB Soft'],
+  },
+  bagger: {
+    placeholder: 'Søk etter hva slags bag du vil ha...',
+    popular: ['Standbag', 'Carrybag', 'Tourbag', 'Trolleybag', 'Sun Mountain'],
+  },
+}
 
 const SORT_LABELS: Record<string, string> = {
   nyeste: 'Nyeste først',
@@ -96,6 +116,13 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
   const [activeFilter, setActiveFilter] = useState('alle')
   const [canScrollRight, setCanScrollRight] = useState(false)
   const chipsRef = useRef<HTMLDivElement>(null)
+
+  const catConfig = CATEGORY_CONFIG[activeCategory] ?? CATEGORY_CONFIG.alt
+
+  function handleCategoryChange(id: string) {
+    setActiveCategory(id)
+    setActiveFilter('alle')
+  }
 
   const handleSearch = (query: string) => {
     const q = query.trim()
@@ -174,12 +201,12 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
+                onClick={() => handleCategoryChange(cat.id)}
                 className={cn(
-                  'rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
+                  'cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-all',
                   activeCategory === cat.id
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-foreground text-background shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:shadow-sm'
                 )}
               >
                 {cat.label}
@@ -194,7 +221,7 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-              placeholder="Søk etter kølle, merke eller type..."
+              placeholder={catConfig.placeholder}
               className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
             />
             <button
@@ -208,11 +235,11 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
           {/* Popular searches */}
           <div className="flex w-full touch-pan-x items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <span className="text-muted-foreground shrink-0 text-xs font-semibold">Populært:</span>
-            {POPULAR_SEARCHES.map((term) => (
+            {catConfig.popular.map((term) => (
               <button
                 key={term}
                 onClick={() => handleSearch(term)}
-                className="border-border text-muted-foreground hover:border-primary/40 hover:text-foreground shrink-0 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition-colors"
+                className="border-border text-muted-foreground hover:bg-muted hover:text-foreground shrink-0 cursor-pointer rounded-full border px-3 py-1 text-xs whitespace-nowrap transition-all hover:shadow-sm"
               >
                 {term}
               </button>
@@ -236,7 +263,7 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
               <SelectItem value="pris-hoy">Pris: høy til lav</SelectItem>
             </SelectContent>
           </Select>
-          <button className="border-border text-muted-foreground hover:text-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-xl border px-4 text-sm font-medium transition-colors">
+          <button className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-4 text-sm font-medium transition-all hover:shadow-sm">
             <ListFilter className="h-3.5 w-3.5" />
             Filter
           </button>
@@ -255,10 +282,10 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
                   key={chip.id}
                   onClick={() => setActiveFilter(chip.id)}
                   className={cn(
-                    'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
+                    'shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-all',
                     activeFilter === chip.id
-                      ? 'bg-muted text-foreground font-semibold'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-muted text-foreground font-semibold shadow-sm'
+                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-sm'
                   )}
                 >
                   {chip.label}
@@ -297,10 +324,10 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
                     key={chip.id}
                     onClick={() => setActiveFilter(chip.id)}
                     className={cn(
-                      'shrink-0 rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors',
+                      'shrink-0 cursor-pointer rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap transition-all',
                       activeFilter === chip.id
-                        ? 'bg-muted text-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-muted text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:shadow-sm'
                     )}
                   >
                     {chip.label}
@@ -309,7 +336,7 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
               </div>
             </div>
           </div>
-          <button className="border-border text-muted-foreground hover:text-foreground flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors">
+          <button className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-all hover:shadow-sm">
             <ListFilter className="h-3.5 w-3.5" />
             Filter
           </button>

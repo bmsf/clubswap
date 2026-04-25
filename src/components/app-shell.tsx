@@ -65,9 +65,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('gt-sidebar') === 'open' : false
+  )
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [dark, setDark] = useState(false)
+  const [dark, setDark] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? (localStorage.getItem('gt-theme') ?? 'dark') === 'dark' : true
+  )
   const [user, setUser] = useState<User | null>(null)
   const [authLoaded, setAuthLoaded] = useState(false)
   const [unreadMessages] = useState<number>(0)
@@ -75,11 +79,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const { openModal } = useAuthModal()
 
+  // Apply dark class to <html>
   useEffect(() => {
     const root = document.documentElement
     if (dark) root.classList.add('dark')
     else root.classList.remove('dark')
   }, [dark])
+
+  // Persist theme preference
+  useEffect(() => {
+    localStorage.setItem('gt-theme', dark ? 'dark' : 'light')
+  }, [dark])
+
+  // Persist sidebar preference
+  useEffect(() => {
+    localStorage.setItem('gt-sidebar', sidebarOpen ? 'open' : 'closed')
+  }, [sidebarOpen])
 
   useEffect(() => {
     const supabase = createClient()
@@ -307,7 +322,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden p-3">
-        <main className="bg-card border-border flex flex-1 flex-col overflow-hidden rounded-2xl border">
+        <main className="bg-card main-panel flex flex-1 flex-col overflow-hidden rounded-2xl">
           <header className="border-border flex h-14 shrink-0 items-center gap-3 border-b px-4 md:h-16 md:px-20">
             <button
               onClick={() => setMobileMenuOpen(true)}

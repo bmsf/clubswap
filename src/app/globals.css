@@ -64,6 +64,14 @@
   --surface: 42 45% 95%;
   --surface-foreground: 0 0% 11%;
   --surface-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --main-panel-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.06),
+    0 1px 1px -0.5px rgb(0 0 0 / 0.06),
+    0 3px 3px -1.5px rgb(0 0 0 / 0.06),
+    0 6px 6px -3px rgb(0 0 0 / 0.06),
+    0 12px 12px -6px rgb(0 0 0 / 0.06),
+    0 24px 24px -12px rgb(0 0 0 / 0.06),
+    0 48px 48px -24px rgb(0 0 0 / 0.06);
 
   /* ── Popover ── */
   --popover: 42 45% 95%;
@@ -131,7 +139,21 @@
   --card-foreground: 40 32% 73%;
   --surface: 0 0% 15%;
   --surface-foreground: 40 32% 73%;
-  --surface-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --surface-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.03),
+    inset 0 0 0 1px rgb(255 255 255 / 0.02),
+    0 2px 4px 0 rgb(0 0 0 / 0.35),
+    0 1px 2px 0 rgb(0 0 0 / 0.25);
+  --main-panel-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.11),
+    inset 0 0 0 1px rgb(255 255 255 / 0.06),
+    0 0 0 1px rgb(0 0 0 / 0.20),
+    0 1px 1px -0.5px rgb(0 0 0 / 0.18),
+    0 3px 3px -1.5px rgb(0 0 0 / 0.18),
+    0 6px 6px -3px rgb(0 0 0 / 0.18),
+    0 12px 12px -6px rgb(0 0 0 / 0.18),
+    0 24px 24px -12px rgb(0 0 0 / 0.18),
+    0 48px 48px -24px rgb(0 0 0 / 0.18);
 
   /* ── Popover ── */
   --popover: 0 0% 15%;
@@ -202,6 +224,11 @@
     background-color: hsl(var(--surface));
     border: 1px solid hsl(var(--border));
     box-shadow: var(--surface-shadow);
+  }
+
+  /* Main content panel — elevation shadow (DM-7 dark / ELEVATION-6 light) */
+  .main-panel {
+    box-shadow: var(--main-panel-shadow);
   }
 
   /* Pill accent helper — white pill with #e0e0e6 border */
