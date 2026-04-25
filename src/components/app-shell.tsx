@@ -1,5 +1,6 @@
 'use client'
 
+import '@/bones/registry'
 import { useState, useEffect } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -65,19 +66,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('gt-sidebar') === 'open' : false
-  )
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [dark, setDark] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? (localStorage.getItem('gt-theme') ?? 'dark') === 'dark' : true
-  )
+  const [dark, setDark] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [authLoaded, setAuthLoaded] = useState(false)
   const [unreadMessages] = useState<number>(0)
   const [profilMeny, setProfilMeny] = useState(false)
 
   const { openModal } = useAuthModal()
+
+  // Sync persisted preferences after hydration (avoids SSR mismatch)
+  useEffect(() => {
+    const storedSidebar = localStorage.getItem('gt-sidebar')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (storedSidebar !== null) setSidebarOpen(storedSidebar === 'open')
+
+    const storedTheme = localStorage.getItem('gt-theme')
+
+    if (storedTheme !== null) setDark(storedTheme === 'dark')
+  }, [])
 
   // Apply dark class to <html>
   useEffect(() => {
