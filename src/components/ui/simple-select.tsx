@@ -32,13 +32,7 @@ export function SimpleSelect({
       onValueChange={(v) => v != null && onValueChange?.(v)}
       disabled={disabled}
     >
-      <SelectTrigger
-        className={cn(
-          // Reset base-ui trigger defaults, match selectKlasse exactly
-          'border-border text-foreground focus-visible:border-primary/50 h-11 w-full rounded-xl border bg-transparent px-4 text-sm transition-colors outline-none focus-visible:ring-0',
-          className
-        )}
-      >
+      <SelectTrigger className={cn('w-full', className)}>
         <span className={currentLabel ? 'text-foreground' : 'text-muted-foreground'}>
           {currentLabel ?? placeholder}
         </span>

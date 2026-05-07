@@ -109,7 +109,7 @@
   --destructive-foreground: 0 0% 100%;
 
   /* ── Ring ── */
-  --ring: 17 100% 61%;
+  --ring: 0 0% 11%;
 
   /* ── Radius ── */
   --radius: 0.625rem;
@@ -189,7 +189,7 @@
   --destructive-foreground: 0 0% 100%;
 
   /* ── Ring ── */
-  --ring: 17 100% 61%;
+  --ring: 40 32% 73%;
 
   /* ── Sidebar ── */
   --sidebar: 0 0% 11%;

@@ -11,9 +11,9 @@ import { KJENTE_SKAFT } from './constants'
 
 export function AiBadge() {
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
       <SparklesIcon className="h-2.5 w-2.5" />
-      AI
+      Foreslått av AI
     </span>
   )
 }
@@ -34,7 +34,7 @@ export function Felt({
   children: React.ReactNode
 }) {
   return (
-    <div>
+    <div className={cn(aiBadge && 'border-l-2 border-amber-400 pl-3')}>
       <Label className="mb-1.5 flex items-center gap-1.5">
         {label}
         {required && <span className="text-red-500">*</span>}
@@ -130,10 +130,10 @@ export function PillToggle<T extends string>({
           type="button"
           onClick={() => onChange(opt.value)}
           className={cn(
-            'border-border focus:border-primary/50 h-11 cursor-pointer rounded-xl border px-4 text-sm transition-colors outline-none',
+            'border-border focus:border-foreground/50 h-11 cursor-pointer rounded-xl border px-4 text-sm transition-colors outline-none',
             value === opt.value
-              ? 'border-primary bg-primary/8 text-primary font-medium'
-              : 'hover:border-primary/40'
+              ? 'border-foreground bg-foreground/8 text-foreground font-medium'
+              : 'hover:border-foreground/40'
           )}
         >
           {opt.label}

@@ -278,4 +278,217 @@ export type StegId = (typeof ALLE_STEG)[number]['id']
 
 export const TILLATTE_BILDE_TYPER = ['image/jpeg', 'image/png', 'image/webp']
 export const MAKS_BILDESTORRELSE_BYTES = 5 * 1024 * 1024
-export const MAKS_ANTALL_BILDER = 6
+export const MAKS_ANTALL_BILDER = 8
+
+// ── New 4-phase flow types ─────────────────────────────────────────────────────
+
+export type UiKategori =
+  | 'jernshaft'
+  | 'trekker'
+  | 'putter'
+  | 'baller'
+  | 'bag'
+  | 'sko'
+  | 'tilbehor'
+  | 'annet'
+
+export type NyTilstand = 'ny' | 'som_ny' | 'bra' | 'ok' | 'slitt'
+
+export const UI_KATEGORI_OPTIONS: { value: UiKategori; label: string }[] = [
+  { value: 'jernshaft', label: 'Jernkøller' },
+  { value: 'trekker', label: 'Trekker' },
+  { value: 'putter', label: 'Putter' },
+  { value: 'baller', label: 'Baller' },
+  { value: 'bag', label: 'Bag' },
+  { value: 'sko', label: 'Sko' },
+  { value: 'tilbehor', label: 'Tilbehør' },
+  { value: 'annet', label: 'Annet' },
+]
+
+export const UNDERKATEGORI_OPTIONS: Record<UiKategori, { value: string; label: string }[]> = {
+  jernshaft: [
+    { value: 'jernsett', label: 'Jern (3-PW)' },
+    { value: 'hybrid', label: 'Hybridkøller' },
+    { value: 'trerekke', label: 'Trerekke' },
+    { value: 'enkelt_jern', label: 'Enkelt jern' },
+  ],
+  trekker: [
+    { value: 'driver', label: 'Driver' },
+    { value: 'fairway_tre', label: 'Fairway tre' },
+    { value: 'hybridtrekker', label: 'Hybridtrekker' },
+  ],
+  putter: [
+    { value: 'bladputter', label: 'Bladputter' },
+    { value: 'malteputter', label: 'Malteputter' },
+    { value: 'hoy_moi', label: 'Høy-MOI' },
+  ],
+  baller: [],
+  bag: [
+    { value: 'standbag', label: 'Standbag' },
+    { value: 'cartbag', label: 'Cartbag' },
+    { value: 'tourbag', label: 'Tourbag' },
+  ],
+  sko: [
+    { value: 'piggsko', label: 'Piggsko' },
+    { value: 'piggfri', label: 'Piggfri' },
+    { value: 'casual', label: 'Casual' },
+  ],
+  tilbehor: [],
+  annet: [],
+}
+
+export function uiKategoriTilDb(ui: UiKategori, underkat: string | null): string {
+  switch (ui) {
+    case 'jernshaft':
+      if (underkat === 'hybrid') return 'hybrid'
+      if (underkat === 'trerekke') return 'fairway_wood'
+      if (underkat === 'enkelt_jern') return 'enkelt-jern'
+      return 'jernsett'
+    case 'trekker':
+      if (underkat === 'fairway_tre') return 'fairway_wood'
+      if (underkat === 'hybridtrekker') return 'hybrid'
+      return 'driver'
+    case 'putter':
+      return 'putter'
+    case 'baller':
+      return 'baller'
+    case 'bag':
+      return 'bag'
+    case 'sko':
+      return 'sko'
+    case 'tilbehor':
+      return 'annet'
+    case 'annet':
+      return 'annet'
+  }
+}
+
+export function kategoriTilUiKategori(kat: Category): { ui: UiKategori; underkat: string | null } {
+  switch (kat) {
+    case 'driver':
+      return { ui: 'trekker', underkat: 'driver' }
+    case 'fairway_wood':
+      return { ui: 'trekker', underkat: 'fairway_tre' }
+    case 'hybrid':
+      return { ui: 'trekker', underkat: 'hybridtrekker' }
+    case 'iron_set':
+      return { ui: 'jernshaft', underkat: 'jernsett' }
+    case 'single_iron':
+      return { ui: 'jernshaft', underkat: 'enkelt_jern' }
+    case 'wedge':
+      return { ui: 'jernshaft', underkat: 'enkelt_jern' }
+    case 'putter':
+      return { ui: 'putter', underkat: 'bladputter' }
+    case 'golf_bag':
+      return { ui: 'bag', underkat: null }
+    case 'golf_shoes':
+      return { ui: 'sko', underkat: null }
+    case 'rangefinder':
+      return { ui: 'tilbehor', underkat: null }
+    case 'other':
+      return { ui: 'annet', underkat: null }
+  }
+}
+
+export const NY_TILSTANDER: {
+  value: NyTilstand
+  label: string
+  klasse: string
+  dotKlasse: string
+}[] = [
+  {
+    value: 'ny',
+    label: 'Ny',
+    klasse:
+      'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+    dotKlasse: 'bg-emerald-500',
+  },
+  {
+    value: 'som_ny',
+    label: 'Som ny',
+    klasse:
+      'border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-950 dark:text-green-300',
+    dotKlasse: 'bg-green-400',
+  },
+  {
+    value: 'bra',
+    label: 'Bra',
+    klasse: 'border-primary/30 bg-primary/8 text-primary',
+    dotKlasse: 'bg-primary',
+  },
+  {
+    value: 'ok',
+    label: 'OK',
+    klasse:
+      'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300',
+    dotKlasse: 'bg-amber-500',
+  },
+  {
+    value: 'slitt',
+    label: 'Slitt',
+    klasse:
+      'border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-950 dark:text-red-300',
+    dotKlasse: 'bg-red-500',
+  },
+]
+
+export const NY_TILSTAND_LABEL: Record<NyTilstand, string> = {
+  ny: 'Ny',
+  som_ny: 'Som ny',
+  bra: 'God',
+  ok: 'Akseptabel',
+  slitt: 'Slitt',
+}
+
+export const PRIS_ANBEFALINGER: Record<UiKategori, string> = {
+  jernshaft: '500–4 000 kr',
+  trekker: '300–3 500 kr',
+  putter: '300–2 500 kr',
+  baller: '50–500 kr',
+  bag: '200–2 000 kr',
+  sko: '100–1 200 kr',
+  tilbehor: '50–1 000 kr',
+  annet: '50–1 000 kr',
+}
+
+export const GOLF_MERKER = [
+  'Titleist',
+  'TaylorMade',
+  'Callaway',
+  'Ping',
+  'Mizuno',
+  'Cobra',
+  'Cleveland',
+  'Srixon',
+  'Wilson',
+  'Annet',
+]
+
+export const NY_FLEX_OPTIONS: { value: string; label: string }[] = [
+  { value: 'L', label: 'Dame' },
+  { value: 'A', label: 'Senior' },
+  { value: 'R', label: 'Regular' },
+  { value: 'S', label: 'Stiff' },
+  { value: 'X', label: 'X-Stiff' },
+]
+
+export const HOSEL_OPTIONS = [
+  { value: 'straight', label: 'Straight' },
+  { value: 'offset', label: 'Offset' },
+  { value: 'double_bend', label: 'Double-bend' },
+]
+
+export const ALLE_STEG_CREATE = [
+  { id: 'metode', tittel: 'Metode' },
+  { id: 'kategori', tittel: 'Kategori' },
+  { id: 'detaljer', tittel: 'Detaljer' },
+  { id: 'pris', tittel: 'Pris' },
+] as const
+
+export const ALLE_STEG_REDIGER = [
+  { id: 'kategori', tittel: 'Kategori' },
+  { id: 'utstyr', tittel: 'Utstyr' },
+  { id: 'bilder', tittel: 'Bilder' },
+  { id: 'tilstand', tittel: 'Tilstand' },
+  { id: 'pris', tittel: 'Pris' },
+] as const

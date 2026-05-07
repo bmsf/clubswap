@@ -16,7 +16,7 @@ export type AnnonseInput = {
   tilstand: string
   skadebeskrivelse?: string
   pris: number
-  selgesFra: string
+  selgesFra?: string
   tilbyrFrakt: boolean
   bilder: string[]
 }
@@ -52,7 +52,7 @@ export async function publiserAnnonse(
       tilstand: input.tilstand,
       skadebeskrivelse: input.skadebeskrivelse ?? null,
       pris: input.pris,
-      selges_fra: input.selgesFra,
+      selges_fra: input.selgesFra ?? '',
       tilbyr_frakt: input.tilbyrFrakt,
       bilder: input.bilder,
     })
@@ -96,7 +96,7 @@ export async function oppdaterAnnonse(
       tilstand: input.tilstand,
       skadebeskrivelse: input.skadebeskrivelse ?? null,
       pris: input.pris,
-      selges_fra: input.selgesFra,
+      selges_fra: input.selgesFra ?? '',
       tilbyr_frakt: input.tilbyrFrakt,
       bilder: input.bilder,
     })

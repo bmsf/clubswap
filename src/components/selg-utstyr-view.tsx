@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -23,11 +23,12 @@ import {
 import { cn } from '@/lib/utils'
 import {
   SparklesIcon,
-  PencilSquareIcon,
   ArrowPathIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CheckIcon,
+  ArrowRightIcon,
+  PhotoIcon,
 } from '@heroicons/react/16/solid'
 import { createClient } from '@/supabase/client'
 import { publiserAnnonse, oppdaterAnnonse } from '@/app/(app)/selg/actions'
@@ -37,9 +38,8 @@ import {
   type FormData,
   type Category,
   type Condition,
-  type EquipmentAnalysis,
-  type KolleItem,
-  ALLE_STEG,
+  ALLE_STEG_CREATE,
+  ALLE_STEG_REDIGER,
   CATEGORY_TO_DB,
   TILSTANDER,
   KATEGORI_OPTIONS,
@@ -51,8 +51,18 @@ import {
   HAR_HEADCOVER,
   HAR_LOFT_DRIVER,
   MAKS_ANTALL_BILDER,
-  SHAFT_KATEGORI_MAP,
-  createModeSchema,
+  type UiKategori,
+  type NyTilstand,
+  UI_KATEGORI_OPTIONS,
+  UNDERKATEGORI_OPTIONS,
+  uiKategoriTilDb,
+  kategoriTilUiKategori,
+  NY_TILSTANDER,
+  NY_TILSTAND_LABEL,
+  PRIS_ANBEFALINGER,
+  GOLF_MERKER,
+  NY_FLEX_OPTIONS,
+  HOSEL_OPTIONS,
 } from './selg-utstyr/constants'
 import {
   BildeOpplaster,
@@ -62,8 +72,6 @@ import {
 } from './selg-utstyr/bilde-opplaster'
 import { Felt, PillToggle, AiBadge } from './selg-utstyr/primitives'
 import { Fremdrift } from './selg-utstyr/fremdrift'
-import { UtstyrSok } from './selg-utstyr/utstyr-sok'
-import { SkaftSokDb } from './selg-utstyr/skaft-sok-db'
 
 // ── Animation ─────────────────────────────────────────────────────────────────
 
@@ -79,6 +87,12 @@ const contentVariants = {
     x: dir * -40,
     transition: { duration: 0.2, ease: [0.4, 0.0, 1.0, 1.0] as const },
   }),
+}
+
+const fieldVariants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
+  exit: { opacity: 0, y: -4, transition: { duration: 0.15 } },
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -105,25 +119,46 @@ export function SelgUtstyrView({
   const router = useRouter()
   const redigerModus = !!annonseId
 
-  const steg = redigerModus ? ALLE_STEG.slice(1) : ALLE_STEG.filter((s) => s.id !== 'kategori')
+  const steg = redigerModus ? [...ALLE_STEG_REDIGER] : [...ALLE_STEG_CREATE]
 
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState(1)
+
+  // ── Shared state ──────────────────────────────────────────────────────────
 
   const [mode, setMode] = useState<'ai' | 'manual' | null>(redigerModus ? 'manual' : null)
   const [bilder, setBilder] = useState<BildeEntry[]>([])
   const [eksisterendeBilder, setEksisterendeBilder] = useState<string[]>(initBilder)
   const [analyserer, setAnalyserer] = useState(false)
-  const [analysis, setAnalysis] = useState<EquipmentAnalysis | null>(null)
   const [aiFields, setAiFields] = useState<Set<string>>(new Set())
 
-  // Edit mode: single category state (backward compat)
+  // ── Edit mode state ───────────────────────────────────────────────────────
+
   const [kategori, setKategori] = useState<Category | null>(initialKategori ?? null)
   const [tilstand, setTilstand] = useState<Condition | null>(initialTilstand ?? null)
 
-  // Create mode: single-club state
-  const [koller, setKoller] = useState<KolleItem[]>([])
-  const [aiKolleId, setAiKolleId] = useState<string | null>(null)
+  // ── New create mode state ─────────────────────────────────────────────────
+
+  const [listemetode, setListemetode] = useState<'selg' | 'bytt'>('selg')
+  const [uiKategori, setUiKategori] = useState<UiKategori | null>(null)
+  const [underkategori, setUnderkategori] = useState<string | null>(null)
+  const [tittel, setTittel] = useState('')
+  const [merke, setMerke] = useState('')
+  const [merkeOpen, setMerkeOpen] = useState(false)
+  const [flex, setFlex] = useState<string | null>(null)
+  const [skaftMateriale, setSkaftMateriale] = useState<'stal' | 'grafitt' | null>(null)
+  const [antallKoller, setAntallKoller] = useState(1)
+  const [loft, setLoft] = useState('')
+  const [putterLengde, setPutterLengde] = useState('')
+  const [hoselType, setHoselType] = useState<string | null>(null)
+  const [skoStorrelse, setSkoStorrelse] = useState('')
+  const [piggType, setPiggType] = useState<'soft' | 'fast' | null>(null)
+  const [nyTilstand, setNyTilstand] = useState<NyTilstand | null>(null)
+  const [pris, setPris] = useState('')
+  const [fraktInkludert, setFraktInkludert] = useState(false)
+  const [isSubmittingNy, setIsSubmittingNy] = useState(false)
+
+  // ── React Hook Form (edit mode) ───────────────────────────────────────────
 
   const {
     register,
@@ -134,9 +169,95 @@ export function SelgUtstyrView({
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(redigerModus ? schema : createModeSchema) as any,
+    resolver: zodResolver(schema) as any,
     defaultValues: { tilbyrFrakt: false, selgesFra: '', ...initialData },
   })
+
+  // ── localStorage: restore draft on mount ─────────────────────────────────
+
+  useEffect(() => {
+    if (redigerModus) return
+    try {
+      const saved = localStorage.getItem('golftorget_listing_draft')
+      if (!saved) return
+      const d = JSON.parse(saved) as Record<string, unknown>
+      if (d.mode === 'manual' || d.mode === 'ai') setMode(d.mode)
+      if (d.listemetode === 'selg' || d.listemetode === 'bytt') setListemetode(d.listemetode)
+      if (typeof d.uiKategori === 'string') setUiKategori(d.uiKategori as UiKategori)
+      if (d.underkategori === null || typeof d.underkategori === 'string')
+        setUnderkategori(d.underkategori as string | null)
+      if (typeof d.tittel === 'string') setTittel(d.tittel)
+      if (typeof d.merke === 'string') setMerke(d.merke)
+      if (d.flex === null || typeof d.flex === 'string') setFlex(d.flex as string | null)
+      if (
+        d.skaftMateriale === 'stal' ||
+        d.skaftMateriale === 'grafitt' ||
+        d.skaftMateriale === null
+      )
+        setSkaftMateriale(d.skaftMateriale as 'stal' | 'grafitt' | null)
+      if (typeof d.antallKoller === 'number') setAntallKoller(d.antallKoller)
+      if (typeof d.loft === 'string') setLoft(d.loft)
+      if (typeof d.putterLengde === 'string') setPutterLengde(d.putterLengde)
+      if (d.hoselType === null || typeof d.hoselType === 'string')
+        setHoselType(d.hoselType as string | null)
+      if (typeof d.skoStorrelse === 'string') setSkoStorrelse(d.skoStorrelse)
+      if (d.piggType === 'soft' || d.piggType === 'fast' || d.piggType === null)
+        setPiggType(d.piggType as 'soft' | 'fast' | null)
+      const validTilstander: NyTilstand[] = ['ny', 'som_ny', 'bra', 'ok', 'slitt']
+      if (validTilstander.includes(d.nyTilstand as NyTilstand))
+        setNyTilstand(d.nyTilstand as NyTilstand)
+      if (typeof d.pris === 'string') setPris(d.pris)
+      if (typeof d.fraktInkludert === 'boolean') setFraktInkludert(d.fraktInkludert)
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── localStorage: save on every change ───────────────────────────────────
+
+  useEffect(() => {
+    if (redigerModus) return
+    const draft = {
+      mode,
+      listemetode,
+      uiKategori,
+      underkategori,
+      tittel,
+      merke,
+      flex,
+      skaftMateriale,
+      antallKoller,
+      loft,
+      putterLengde,
+      hoselType,
+      skoStorrelse,
+      piggType,
+      nyTilstand,
+      pris,
+      fraktInkludert,
+    }
+    localStorage.setItem('golftorget_listing_draft', JSON.stringify(draft))
+  }, [
+    redigerModus,
+    mode,
+    listemetode,
+    uiKategori,
+    underkategori,
+    tittel,
+    merke,
+    flex,
+    skaftMateriale,
+    antallKoller,
+    loft,
+    putterLengde,
+    hoselType,
+    skoStorrelse,
+    piggType,
+    nyTilstand,
+    pris,
+    fraktInkludert,
+  ])
 
   // ── Navigation ───────────────────────────────────────────────────────────
 
@@ -147,8 +268,13 @@ export function SelgUtstyrView({
   }
 
   function nextStep() {
-    if (currentStep < steg.length - 1) gaTil(currentStep + 1)
+    if (!redigerModus && steg[currentStep]?.id === 'metode' && mode === 'ai') {
+      gaTil(2) // skip Kategori in AI path
+    } else if (currentStep < steg.length - 1) {
+      gaTil(currentStep + 1)
+    }
   }
+
   function prevStep() {
     if (currentStep > 0) gaTil(currentStep - 1)
   }
@@ -156,42 +282,36 @@ export function SelgUtstyrView({
   // ── Step validation ──────────────────────────────────────────────────────
 
   function isStegGyldig(): boolean {
+    if (redigerModus) {
+      switch (steg[currentStep]?.id) {
+        case 'kategori':
+          return kategori !== null
+        case 'utstyr': {
+          const { merke: m, modell } = getValues()
+          return (m?.trim() ?? '') !== '' && (modell?.trim() ?? '') !== ''
+        }
+        case 'bilder':
+          return true
+        case 'tilstand':
+          return tilstand !== null
+        case 'pris':
+          return true
+        default:
+          return true
+      }
+    }
     switch (steg[currentStep]?.id) {
       case 'metode':
         return mode !== null
       case 'kategori':
-        return redigerModus ? kategori !== null : koller.length > 0
-      case 'utstyr': {
-        if (redigerModus) {
-          const { merke, modell } = getValues()
-          return merke?.trim() !== '' && modell?.trim() !== ''
-        }
-        return (
-          koller.length > 0 &&
-          koller.every(
-            (k) =>
-              k.confirmed &&
-              k.merke.trim() !== '' &&
-              k.modell.trim() !== '' &&
-              (!HAR_HEADCOVER.has(k.kategori) || k.headcover !== undefined)
-          )
-        )
-      }
-      case 'bilder':
+        return uiKategori !== null
+      case 'detaljer':
         return true
-      case 'tilstand':
-        return tilstand !== null
       case 'pris':
         return true
       default:
         return true
     }
-  }
-
-  // ── Club helpers ─────────────────────────────────────────────────────────
-
-  function oppdaterKolle(id: string, felt: Partial<Omit<KolleItem, 'id'>>) {
-    setKoller((prev) => prev.map((k) => (k.id === id ? { ...k, ...felt } : k)))
   }
 
   // ── Image helpers ────────────────────────────────────────────────────────
@@ -222,55 +342,79 @@ export function SelgUtstyrView({
     setEksisterendeBilder((prev) => prev.filter((_, idx) => idx !== i))
   }
 
-  // ── AI analysis ──────────────────────────────────────────────────────────
+  // ── AI: trigger on upload (new create flow) ──────────────────────────────
 
-  async function analyserBilder() {
-    if (bilder.length === 0) return
+  function leggTilOgAnalyser(files: FileList | null) {
+    if (!files || files.length === 0) return
+    const file = files[0]
+    const feil = validerFiler([file])
+    if (feil) {
+      toast.error(feil)
+      return
+    }
+    const entry: BildeEntry = { file, url: URL.createObjectURL(file) }
+    setBilder([entry])
+    gaTil(2)
+    void analyserNy(file)
+  }
+
+  async function analyserNy(file: File) {
     setAnalyserer(true)
     try {
-      const fil = bilder[0].file
       const res = await fetch('/api/analyze-equipment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: await fileToBase64(fil), mediaType: fil.type }),
+        body: JSON.stringify({ imageBase64: await fileToBase64(file), mediaType: file.type }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error ?? 'API-kall feilet')
-      setAnalysis(data)
 
       const filled = new Set<string>()
 
       if (data.category) {
-        const kolleId = crypto.randomUUID()
-        const nyKolle: KolleItem = {
-          id: kolleId,
-          kategori: data.category,
-          merke: data.brand ?? '',
-          modell: data.model ?? '',
-          aarsmodell: data.year ? String(data.year) : undefined,
-          hand: data.hand ?? undefined,
-          loft: data.loft ? `${data.loft}°` : undefined,
-          shaftFlex: data.shaft_flex ?? undefined,
-          skaftType: data.shaft_type ?? undefined,
-          headcover: data.includes_headcover ?? undefined,
-          confirmed: true,
-          manuell: false,
-        }
-        setKoller([nyKolle])
-        setAiKolleId(kolleId)
+        const { ui, underkat } = kategoriTilUiKategori(data.category as Category)
+        setUiKategori(ui)
+        setUnderkategori(underkat)
         filled.add('kategori')
-        if (data.brand) filled.add('merke')
-        if (data.model) filled.add('modell')
-        if (data.year) filled.add('aarsmodell')
-        if (data.hand) filled.add('hand')
-        if (data.loft) filled.add('loft')
-        if (data.shaft_flex) filled.add('shaftFlex')
-        if (data.shaft_type) filled.add('skaftType')
-        if (data.includes_headcover !== null) filled.add('headcover')
+      }
+      if (data.brand) {
+        setMerke(data.brand as string)
+        filled.add('merke')
+      }
+      if (data.model) {
+        const suggested = data.brand
+          ? `${data.brand as string} ${data.model as string}`.trim()
+          : (data.model as string)
+        setTittel(suggested)
+        filled.add('tittel')
       }
       if (data.condition_estimate) {
-        setTilstand(data.condition_estimate)
-        filled.add('tilstand')
+        const condMap: Record<string, NyTilstand> = {
+          ny: 'ny',
+          meget_god: 'som_ny',
+          god: 'bra',
+          akseptabel: 'ok',
+        }
+        const mapped = condMap[data.condition_estimate as string]
+        if (mapped) {
+          setNyTilstand(mapped)
+          filled.add('tilstand')
+        }
+      }
+      if (data.shaft_flex) {
+        setFlex(data.shaft_flex as string)
+        filled.add('flex')
+      }
+      if (data.shaft_type === 'steel') {
+        setSkaftMateriale('stal')
+        filled.add('skaftMateriale')
+      } else if (data.shaft_type === 'graphite') {
+        setSkaftMateriale('grafitt')
+        filled.add('skaftMateriale')
+      }
+      if (data.loft) {
+        setLoft(String(data.loft as number))
+        filled.add('loft')
       }
       setAiFields(filled)
     } catch (err) {
@@ -282,7 +426,69 @@ export function SelgUtstyrView({
     }
   }
 
-  // ── Submit ───────────────────────────────────────────────────────────────
+  // ── New create mode submit ────────────────────────────────────────────────
+
+  async function submitNy() {
+    if (!uiKategori) {
+      toast.error('Velg kategori.')
+      return
+    }
+    if (!nyTilstand) {
+      toast.error('Velg tilstand i Detaljer-steget.')
+      return
+    }
+    if (!pris || parseInt(pris) <= 0) {
+      toast.error('Fyll inn pris.')
+      return
+    }
+
+    setIsSubmittingNy(true)
+    const supabase = createClient()
+    const nyeBildeUrls: string[] = []
+    for (const entry of bilder) {
+      const ext = entry.file.name.split('.').pop() ?? 'jpg'
+      const path = `${crypto.randomUUID()}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('annonse-bilder')
+        .upload(path, entry.file, { upsert: false })
+      if (uploadError) {
+        toast.error(`Bildeopplasting feilet: ${uploadError.message}`)
+        setIsSubmittingNy(false)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('annonse-bilder').getPublicUrl(path)
+      nyeBildeUrls.push(urlData.publicUrl)
+    }
+
+    const payload = {
+      kategori: uiKategoriTilDb(uiKategori, underkategori),
+      merke: merke || 'Ukjent',
+      modell: tittel || merke || 'Ukjent',
+      tilstand: NY_TILSTAND_LABEL[nyTilstand],
+      pris: parseInt(pris),
+      selgesFra: '',
+      tilbyrFrakt: !fraktInkludert,
+      bilder: nyeBildeUrls,
+      ...(flex ? { shaftFlex: flex } : {}),
+      ...(skaftMateriale ? { skaftMateriale: skaftMateriale === 'stal' ? 'Stål' : 'Grafitt' } : {}),
+      ...(loft ? { loft: `${loft}°` } : {}),
+    }
+
+    try {
+      const result = await publiserAnnonse(payload)
+      if ('feil' in result) {
+        toast.error(result.feil)
+        return
+      }
+      toast.success('Annonsen er publisert!')
+      localStorage.removeItem('golftorget_listing_draft')
+      setTimeout(() => router.push('/annonser'), 1200)
+    } finally {
+      setIsSubmittingNy(false)
+    }
+  }
+
+  // ── Edit mode submit ──────────────────────────────────────────────────────
 
   async function onSubmit(data: FormData) {
     if (!tilstand) {
@@ -309,89 +515,42 @@ export function SelgUtstyrView({
     const bildeUrls = [...eksisterendeBilder, ...nyeBildeUrls]
     const tilstandLabel = TILSTANDER.find((t) => t.value === tilstand)?.label ?? tilstand
 
-    // Edit mode: single listing update
-    if (redigerModus) {
-      if (!kategori) {
-        toast.error('Velg en kategori.')
-        return
-      }
-      const payload = {
-        kategori: CATEGORY_TO_DB[kategori],
-        merke: data.merke,
-        modell: data.modell,
-        aarsmodell: data.aarsmodell,
-        haandighet: data.hand === 'right' ? 'Høyre' : data.hand === 'left' ? 'Venstre' : undefined,
-        loft: data.loft,
-        shaftFlex: data.shaftFlex,
-        skaftMateriale:
-          data.skaftType === 'steel'
-            ? 'Stål'
-            : data.skaftType === 'graphite'
-              ? 'Grafitt'
-              : undefined,
-        tilstand: tilstandLabel,
-        skadebeskrivelse: data.skadebeskrivelse,
-        pris: data.pris,
-        selgesFra: data.selgesFra,
-        tilbyrFrakt: data.tilbyrFrakt,
-        bilder: bildeUrls,
-      }
-      const result = await oppdaterAnnonse(
-        annonseId!,
-        payload as Parameters<typeof oppdaterAnnonse>[1]
-      )
-      if ('feil' in result) {
-        toast.error(result.feil)
-        return
-      }
-      toast.success('Annonsen er oppdatert!')
-      setTimeout(() => (onSuccess ? onSuccess() : router.push('/annonser')), 1200)
+    if (!kategori) {
+      toast.error('Velg en kategori.')
       return
     }
 
-    // Create mode: one listing per club
-    if (koller.length === 0) {
-      toast.error('Legg til minst én kølle.')
-      return
+    const payload = {
+      kategori: CATEGORY_TO_DB[kategori],
+      merke: data.merke,
+      modell: data.modell,
+      aarsmodell: data.aarsmodell,
+      haandighet: data.hand === 'right' ? 'Høyre' : data.hand === 'left' ? 'Venstre' : undefined,
+      loft: data.loft,
+      shaftFlex: data.shaftFlex,
+      skaftMateriale:
+        data.skaftType === 'steel' ? 'Stål' : data.skaftType === 'graphite' ? 'Grafitt' : undefined,
+      tilstand: tilstandLabel,
+      skadebeskrivelse: data.skadebeskrivelse,
+      pris: data.pris,
+      selgesFra: data.selgesFra,
+      tilbyrFrakt: data.tilbyrFrakt,
+      bilder: bildeUrls,
     }
 
-    for (const kolle of koller) {
-      const payload = {
-        kategori: CATEGORY_TO_DB[kolle.kategori],
-        merke: kolle.merke,
-        modell: kolle.modell,
-        aarsmodell: kolle.aarsmodell,
-        haandighet:
-          kolle.hand === 'right' ? 'Høyre' : kolle.hand === 'left' ? 'Venstre' : undefined,
-        loft: kolle.loft,
-        shaftFlex: kolle.shaftFlex,
-        skaftMateriale:
-          kolle.skaftType === 'steel'
-            ? 'Stål'
-            : kolle.skaftType === 'graphite'
-              ? 'Grafitt'
-              : undefined,
-        tilstand: tilstandLabel,
-        skadebeskrivelse: data.skadebeskrivelse,
-        pris: data.pris,
-        selgesFra: data.selgesFra,
-        tilbyrFrakt: data.tilbyrFrakt,
-        bilder: bildeUrls,
-      }
-      const result = await publiserAnnonse(payload as Parameters<typeof publiserAnnonse>[0])
-      if ('feil' in result) {
-        toast.error(result.feil)
-        return
-      }
-    }
-
-    toast.success(
-      koller.length === 1 ? 'Annonsen er publisert!' : `${koller.length} annonser er publisert!`
+    const result = await oppdaterAnnonse(
+      annonseId!,
+      payload as Parameters<typeof oppdaterAnnonse>[1]
     )
-    setTimeout(() => router.push('/annonser'), 1200)
+    if ('feil' in result) {
+      toast.error(result.feil)
+      return
+    }
+    toast.success('Annonsen er oppdatert!')
+    setTimeout(() => (onSuccess ? onSuccess() : router.push('/annonser')), 1200)
   }
 
-  // ── Step content ─────────────────────────────────────────────────────────
+  // ── Create mode phase renderers ───────────────────────────────────────────
 
   const bildeOpplasterProps = {
     bilder,
@@ -401,696 +560,924 @@ export function SelgUtstyrView({
     onFjernEksisterende: fjernEksisterende,
   }
 
-  function renderStegInnhold() {
-    switch (steg[currentStep]?.id) {
-      case 'metode':
-        return (
-          <>
-            <CardHeader>
-              <CardTitle>Hvordan vil du legge ut?</CardTitle>
-              <CardDescription>Velg metode for å registrere utstyret ditt</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {(
-                  [
-                    {
-                      key: 'ai' as const,
-                      icon: SparklesIcon,
-                      tittel: 'Skann med AI',
-                      beskrivelse: 'Last opp bilde og la AI gjenkjenne utstyret automatisk',
-                    },
-                    {
-                      key: 'manual' as const,
-                      icon: PencilSquareIcon,
-                      tittel: 'Fyll ut manuelt',
-                      beskrivelse: 'Velg kategori og fyll ut feltene selv',
-                    },
-                  ] as const
-                ).map(({ key, icon: Icon, tittel, beskrivelse }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setMode(key)}
-                    className={cn(
-                      'flex cursor-pointer flex-col items-start gap-3 rounded-2xl border-2 p-5 text-left transition-all',
-                      mode === key
-                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40'
-                        : 'border-border hover:border-primary/40'
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-xl',
-                        mode === key
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'
-                          : 'bg-muted text-muted-foreground'
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-foreground text-sm font-semibold">{tittel}</p>
-                      <p className="text-muted-foreground mt-0.5 text-xs">{beskrivelse}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {mode === 'ai' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  transition={{ duration: 0.25 }}
-                  className="overflow-hidden"
+  function renderMetodeFase() {
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Hvordan vil du legge ut?</CardTitle>
+          <CardDescription>Velg metode for å registrere utstyret ditt</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            {(
+              [
+                {
+                  key: 'manual' as const,
+                  icon: ArrowRightIcon,
+                  tittel: 'Fyll ut manuelt',
+                  beskrivelse: 'Du fyller ut skjemaet selv',
+                },
+                {
+                  key: 'ai' as const,
+                  icon: SparklesIcon,
+                  tittel: 'AI-assistert',
+                  beskrivelse: 'Last opp et bilde, så fyller AI ut for deg',
+                },
+              ] as const
+            ).map(({ key, icon: Icon, tittel: t, beskrivelse }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setMode(key)}
+                className={cn(
+                  'flex cursor-pointer flex-col items-start gap-3 rounded-2xl border-2 p-5 text-left transition-all',
+                  mode === key
+                    ? 'border-foreground bg-foreground/5 dark:bg-foreground/10'
+                    : 'border-border hover:border-foreground/40'
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex h-10 w-10 items-center justify-center rounded-xl',
+                    mode === key
+                      ? 'bg-foreground/10 text-foreground dark:bg-foreground/20'
+                      : 'bg-muted text-muted-foreground'
+                  )}
                 >
-                  <div className="border-border mt-4 border-t pt-4">
-                    <p className="text-foreground mb-3 text-sm font-medium">Last opp bilder</p>
-                    <BildeOpplaster {...bildeOpplasterProps} />
-                    {analysis?.confidence === 'low' && (
-                      <div className="mt-4 mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-                        Vi er litt usikre på gjenkjenningen – sjekk at feltene stemmer.
-                      </div>
-                    )}
-                    <Button
-                      type="button"
-                      variant="primary"
-                      onClick={analyserBilder}
-                      disabled={bilder.length === 0 || analyserer}
-                      className="mt-4 w-full gap-2"
-                    >
-                      {analyserer ? (
-                        <>
-                          <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                          Gjenkjenner utstyr…
-                        </>
-                      ) : (
-                        <>
-                          <SparklesIcon className="h-4 w-4" />
-                          Analyser bilder med AI
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </CardContent>
-          </>
-        )
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-foreground text-sm font-semibold">{t}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">{beskrivelse}</p>
+                </div>
+              </button>
+            ))}
+          </div>
 
-      case 'kategori':
-        // Edit mode: single category picker (unchanged)
-        if (redigerModus) {
-          return (
-            <>
-              <CardHeader>
-                <CardTitle>Kategori</CardTitle>
-                <CardDescription>Velg hvilken type utstyr du selger</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Felt label="Kategori" required>
+          <AnimatePresence>
+            {mode === 'ai' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="border-border mt-4 border-t pt-4">
+                  <p className="text-foreground mb-3 text-sm font-medium">Last opp bilde</p>
+                  <BildeOpplaster
+                    bilder={bilder}
+                    eksisterendeBilder={[]}
+                    onLeggTil={leggTilOgAnalyser}
+                    onFjern={fjernBilde}
+                    onFjernEksisterende={() => {}}
+                  />
+                  <p className="text-muted-foreground mt-3 text-xs">
+                    Bildet sendes til AI for gjenkjenning og du tas direkte til utfylling.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </>
+    )
+  }
+
+  function renderKategoriFase() {
+    const harUnderkat = uiKategori !== null && (UNDERKATEGORI_OPTIONS[uiKategori]?.length ?? 0) > 0
+
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Kategori</CardTitle>
+          <CardDescription>Velg hvilken type utstyr du ønsker å selge</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Category dropdown */}
+          <Felt label="Kategori" required>
+            <SimpleSelect
+              value={uiKategori ?? ''}
+              onValueChange={(v) => {
+                setUiKategori(v as UiKategori)
+                setUnderkategori(null)
+              }}
+              placeholder="Velg kategori…"
+              options={UI_KATEGORI_OPTIONS}
+            />
+          </Felt>
+
+          {/* Subcategory */}
+          <AnimatePresence>
+            {harUnderkat && (
+              <motion.div
+                key={uiKategori}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                <Felt label="Underkategori">
                   <SimpleSelect
-                    value={kategori ?? ''}
-                    onValueChange={(v) => setKategori(v as Category)}
-                    placeholder="Velg kategori…"
-                    options={KATEGORI_OPTIONS}
-                    className="max-w-1/3"
+                    value={underkategori ?? ''}
+                    onValueChange={setUnderkategori}
+                    placeholder="Velg underkategori…"
+                    options={UNDERKATEGORI_OPTIONS[uiKategori!]}
+                    className=""
                   />
                 </Felt>
-              </CardContent>
-            </>
-          )
-        }
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </>
+    )
+  }
 
-        // Create mode: single category picker
-        return (
-          <>
-            <CardHeader>
-              <CardTitle>Kategori</CardTitle>
-              <CardDescription>Velg hvilken type utstyr du ønsker å selge</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <SimpleSelect
-                value={koller[0]?.kategori ?? ''}
-                onValueChange={(v) => {
-                  const kat = v as Category
-                  setKoller([
-                    koller.length > 0
-                      ? { ...koller[0], kategori: kat }
-                      : { id: crypto.randomUUID(), kategori: kat, merke: '', modell: '' },
-                  ])
-                }}
-                placeholder="Velg kategori…"
-                options={KATEGORI_OPTIONS}
-                className="max-w-xs"
-              />
-            </CardContent>
-          </>
-        )
+  function tittelPlaceholder(): string {
+    if (!uiKategori) return 'f.eks. Titleist T200 Jern'
+    const katLabel = UI_KATEGORI_OPTIONS.find((o) => o.value === uiKategori)?.label ?? ''
+    if (merke) return `${merke} ${katLabel}`
+    return `f.eks. ${katLabel}`
+  }
 
-      case 'utstyr':
-        // Edit mode: old single-club form (unchanged)
-        if (redigerModus) {
-          return (
-            <>
-              <CardHeader>
-                <CardTitle>Om utstyret</CardTitle>
-                <CardDescription>Fyll inn detaljer om utstyret du selger</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <Felt
-                    label="Merke"
-                    required
-                    error={errors.merke?.message}
-                    aiBadge={aiFields.has('merke')}
-                  >
-                    <Input {...register('merke')} placeholder="f.eks. TaylorMade" />
+  function renderDetaljerFase() {
+    const showMerke = tittel.trim().length > 0
+    const showCatFields = merke.trim().length > 0
+    const showTilstand = merke.trim().length > 0
+    const showBilder = nyTilstand !== null
+
+    const harSkaftFields = uiKategori === 'jernshaft' || uiKategori === 'trekker'
+    const erPutter = uiKategori === 'putter'
+    const erSko = uiKategori === 'sko'
+    const erPiggsko = underkategori === 'piggsko'
+
+    const filteredMerker = GOLF_MERKER.filter(
+      (m) => merke.trim() === '' || m.toLowerCase().includes(merke.toLowerCase())
+    )
+
+    if (analyserer) {
+      return (
+        <>
+          <CardHeader>
+            <CardTitle>Detaljer</CardTitle>
+            <CardDescription>Fyll inn informasjon om utstyret</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-5">
+              <div className="flex items-center gap-2">
+                <SparklesIcon className="h-4 w-4 animate-pulse text-amber-500" />
+                <span className="animate-pulse text-sm font-medium text-amber-700 dark:text-amber-300">
+                  AI analyserer bildet…
+                </span>
+              </div>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="bg-muted h-3 w-24 animate-pulse rounded" />
+                  <div className="bg-muted h-11 w-full animate-pulse rounded-xl" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </>
+      )
+    }
+
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Detaljer</CardTitle>
+          <CardDescription>Fyll inn informasjon om utstyret</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* 1. Tittel */}
+          <Felt label="Tittel" aiBadge={aiFields.has('tittel')}>
+            <Input
+              value={tittel}
+              onChange={(e) => setTittel(e.target.value)}
+              placeholder={tittelPlaceholder()}
+            />
+          </Felt>
+
+          {/* 2. Merke */}
+          <AnimatePresence>
+            {showMerke && (
+              <motion.div
+                key="merke"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <Felt label="Merke" aiBadge={aiFields.has('merke')}>
+                  <div className="relative">
+                    <Input
+                      value={merke}
+                      onChange={(e) => setMerke(e.target.value)}
+                      onFocus={() => setMerkeOpen(true)}
+                      onBlur={() => setTimeout(() => setMerkeOpen(false), 150)}
+                      placeholder="Søk etter merke…"
+                    />
+                    <AnimatePresence>
+                      {merkeOpen && filteredMerker.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.12 }}
+                          className="border-border bg-background absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border shadow-lg"
+                        >
+                          {filteredMerker.map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onMouseDown={() => {
+                                setMerke(m)
+                                setMerkeOpen(false)
+                              }}
+                              className="hover:bg-muted flex w-full cursor-pointer items-center px-4 py-2.5 text-left text-sm transition-colors"
+                            >
+                              {m}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </Felt>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 3. Category-specific fields */}
+          <AnimatePresence>
+            {showCatFields && harSkaftFields && (
+              <motion.div
+                key="skaft-fields"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-4"
+              >
+                <Felt label="Flex" aiBadge={aiFields.has('flex')}>
+                  <SimpleSelect
+                    value={flex ?? ''}
+                    onValueChange={setFlex}
+                    placeholder="Velg flex…"
+                    options={NY_FLEX_OPTIONS}
+                    className=""
+                  />
+                </Felt>
+                <Felt label="Sjaft-materiale" aiBadge={aiFields.has('skaftMateriale')}>
+                  <PillToggle
+                    options={[
+                      { value: 'stal', label: 'Stål' },
+                      { value: 'grafitt', label: 'Grafitt' },
+                    ]}
+                    value={skaftMateriale}
+                    onChange={setSkaftMateriale}
+                  />
+                </Felt>
+                {uiKategori === 'trekker' && (
+                  <Felt label="Loft (grader)" aiBadge={aiFields.has('loft')}>
+                    <Input
+                      type="number"
+                      value={loft}
+                      onChange={(e) => setLoft(e.target.value)}
+                      placeholder="f.eks. 10.5"
+                      min={0}
+                      max={60}
+                      className=""
+                    />
                   </Felt>
-
-                  <Felt
-                    label="Modell"
-                    required
-                    error={errors.modell?.message}
-                    aiBadge={aiFields.has('modell')}
-                  >
-                    <Input {...register('modell')} placeholder="f.eks. Stealth 2" />
+                )}
+                {uiKategori === 'jernshaft' && (
+                  <Felt label="Antall køller">
+                    <Input
+                      type="number"
+                      value={antallKoller}
+                      onChange={(e) =>
+                        setAntallKoller(Math.max(1, Math.min(14, parseInt(e.target.value) || 1)))
+                      }
+                      min={1}
+                      max={14}
+                      className="max-w-25"
+                    />
                   </Felt>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
+          <AnimatePresence>
+            {showCatFields && erPutter && (
+              <motion.div
+                key="putter-fields"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-4"
+              >
+                <Felt label="Lengde (cm)">
+                  <Input
+                    type="number"
+                    value={putterLengde}
+                    onChange={(e) => setPutterLengde(e.target.value)}
+                    placeholder="f.eks. 86"
+                    min={50}
+                    max={120}
+                    className=""
+                  />
+                </Felt>
+                <Felt label="Hosel-type">
+                  <SimpleSelect
+                    value={hoselType ?? ''}
+                    onValueChange={setHoselType}
+                    placeholder="Velg hosel-type…"
+                    options={HOSEL_OPTIONS}
+                    className=""
+                  />
+                </Felt>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {showCatFields && erSko && (
+              <motion.div
+                key="sko-fields"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-4"
+              >
+                <Felt label="Størrelse EU">
+                  <Input
+                    type="number"
+                    value={skoStorrelse}
+                    onChange={(e) => setSkoStorrelse(e.target.value)}
+                    placeholder="f.eks. 42"
+                    min={30}
+                    max={55}
+                    className="max-w-25"
+                  />
+                </Felt>
+                {erPiggsko && (
+                  <Felt label="Piggtype">
+                    <PillToggle
+                      options={[
+                        { value: 'soft', label: 'Soft' },
+                        { value: 'fast', label: 'Fast' },
+                      ]}
+                      value={piggType}
+                      onChange={setPiggType}
+                    />
+                  </Felt>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 4. Tilstand */}
+          <AnimatePresence>
+            {showTilstand && (
+              <motion.div
+                key="tilstand"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div
+                  className={cn(
+                    'space-y-2',
+                    aiFields.has('tilstand') && 'border-l-2 border-amber-400 pl-3'
+                  )}
+                >
+                  <div className="mb-1.5 flex items-center gap-1.5">
+                    <Label>Tilstand</Label>
+                    {aiFields.has('tilstand') && <AiBadge />}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {NY_TILSTANDER.map((t) => (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => setNyTilstand(t.value)}
+                        className={cn(
+                          'flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
+                          nyTilstand === t.value
+                            ? `${t.klasse} ring-2 ring-current ring-offset-1`
+                            : 'border-border hover:border-foreground/40'
+                        )}
+                      >
+                        <span className={cn('h-2.5 w-2.5 rounded-full', t.dotKlasse)} />
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 5. Bilder */}
+          <AnimatePresence>
+            {showBilder && (
+              <motion.div
+                key="bilder"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div className="border-border border-t pt-5">
+                  <p className="text-foreground mb-3 text-sm font-medium">Bilder</p>
+                  <BildeOpplaster {...bildeOpplasterProps} />
+                  <p className="text-muted-foreground mt-2 text-xs">
+                    Maks {MAKS_ANTALL_BILDER} bilder · Første bilde blir forsidebilde
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </>
+    )
+  }
+
+  function renderPrisFase() {
+    const prisNummer = parseInt(pris)
+    const prisGyldig = !isNaN(prisNummer) && prisNummer > 0
+
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Pris og publisering</CardTitle>
+          <CardDescription>Sett en pris og publiser annonsen din</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Left: price + frakt */}
+            <div className="space-y-5">
+              <Felt label="Pris" required>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    value={pris}
+                    onChange={(e) => setPris(e.target.value)}
+                    placeholder="f.eks. 2490"
+                    className="pr-10"
+                    min={0}
+                  />
+                  <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm">
+                    kr
+                  </span>
+                </div>
+                {uiKategori && (
+                  <p className="text-muted-foreground mt-1.5 text-xs">
+                    Typisk: {PRIS_ANBEFALINGER[uiKategori]}
+                  </p>
+                )}
+              </Felt>
+
+              <Felt label="Frakt">
+                <div className="border-border overflow-hidden rounded-xl border">
+                  <button
+                    type="button"
+                    onClick={() => setFraktInkludert(true)}
+                    className={cn(
+                      'w-full cursor-pointer px-4 py-2.5 text-left text-sm transition-colors',
+                      fraktInkludert
+                        ? 'bg-foreground text-background font-medium'
+                        : 'hover:bg-muted text-foreground'
+                    )}
+                  >
+                    Frakt inkludert
+                  </button>
+                  <div className="border-border border-t" />
+                  <button
+                    type="button"
+                    onClick={() => setFraktInkludert(false)}
+                    className={cn(
+                      'w-full cursor-pointer px-4 py-2.5 text-left text-sm transition-colors',
+                      !fraktInkludert
+                        ? 'bg-foreground text-background font-medium'
+                        : 'hover:bg-muted text-foreground'
+                    )}
+                  >
+                    Kjøper betaler frakt
+                  </button>
+                </div>
+              </Felt>
+            </div>
+
+            {/* Right: live preview */}
+            <div className="space-y-3">
+              <p className="text-foreground text-sm font-medium">Forhåndsvisning</p>
+              <div className="border-border overflow-hidden rounded-2xl border shadow-sm">
+                <div className="bg-muted aspect-4/3">
+                  {bilder[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={bilder[0].url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <PhotoIcon className="text-muted-foreground/30 h-10 w-10" />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2 p-4">
+                  <p className="line-clamp-2 text-sm font-semibold">{tittel || 'Annonsetittel'}</p>
+                  {merke && <p className="text-muted-foreground text-xs">{merke}</p>}
+                  <div className="flex items-center justify-between gap-2">
+                    {nyTilstand && (
+                      <span
+                        className={cn(
+                          'rounded-full border px-2 py-0.5 text-[11px] font-medium',
+                          NY_TILSTANDER.find((t) => t.value === nyTilstand)?.klasse
+                        )}
+                      >
+                        {NY_TILSTANDER.find((t) => t.value === nyTilstand)?.label}
+                      </span>
+                    )}
+                    {prisGyldig && (
+                      <span className="text-foreground text-sm font-semibold">
+                        {prisNummer.toLocaleString('nb-NO')} kr
+                      </span>
+                    )}
+                  </div>
+                  {uiKategori && (
+                    <span className="bg-muted text-muted-foreground inline-block rounded-full px-2 py-0.5 text-xs">
+                      {UI_KATEGORI_OPTIONS.find((o) => o.value === uiKategori)?.label}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </>
+    )
+  }
+
+  // ── Edit mode phase renderers ─────────────────────────────────────────────
+
+  function renderEditKategori() {
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Kategori</CardTitle>
+          <CardDescription>Velg hvilken type utstyr du selger</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Felt label="Kategori" required>
+            <SimpleSelect
+              value={kategori ?? ''}
+              onValueChange={(v) => setKategori(v as Category)}
+              placeholder="Velg kategori…"
+              options={KATEGORI_OPTIONS}
+              className=""
+            />
+          </Felt>
+        </CardContent>
+      </>
+    )
+  }
+
+  function renderEditUtstyr() {
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Om utstyret</CardTitle>
+          <CardDescription>Fyll inn detaljer om utstyret du selger</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <Felt
+              label="Merke"
+              required
+              error={errors.merke?.message}
+              aiBadge={aiFields.has('merke')}
+            >
+              <Input {...register('merke')} placeholder="f.eks. TaylorMade" />
+            </Felt>
+
+            <Felt
+              label="Modell"
+              required
+              error={errors.modell?.message}
+              aiBadge={aiFields.has('modell')}
+            >
+              <Input {...register('modell')} placeholder="f.eks. Stealth 2" />
+            </Felt>
+
+            <div className="col-span-2">
+              <Felt
+                label="Årsmodell"
+                error={errors.aarsmodell?.message}
+                aiBadge={aiFields.has('aarsmodell')}
+              >
+                <Controller
+                  name="aarsmodell"
+                  control={control}
+                  render={({ field }) => (
+                    <SimpleSelect
+                      value={field.value ?? ''}
+                      onValueChange={field.onChange}
+                      placeholder="Ukjent / ikke oppgitt"
+                      options={AARSMODELL_VALG}
+                    />
+                  )}
+                />
+              </Felt>
+            </div>
+
+            {kategori && HAR_SKAFT.has(kategori) && (
+              <>
+                <div className="col-span-2">
+                  <Felt
+                    label="Hånd"
+                    required
+                    error={errors.hand?.message}
+                    aiBadge={aiFields.has('hand')}
+                  >
+                    <Controller
+                      name="hand"
+                      control={control}
+                      render={({ field }) => (
+                        <PillToggle
+                          options={[
+                            { value: 'right', label: 'Høyre' },
+                            { value: 'left', label: 'Venstre' },
+                          ]}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Felt>
+                </div>
+
+                {kategori && HAR_LOFT_DRIVER.has(kategori) && (
                   <div className="col-span-2">
                     <Felt
-                      label="Årsmodell"
-                      error={errors.aarsmodell?.message}
-                      aiBadge={aiFields.has('aarsmodell')}
+                      label="Loft"
+                      required
+                      error={errors.loft?.message}
+                      aiBadge={aiFields.has('loft')}
                     >
                       <Controller
-                        name="aarsmodell"
+                        name="loft"
                         control={control}
                         render={({ field }) => (
-                          <SimpleSelect
-                            value={field.value ?? ''}
-                            onValueChange={field.onChange}
-                            placeholder="Ukjent / ikke oppgitt"
-                            options={AARSMODELL_VALG}
+                          <PillToggle
+                            options={DRIVER_LOFT_OPTIONS.map((l) => ({ value: l, label: l }))}
+                            value={field.value ?? null}
+                            onChange={field.onChange}
                           />
                         )}
                       />
                     </Felt>
                   </div>
-
-                  {kategori && HAR_SKAFT.has(kategori) && (
-                    <>
-                      <div className="col-span-2">
-                        <Felt
-                          label="Hånd"
-                          required
-                          error={errors.hand?.message}
-                          aiBadge={aiFields.has('hand')}
-                        >
-                          <Controller
-                            name="hand"
-                            control={control}
-                            render={({ field }) => (
-                              <PillToggle
-                                options={[
-                                  { value: 'right', label: 'Høyre' },
-                                  { value: 'left', label: 'Venstre' },
-                                ]}
-                                value={field.value}
-                                onChange={field.onChange}
-                              />
-                            )}
-                          />
-                        </Felt>
-                      </div>
-
-                      {kategori && HAR_LOFT_DRIVER.has(kategori) && (
-                        <div className="col-span-2">
-                          <Felt
-                            label="Loft"
-                            required
-                            error={errors.loft?.message}
-                            aiBadge={aiFields.has('loft')}
-                          >
-                            <Controller
-                              name="loft"
-                              control={control}
-                              render={({ field }) => (
-                                <PillToggle
-                                  options={DRIVER_LOFT_OPTIONS.map((l) => ({ value: l, label: l }))}
-                                  value={field.value ?? null}
-                                  onChange={field.onChange}
-                                />
-                              )}
-                            />
-                          </Felt>
-                        </div>
-                      )}
-
-                      <div className="col-span-2">
-                        <Felt
-                          label="Shaft flex"
-                          error={errors.shaftFlex?.message}
-                          aiBadge={aiFields.has('shaftFlex')}
-                        >
-                          <Controller
-                            name="shaftFlex"
-                            control={control}
-                            render={({ field }) => (
-                              <PillToggle
-                                options={SHAFT_FLEX_OPTIONS}
-                                value={field.value ?? null}
-                                onChange={field.onChange}
-                              />
-                            )}
-                          />
-                        </Felt>
-                      </div>
-
-                      <div className="col-span-2">
-                        <Felt
-                          label="Type skaft"
-                          error={errors.skaftType?.message}
-                          aiBadge={aiFields.has('skaftType')}
-                        >
-                          <Controller
-                            name="skaftType"
-                            control={control}
-                            render={({ field }) => (
-                              <PillToggle
-                                options={SKAFT_TYPE_OPTIONS}
-                                value={field.value ?? null}
-                                onChange={field.onChange}
-                              />
-                            )}
-                          />
-                        </Felt>
-                      </div>
-                    </>
-                  )}
-
-                  {kategori && HAR_HEADCOVER.has(kategori) && (
-                    <div className="col-span-2">
-                      <Felt
-                        label="Original headcover"
-                        error={errors.headcover?.message}
-                        aiBadge={aiFields.has('headcover')}
-                      >
-                        <Controller
-                          name="headcover"
-                          control={control}
-                          render={({ field }) => (
-                            <PillToggle
-                              options={[
-                                { value: 'true', label: 'Ja' },
-                                { value: 'false', label: 'Nei' },
-                              ]}
-                              value={
-                                field.value === true
-                                  ? 'true'
-                                  : field.value === false
-                                    ? 'false'
-                                    : null
-                              }
-                              onChange={(v) => field.onChange(v === 'true')}
-                            />
-                          )}
-                        />
-                      </Felt>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </>
-          )
-        }
-
-        // Create mode: merged category + equipment details
-        return (() => {
-          const kolle = koller[0] ?? null
-          const harSkaft = kolle ? HAR_SKAFT.has(kolle.kategori) : false
-          const harHeadcover = kolle ? HAR_HEADCOVER.has(kolle.kategori) : false
-          const harLoft = kolle ? HAR_LOFT_DRIVER.has(kolle.kategori) : false
-          const label = kolle
-            ? (KATEGORI_OPTIONS.find((o) => o.value === kolle.kategori)?.label ?? kolle.kategori)
-            : ''
-          const erAI = kolle?.id === aiKolleId
-
-          return (
-            <>
-              <CardHeader>
-                <CardTitle>Utstyr</CardTitle>
-                <CardDescription>Velg hvilken type utstyr du ønsker å selge</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <SimpleSelect
-                  value={kolle?.kategori ?? ''}
-                  onValueChange={(v) => {
-                    const kat = v as Category
-                    setKoller([
-                      kolle
-                        ? {
-                            id: kolle.id,
-                            kategori: kat,
-                            merke: '',
-                            modell: '',
-                            confirmed: false,
-                            manuell: false,
-                          }
-                        : { id: crypto.randomUUID(), kategori: kat, merke: '', modell: '' },
-                    ])
-                  }}
-                  placeholder="Velg kategori…"
-                  options={KATEGORI_OPTIONS}
-                  className="max-w-xs"
-                />
-
-                <AnimatePresence>
-                  {kolle && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.22 }}
-                      className="space-y-4"
-                    >
-                      <div className="border-border border-t" />
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground text-sm font-semibold">{label}</span>
-                        {erAI && <AiBadge />}
-                      </div>
-
-                      <div className="space-y-4">
-                        {kolle.manuell ? (
-                          <div className="grid grid-cols-2 gap-4">
-                            <Felt label="Merke" required>
-                              <Input
-                                value={kolle.merke}
-                                onChange={(e) => oppdaterKolle(kolle.id, { merke: e.target.value })}
-                                placeholder="f.eks. TaylorMade"
-                                autoFocus
-                              />
-                            </Felt>
-                            <Felt label="Modell" required>
-                              <Input
-                                value={kolle.modell}
-                                onChange={(e) =>
-                                  oppdaterKolle(kolle.id, { modell: e.target.value })
-                                }
-                                placeholder={
-                                  kolle.kategori === 'driver'
-                                    ? 'f.eks. Stealth 2'
-                                    : kolle.kategori === 'wedge'
-                                      ? 'f.eks. SM9 56°'
-                                      : 'f.eks. Apex Pro'
-                                }
-                              />
-                            </Felt>
-                          </div>
-                        ) : (
-                          <UtstyrSok
-                            category={kolle.kategori}
-                            placeholder={`Søk etter ${label.toLowerCase()}…`}
-                            value={
-                              kolle.confirmed
-                                ? {
-                                    id: '',
-                                    brand: kolle.merke,
-                                    model: kolle.modell,
-                                    year: kolle.aarsmodell ? parseInt(kolle.aarsmodell) : undefined,
-                                    category: kolle.kategori,
-                                  }
-                                : null
-                            }
-                            onChange={(val) => {
-                              if (val) {
-                                oppdaterKolle(kolle.id, {
-                                  merke: val.brand,
-                                  modell: val.model,
-                                  aarsmodell: val.year ? String(val.year) : undefined,
-                                  confirmed: true,
-                                  manuell: false,
-                                })
-                              } else {
-                                oppdaterKolle(kolle.id, {
-                                  merke: '',
-                                  modell: '',
-                                  aarsmodell: undefined,
-                                  confirmed: false,
-                                  manuell: false,
-                                })
-                              }
-                            }}
-                            onManuell={() =>
-                              oppdaterKolle(kolle.id, { confirmed: true, manuell: true })
-                            }
-                          />
-                        )}
-
-                        {kolle.confirmed && (
-                          <div className="grid grid-cols-2 gap-4">
-                            {kolle.manuell && (
-                              <div className="col-span-2">
-                                <Felt label="Årsmodell">
-                                  <SimpleSelect
-                                    value={kolle.aarsmodell ?? ''}
-                                    onValueChange={(v) =>
-                                      oppdaterKolle(kolle.id, { aarsmodell: v })
-                                    }
-                                    placeholder="Ukjent / ikke oppgitt"
-                                    options={AARSMODELL_VALG}
-                                    className="max-w-xs"
-                                  />
-                                </Felt>
-                              </div>
-                            )}
-
-                            {harSkaft && (
-                              <>
-                                <div className="col-span-2">
-                                  <Felt label="Hånd" required>
-                                    <PillToggle
-                                      options={[
-                                        { value: 'right', label: 'Høyre' },
-                                        { value: 'left', label: 'Venstre' },
-                                      ]}
-                                      value={kolle.hand ?? null}
-                                      onChange={(v) => oppdaterKolle(kolle.id, { hand: v })}
-                                    />
-                                  </Felt>
-                                </div>
-
-                                {harLoft && (
-                                  <div className="col-span-2">
-                                    <Felt label="Loft">
-                                      <PillToggle
-                                        options={DRIVER_LOFT_OPTIONS.map((l) => ({
-                                          value: l,
-                                          label: l,
-                                        }))}
-                                        value={kolle.loft ?? null}
-                                        onChange={(v) => oppdaterKolle(kolle.id, { loft: v })}
-                                      />
-                                    </Felt>
-                                  </div>
-                                )}
-
-                                <div className="col-span-2">
-                                  <Felt label="Skaftmodell">
-                                    <SkaftSokDb
-                                      category={SHAFT_KATEGORI_MAP[kolle.kategori] ?? 'iron'}
-                                      placeholder="Søk etter skaft…"
-                                      value={kolle.selectedSkaft ?? null}
-                                      onChange={(val) =>
-                                        oppdaterKolle(kolle.id, {
-                                          selectedSkaft: val ?? undefined,
-                                          skaftModell: val
-                                            ? `${val.brand} ${val.model}`.trim()
-                                            : undefined,
-                                          shaftFlex: undefined,
-                                        })
-                                      }
-                                    />
-                                  </Felt>
-                                </div>
-
-                                {kolle.selectedSkaft && (
-                                  <div className="col-span-2">
-                                    <Felt label="Shaft flex">
-                                      <PillToggle
-                                        options={SHAFT_FLEX_OPTIONS}
-                                        value={kolle.shaftFlex ?? null}
-                                        onChange={(v) => oppdaterKolle(kolle.id, { shaftFlex: v })}
-                                      />
-                                    </Felt>
-                                  </div>
-                                )}
-                              </>
-                            )}
-
-                            {harHeadcover && (
-                              <div className="col-span-2">
-                                <Felt label="Original headcover" required>
-                                  <PillToggle
-                                    options={[
-                                      { value: 'true', label: 'Ja' },
-                                      { value: 'false', label: 'Nei' },
-                                    ]}
-                                    value={
-                                      kolle.headcover === true
-                                        ? 'true'
-                                        : kolle.headcover === false
-                                          ? 'false'
-                                          : null
-                                    }
-                                    onChange={(v) =>
-                                      oppdaterKolle(kolle.id, { headcover: v === 'true' })
-                                    }
-                                  />
-                                </Felt>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </CardContent>
-            </>
-          )
-        })()
-
-      case 'bilder':
-        return (
-          <>
-            <CardHeader>
-              <CardTitle>Bilder</CardTitle>
-              <CardDescription>Annonser med bilder får langt flere henvendelser</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BildeOpplaster {...bildeOpplasterProps} />
-            </CardContent>
-          </>
-        )
-
-      case 'tilstand':
-        return (
-          <>
-            <CardHeader>
-              <CardTitle>Tilstand</CardTitle>
-              <CardDescription>Velg tilstandsgrad og beskriv eventuell slitasje</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="mb-2 flex items-center gap-1.5">
-                  Tilstandsgrad
-                  <span className="text-red-500">*</span>
-                  {aiFields.has('tilstand') && <AiBadge />}
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {TILSTANDER.map((t, i) => (
-                    <motion.button
-                      key={t.value}
-                      type="button"
-                      onClick={() => setTilstand(t.value)}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        transition: { delay: 0.05 * i, duration: 0.25 },
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={cn(
-                        'flex cursor-pointer flex-col items-start rounded-xl border px-4 py-3 text-left transition-all',
-                        tilstand === t.value
-                          ? `${t.klasse} ring-primary ring-2 ring-offset-1`
-                          : 'border-border hover:border-primary/40'
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                          t.klasse
-                        )}
-                      >
-                        {t.label}
-                      </span>
-                      <span className="text-muted-foreground mt-1.5 text-xs">{t.beskrivelse}</span>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-              <Felt
-                label="Beskrivelse av slitasje (valgfritt)"
-                error={errors.skadebeskrivelse?.message}
-              >
-                <Textarea
-                  {...register('skadebeskrivelse')}
-                  placeholder="Beskriv eventuelle riper, dents, slitt grep eller andre merker..."
-                  rows={3}
-                />
-              </Felt>
-            </CardContent>
-          </>
-        )
-
-      case 'pris':
-        return (
-          <>
-            <CardHeader>
-              <CardTitle>Pris og logistikk</CardTitle>
-              <CardDescription>Sett pris og velg om du tilbyr frakt</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <Felt label="Pris (NOK)" required error={errors.pris?.message}>
-                  <div className="relative">
-                    <Input
-                      {...register('pris')}
-                      type="number"
-                      min={0}
-                      placeholder="f.eks. 2490"
-                      className="pr-10"
-                    />
-                    <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm">
-                      kr
-                    </span>
-                  </div>
-                </Felt>
-
-                <Felt label="Selges fra" required error={errors.selgesFra?.message}>
-                  <Input {...register('selgesFra')} placeholder="f.eks. Oslo" />
-                </Felt>
+                )}
 
                 <div className="col-span-2">
+                  <Felt
+                    label="Shaft flex"
+                    error={errors.shaftFlex?.message}
+                    aiBadge={aiFields.has('shaftFlex')}
+                  >
+                    <Controller
+                      name="shaftFlex"
+                      control={control}
+                      render={({ field }) => (
+                        <PillToggle
+                          options={SHAFT_FLEX_OPTIONS}
+                          value={field.value ?? null}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Felt>
+                </div>
+
+                <div className="col-span-2">
+                  <Felt
+                    label="Type skaft"
+                    error={errors.skaftType?.message}
+                    aiBadge={aiFields.has('skaftType')}
+                  >
+                    <Controller
+                      name="skaftType"
+                      control={control}
+                      render={({ field }) => (
+                        <PillToggle
+                          options={SKAFT_TYPE_OPTIONS}
+                          value={field.value ?? null}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                  </Felt>
+                </div>
+              </>
+            )}
+
+            {kategori && HAR_HEADCOVER.has(kategori) && (
+              <div className="col-span-2">
+                <Felt
+                  label="Original headcover"
+                  error={errors.headcover?.message}
+                  aiBadge={aiFields.has('headcover')}
+                >
                   <Controller
-                    name="tilbyrFrakt"
+                    name="headcover"
                     control={control}
                     render={({ field }) => (
-                      <label className="flex cursor-pointer items-start gap-3">
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="mt-0.5"
-                        />
-                        <div>
-                          <span className="text-foreground text-sm font-medium">Tilbyr frakt</span>
-                          <p className="text-muted-foreground text-xs">
-                            Du og kjøper avtaler fraktpris direkte i meldinger.
-                          </p>
-                        </div>
-                      </label>
+                      <PillToggle
+                        options={[
+                          { value: 'true', label: 'Ja' },
+                          { value: 'false', label: 'Nei' },
+                        ]}
+                        value={
+                          field.value === true ? 'true' : field.value === false ? 'false' : null
+                        }
+                        onChange={(v) => field.onChange(v === 'true')}
+                      />
                     )}
                   />
-                </div>
+                </Felt>
               </div>
-            </CardContent>
-          </>
-        )
+            )}
+          </div>
+        </CardContent>
+      </>
+    )
+  }
 
+  function renderEditBilder() {
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Bilder</CardTitle>
+          <CardDescription>Annonser med bilder får langt flere henvendelser</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BildeOpplaster {...bildeOpplasterProps} />
+        </CardContent>
+      </>
+    )
+  }
+
+  function renderEditTilstand() {
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Tilstand</CardTitle>
+          <CardDescription>Velg tilstandsgrad og beskriv eventuell slitasje</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="mb-2 flex items-center gap-1.5">
+              Tilstandsgrad
+              <span className="text-red-500">*</span>
+              {aiFields.has('tilstand') && <AiBadge />}
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              {TILSTANDER.map((t, i) => (
+                <motion.button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setTilstand(t.value)}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: { delay: 0.05 * i, duration: 0.25 },
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={cn(
+                    'flex cursor-pointer flex-col items-start rounded-xl border px-4 py-3 text-left transition-all',
+                    tilstand === t.value
+                      ? `${t.klasse} ring-foreground ring-2 ring-offset-1`
+                      : 'border-border hover:border-foreground/40'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                      t.klasse
+                    )}
+                  >
+                    {t.label}
+                  </span>
+                  <span className="text-muted-foreground mt-1.5 text-xs">{t.beskrivelse}</span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+          <Felt
+            label="Beskrivelse av slitasje (valgfritt)"
+            error={errors.skadebeskrivelse?.message}
+          >
+            <Textarea
+              {...register('skadebeskrivelse')}
+              placeholder="Beskriv eventuelle riper, dents, slitt grep eller andre merker..."
+              rows={3}
+            />
+          </Felt>
+        </CardContent>
+      </>
+    )
+  }
+
+  function renderEditPris() {
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Pris og logistikk</CardTitle>
+          <CardDescription>Sett pris og velg om du tilbyr frakt</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <Felt label="Pris (NOK)" required error={errors.pris?.message}>
+              <div className="relative">
+                <Input
+                  {...register('pris')}
+                  type="number"
+                  min={0}
+                  placeholder="f.eks. 2490"
+                  className="pr-10"
+                />
+                <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm">
+                  kr
+                </span>
+              </div>
+            </Felt>
+
+            <Felt label="Selges fra" required error={errors.selgesFra?.message}>
+              <Input {...register('selgesFra')} placeholder="f.eks. Oslo" />
+            </Felt>
+
+            <div className="col-span-2">
+              <Controller
+                name="tilbyrFrakt"
+                control={control}
+                render={({ field }) => (
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <span className="text-foreground text-sm font-medium">Tilbyr frakt</span>
+                      <p className="text-muted-foreground text-xs">
+                        Du og kjøper avtaler fraktpris direkte i meldinger.
+                      </p>
+                    </div>
+                  </label>
+                )}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </>
+    )
+  }
+
+  // ── Step router ───────────────────────────────────────────────────────────
+
+  function renderStegInnhold() {
+    if (redigerModus) {
+      switch (steg[currentStep]?.id) {
+        case 'kategori':
+          return renderEditKategori()
+        case 'utstyr':
+          return renderEditUtstyr()
+        case 'bilder':
+          return renderEditBilder()
+        case 'tilstand':
+          return renderEditTilstand()
+        case 'pris':
+          return renderEditPris()
+        default:
+          return null
+      }
+    }
+    switch (steg[currentStep]?.id) {
+      case 'metode':
+        return renderMetodeFase()
+      case 'kategori':
+        return renderKategoriFase()
+      case 'detaljer':
+        return renderDetaljerFase()
+      case 'pris':
+        return renderPrisFase()
       default:
         return null
     }
@@ -1133,33 +1520,53 @@ export function SelgUtstyrView({
               </Button>
             </motion.div>
 
-            <span className="text-muted-foreground font-mono text-xs">
-              Steg {currentStep + 1} av {steg.length}
-            </span>
-
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               {erSisteSteg ? (
-                <Button
-                  type="button"
-                  variant="primary"
-                  onClick={() =>
-                    void handleSubmit(onSubmit, () => toast.error('Fyll inn alle påkrevde felt.'))()
-                  }
-                  disabled={!isStegGyldig() || isSubmitting}
-                  className="rounded-xl"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                      {redigerModus ? 'Lagrer…' : 'Publiserer…'}
-                    </>
-                  ) : (
-                    <>
-                      {redigerModus ? 'Lagre endringer' : 'Publiser annonse'}
-                      <CheckIcon className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+                redigerModus ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() =>
+                      void handleSubmit(onSubmit, () =>
+                        toast.error('Fyll inn alle påkrevde felt.')
+                      )()
+                    }
+                    disabled={!isStegGyldig() || isSubmitting}
+                    className="rounded-xl"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                        Lagrer…
+                      </>
+                    ) : (
+                      <>
+                        Lagre endringer
+                        <CheckIcon className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => void submitNy()}
+                    disabled={!pris || parseInt(pris) <= 0 || isSubmittingNy}
+                    className="rounded-xl"
+                  >
+                    {isSubmittingNy ? (
+                      <>
+                        <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                        Publiserer…
+                      </>
+                    ) : (
+                      <>
+                        Legg ut annonse
+                        <CheckIcon className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                )
               ) : (
                 <Button
                   type="button"
@@ -1182,19 +1589,25 @@ export function SelgUtstyrView({
   if (modalModus) return formInnhold
 
   return (
-    <section className="px-20 py-12">
-      <div className="mb-8">
-        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
-          {redigerModus ? 'Rediger annonse' : 'Legg ut utstyr'}
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          {redigerModus
-            ? 'Gjør endringer og lagre annonsen.'
-            : 'Fyll ut skjemaet under for å legge ut en annonse – helt gratis.'}
+    <section className="flex flex-col items-center px-4 py-12">
+      <div className="w-full max-w-xl">
+        <div className="mb-8">
+          <h1 className="text-foreground text-3xl font-semibold tracking-tight">
+            {redigerModus ? 'Rediger annonse' : 'Legg ut utstyr'}
+          </h1>
+          <p className="text-muted-foreground mt-2 text-sm">
+            {redigerModus
+              ? 'Gjør endringer og lagre annonsen.'
+              : 'Fyll ut skjemaet under for å legge ut en annonse – helt gratis.'}
+          </p>
+        </div>
+
+        {formInnhold}
+
+        <p className="text-muted-foreground mt-4 text-center text-sm">
+          Steg {currentStep + 1} av {steg.length}: {steg[currentStep]?.tittel}
         </p>
       </div>
-
-      <div className="max-w-2xl">{formInnhold}</div>
     </section>
   )
 }

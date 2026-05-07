@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { ArrowRight, ImageOff } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface ListingCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -19,97 +21,80 @@ export function ListingCard({
   imageUrl,
   name,
   brand,
-  condition: _condition,
+  condition,
   price,
   location,
   posted,
   actions,
   ...props
 }: ListingCardProps) {
-  const cardRef = React.useRef<HTMLDivElement>(null)
-  const [tiltStyle, setTiltStyle] = React.useState<React.CSSProperties>({})
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return
-    const { left, top, width, height } = cardRef.current.getBoundingClientRect()
-    const x = e.clientX - left
-    const y = e.clientY - top
-    const rotateX = ((y - height / 2) / (height / 2)) * -5
-    const rotateY = ((x - width / 2) / (width / 2)) * 5
-    setTiltStyle({
-      transform: `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`,
-      transition: 'transform 0.1s ease-out',
-    })
-  }
-
-  const handleMouseLeave = () => {
-    setTiltStyle({
-      transform: 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
-      transition: 'transform 0.4s ease-in-out',
-    })
-  }
-
   return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={tiltStyle}
-      className={cn('group cursor-pointer overflow-hidden rounded-xl transform-3d', className)}
-      {...props}
+    <motion.div
+      whileHover={{
+        scale: 1.025,
+        boxShadow: '0px 12px 32px -6px hsl(var(--foreground) / 0.14)',
+        transition: { type: 'spring', stiffness: 320, damping: 22 },
+      }}
+      className={cn(
+        'group border-border/50 bg-card text-card-foreground flex cursor-pointer flex-col overflow-hidden rounded-2xl border shadow-sm',
+        className
+      )}
+      {...(props as React.ComponentProps<typeof motion.div>)}
     >
-      {/* Image area — landscape 4/3 */}
-      <div className="bg-muted relative aspect-4/3 w-full overflow-hidden rounded-xl">
+      {/* Image */}
+      <div className="bg-muted relative aspect-3/2 w-full overflow-hidden">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={name}
-            className="absolute inset-0 h-full w-full transform-[translateZ(-10px)_scale(1.08)] object-cover transition-transform duration-300 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="absolute inset-0 flex transform-[translateZ(-10px)_scale(1.08)] items-center justify-center">
-            <svg
-              width="36"
-              height="36"
-              viewBox="0 0 32 32"
-              fill="none"
-              className="text-muted-foreground/30"
-              aria-hidden="true"
-            >
-              <rect x="15" y="2" width="2" height="14" rx="1" fill="currentColor" />
-              <line
-                x1="16"
-                y1="16"
-                x2="24"
-                y2="26"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <rect x="20" y="24" width="8" height="5" rx="1.5" fill="currentColor" />
-            </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ImageOff className="text-foreground/20 h-8 w-8" />
           </div>
         )}
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
       </div>
 
-      {/* Text content — below the image */}
-      <div className="flex transform-[translateZ(20px)] items-start justify-between gap-2 px-0.5 pt-2.5">
-        <div className="min-w-0">
-          <p className="text-muted-foreground mb-0.5 text-[11px] leading-none">{brand}</p>
-          <p className="text-foreground truncate text-sm leading-snug font-semibold">{name}</p>
-          {(location || posted) && (
-            <p className="text-muted-foreground mt-0.5 text-[11px]">
-              {[location, posted].filter(Boolean).join(' · ')}
-            </p>
+      {/* Content */}
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        {/* Title row */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-lg leading-tight font-bold">{name}</p>
+          </div>
+          {condition && (
+            <span className="border-border text-muted-foreground shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium">
+              {condition}
+            </span>
           )}
         </div>
-        <p className="text-foreground shrink-0 pt-0.5 font-mono text-sm font-bold">
-          {price.toLocaleString('nb-NO')} kr
-        </p>
-      </div>
 
-      {/* Optional action slot (e.g. Rediger / Slett for mine annonser) */}
-      {actions && <div className="mt-2.5 transform-[translateZ(20px)]">{actions}</div>}
-    </div>
+        {/* Subtitle */}
+        <p className="text-muted-foreground text-sm">
+          {[brand, location].filter(Boolean).join(' · ')}
+          {posted && <> &bull; {posted}</>}
+        </p>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Price + CTA */}
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-lg font-bold tabular-nums">
+            {price.toLocaleString('nb-NO')}{' '}
+            <span className="text-muted-foreground text-sm font-normal">kr</span>
+          </p>
+          {!actions && (
+            <button className="group/btn bg-foreground text-background flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-80">
+              Se annonse
+              <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+            </button>
+          )}
+          {actions && <div>{actions}</div>}
+        </div>
+      </div>
+    </motion.div>
   )
 }

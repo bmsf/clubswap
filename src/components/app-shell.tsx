@@ -32,7 +32,7 @@ const PROTECTED_ROUTES = ['/selg', '/annonser', '/lagrede', '/meldinger', '/prof
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const ROUTE_LABEL: Record<string, string> = {
-  '/': 'Utforsk',
+  '/': 'Home',
   '/annonser': 'Mine annonser',
   '/selg': 'Ny annonse',
   '/lagrede': 'Lagrede',
@@ -135,8 +135,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setMobileMenuOpen(false)
   }, [pathname])
 
+  const [headerSearch, setHeaderSearch] = useState('')
+
   const W = sidebarOpen ? 240 : 60
   const breadcrumbs = getBreadcrumbs(pathname)
+
+  function handleHeaderSearch(e: React.SyntheticEvent) {
+    e.preventDefault()
+    const q = headerSearch.trim()
+    if (!q) return
+    router.push(`/search/${encodeURIComponent(q)}`)
+    setHeaderSearch('')
+  }
 
   function handleNavClick(href: string) {
     setMobileMenuOpen(false)
@@ -331,28 +341,106 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden p-3">
         <main className="bg-card main-panel flex flex-1 flex-col overflow-hidden rounded-2xl">
-          <header className="border-border flex h-14 shrink-0 items-center gap-3 border-b px-4 md:h-16 md:px-20">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors md:hidden"
-              aria-label="Åpne meny"
-            >
-              <Bars3Icon className="h-5 w-5" />
-            </button>
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <span>Golftorget</span>
-              {breadcrumbs.map((crumb, i) => (
-                <span key={i} className="flex items-center gap-2">
-                  <span className="text-border">›</span>
-                  {crumb.href ? (
-                    <a href={crumb.href} className="hover:text-foreground transition-colors">
-                      {crumb.label}
-                    </a>
-                  ) : (
-                    <span className="text-foreground font-medium">{crumb.label}</span>
+          <header className="flex h-14 shrink-0 items-center gap-4 px-4">
+            {/* Left: mobile menu + breadcrumbs */}
+            <div className="flex min-w-0 shrink-0 items-center gap-3">
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors md:hidden"
+                aria-label="Åpne meny"
+              >
+                <Bars3Icon className="h-5 w-5" />
+              </button>
+              <div className="hidden items-center gap-1.5 text-sm md:flex">
+                {breadcrumbs.map((crumb, i) => (
+                  <span key={i} className="flex items-center gap-1.5">
+                    {i > 0 && <span className="text-muted-foreground">/</span>}
+                    {crumb.href ? (
+                      <a
+                        href={crumb.href}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {crumb.label}
+                      </a>
+                    ) : (
+                      <span className="text-foreground font-medium">{crumb.label}</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+              <span className="text-foreground text-sm font-semibold md:hidden">
+                {breadcrumbs[breadcrumbs.length - 1]?.label ?? 'Golftorget'}
+              </span>
+            </div>
+
+            {/* Center: search */}
+            <form onSubmit={handleHeaderSearch} className="flex flex-1 justify-center">
+              <div className="bg-muted border-border flex w-full max-w-sm items-center gap-2 rounded-full border px-4 py-2">
+                <MagnifyingGlassIcon className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                <input
+                  type="text"
+                  value={headerSearch}
+                  onChange={(e) => setHeaderSearch(e.target.value)}
+                  placeholder="Søk etter utstyr..."
+                  className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
+                />
+                <kbd className="border-border text-muted-foreground hidden rounded border px-1.5 py-0.5 font-mono text-[10px] md:block">
+                  ⌘K
+                </kbd>
+              </div>
+            </form>
+
+            {/* Right: theme + user */}
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                onClick={() => setDark(!dark)}
+                className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+                aria-label="Bytt fargetema"
+              >
+                {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+              </button>
+              {user ? (
+                <div className="relative">
+                  {profilMeny && (
+                    <div className="bg-background border-border absolute top-full right-0 mt-1 rounded-lg border p-1 shadow-lg">
+                      <form action={loggUt}>
+                        <button
+                          type="submit"
+                          className="text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors"
+                        >
+                          <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
+                          <span>Logg ut</span>
+                        </button>
+                      </form>
+                    </div>
                   )}
-                </span>
-              ))}
+                  <button
+                    onClick={() => setProfilMeny(!profilMeny)}
+                    className="hover:bg-muted flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors"
+                    aria-label="Profilmeny"
+                  >
+                    <div className="bg-muted text-muted-foreground flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold">
+                      {(user.user_metadata?.full_name as string | undefined)
+                        ?.split(' ')
+                        .map((n: string) => n[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase() ??
+                        user.email?.[0]?.toUpperCase() ??
+                        '?'}
+                    </div>
+                  </button>
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => openModal('logg-inn')}
+                  className="hidden md:flex"
+                >
+                  Logg inn
+                </Button>
+              )}
             </div>
           </header>
 
