@@ -109,6 +109,7 @@ export function UtforskClient({ listings }: { listings: Listing[] }) {
                     location={listing.selges_fra}
                     posted={relativTid(listing.opprettet_at)}
                     imageUrl={forsideBilde(listing.bilder)}
+                    href={`/annonser/${listing.id}`}
                   />
                 </Skeleton>
               ))}
