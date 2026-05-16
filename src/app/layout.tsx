@@ -15,16 +15,19 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
-      className={cn(
-        'h-full',
-        'overflow-hidden',
-        monaSans.variable,
-        geistMono.variable,
-        'font-sans'
-      )}
+      lang="nb"
+      suppressHydrationWarning
+      className={cn(monaSans.variable, geistMono.variable, 'font-sans')}
     >
-      <body className="h-full overflow-hidden antialiased">
+      <head>
+        {/* Apply dark class based on system preference before first paint */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=document.documentElement,s=localStorage.getItem('gt-theme');if(s==='dark'||(!s&&window.matchMedia('(prefers-color-scheme:dark)').matches))d.classList.add('dark')}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="antialiased">
         {children}
         <Toaster richColors position="bottom-right" />
       </body>

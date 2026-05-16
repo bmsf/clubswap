@@ -50,7 +50,10 @@ export async function loggUt() {
 
 export async function loggInnMedGoogle(formData: FormData) {
   const headersList = await headers()
-  const origin = headersList.get('origin') ?? `https://${headersList.get('host')}`
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    headersList.get('origin') ??
+    `https://${headersList.get('host')}`
   const supabase = await createClient()
 
   const fra = (formData.get('fra') as string | null) ?? '/'

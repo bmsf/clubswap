@@ -1,7 +1,8 @@
 'use client'
 
 import '@/bones/registry'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/supabase/client'
@@ -10,54 +11,21 @@ import { AuthModal } from '@/components/auth-modal'
 import { useAuthModal } from '@/store/auth-modal'
 import { BekreftSlettModal } from '@/components/annonse-kort-handlinger'
 import { Button } from '@/components/ui/button'
-import type { User } from '@supabase/supabase-js'
-import {
-  Bars3Icon,
-  XMarkIcon,
-  MagnifyingGlassIcon,
-  HomeIcon,
-  TagIcon,
-  PlusIcon,
-  UserIcon,
-  EnvelopeIcon,
-  HeartIcon,
-  Cog6ToothIcon,
-  SunIcon,
-  MoonIcon,
-  ArrowRightStartOnRectangleIcon,
-} from '@heroicons/react/16/solid'
+import { Search, Heart, MessageSquare, Plus, User, Home, LogOut } from 'lucide-react'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { cn } from '@/lib/utils'
+
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const PROTECTED_ROUTES = ['/selg', '/annonser', '/lagrede', '/meldinger', '/profil']
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-
-const ROUTE_LABEL: Record<string, string> = {
-  '/': 'Home',
-  '/annonser': 'Mine annonser',
-  '/selg': 'Ny annonse',
-  '/lagrede': 'Lagrede',
-  '/meldinger': 'Meldinger',
-  '/profil': 'Profil',
-}
-
-type Breadcrumb = { label: string; href?: string }
-
-function getBreadcrumbs(pathname: string): Breadcrumb[] {
-  if (/^\/annonser\/[^/]+\/rediger$/.test(pathname)) {
-    return [{ label: 'Mine annonser', href: '/annonser' }, { label: 'Rediger annonse' }]
-  }
-  const label = ROUTE_LABEL[pathname]
-  return label ? [{ label }] : [{ label: 'Golftorget' }]
-}
-
-const navItems = [
-  { icon: <HomeIcon className="h-4 w-4" />, label: 'Utforsk', href: '/' },
-  { icon: <TagIcon className="h-4 w-4" />, label: 'Mine annonser', href: '/annonser' },
-  { icon: <PlusIcon className="h-4 w-4" />, label: 'Ny annonse', href: '/selg' },
-  { icon: <HeartIcon className="h-4 w-4" />, label: 'Lagrede', href: '/lagrede' },
-  { icon: <EnvelopeIcon className="h-4 w-4" />, label: 'Meldinger', href: '/meldinger' },
-  { icon: <UserIcon className="h-4 w-4" />, label: 'Profil', href: '/profil' },
-]
+const BOTTOM_NAV_ITEMS = [
+  { icon: Home, label: 'Utforsk', href: '/' },
+  { icon: Heart, label: 'Lagrede', href: '/lagrede' },
+  { icon: Plus, label: 'Selg', href: '/selg', center: true },
+  { icon: MessageSquare, label: 'Meldinger', href: '/meldinger' },
+  { icon: User, label: 'Profil', href: '/profil' },
+] as const
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -66,43 +34,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [dark, setDark] = useState(true)
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
   const [authLoaded, setAuthLoaded] = useState(false)
-  const [unreadMessages] = useState<number>(0)
   const [profilMeny, setProfilMeny] = useState(false)
+  const [headerSearch, setHeaderSearch] = useState('')
+  const profilRef = useRef<HTMLDivElement>(null)
 
   const { openModal } = useAuthModal()
-
-  // Sync persisted preferences after hydration (avoids SSR mismatch)
-  useEffect(() => {
-    const storedSidebar = localStorage.getItem('gt-sidebar')
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (storedSidebar !== null) setSidebarOpen(storedSidebar === 'open')
-
-    const storedTheme = localStorage.getItem('gt-theme')
-
-    if (storedTheme !== null) setDark(storedTheme === 'dark')
-  }, [])
-
-  // Apply dark class to <html>
-  useEffect(() => {
-    const root = document.documentElement
-    if (dark) root.classList.add('dark')
-    else root.classList.remove('dark')
-  }, [dark])
-
-  // Persist theme preference
-  useEffect(() => {
-    localStorage.setItem('gt-theme', dark ? 'dark' : 'light')
-  }, [dark])
-
-  // Persist sidebar preference
-  useEffect(() => {
-    localStorage.setItem('gt-sidebar', sidebarOpen ? 'open' : 'closed')
-  }, [sidebarOpen])
 
   useEffect(() => {
     const supabase = createClient()
@@ -118,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Open auth modal when middleware redirects here with ?fra=
+  // Open auth modal when middleware redirects with ?fra=
   useEffect(() => {
     if (!authLoaded) return
     const fra = searchParams.get('fra')
@@ -128,17 +66,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [authLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Close menus on navigation
+  // Close profile menu on navigation
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setProfilMeny(false)
-    setMobileMenuOpen(false)
   }, [pathname])
 
-  const [headerSearch, setHeaderSearch] = useState('')
-
-  const W = sidebarOpen ? 240 : 60
-  const breadcrumbs = getBreadcrumbs(pathname)
+  // Close profile menu on outside click
+  useEffect(() => {
+    if (!profilMeny) return
+    const handle = (e: MouseEvent) => {
+      if (profilRef.current && !profilRef.current.contains(e.target as Node)) {
+        setProfilMeny(false)
+      }
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [profilMeny])
 
   function handleHeaderSearch(e: React.SyntheticEvent) {
     e.preventDefault()
@@ -149,7 +93,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   function handleNavClick(href: string) {
-    setMobileMenuOpen(false)
     if (PROTECTED_ROUTES.includes(href) && !user) {
       openModal('logg-inn', href)
     } else {
@@ -157,458 +100,166 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const initials =
+    (user?.user_metadata?.full_name as string | undefined)
+      ?.split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() ??
+    user?.email?.[0]?.toUpperCase() ??
+    '?'
+
   return (
-    <div className="bg-background text-foreground flex h-screen overflow-hidden overscroll-none">
-      {/* ── Left Sidebar (desktop only) ──────────────────────────────────────── */}
-      <aside
-        className="bg-background text-foreground hidden shrink-0 flex-col overflow-hidden transition-all duration-300 ease-in-out md:flex"
-        style={{ width: W }}
-      >
-        {/* Logo + toggle */}
-        <div className="flex h-16 shrink-0 items-center justify-between px-3">
-          <div className="flex min-w-0 items-center overflow-hidden">
-            {sidebarOpen && (
-              <span className="text-foreground text-sm font-semibold whitespace-nowrap">
-                Golftorget
-              </span>
-            )}
-          </div>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors"
-            aria-label="Åpne/lukk meny"
-          >
-            <Bars3Icon className="h-4 w-4" />
-          </button>
-        </div>
+    <div className="bg-background text-foreground flex min-h-screen flex-col">
+      {/* ── Top navbar ─────────────────────────────────────────────────────── */}
+      <header className="bg-background sticky top-0 z-40 h-16">
+        <div className="mx-auto flex h-full w-full max-w-7xl items-center gap-3 px-4 md:gap-4 md:px-6">
+          {/* Brand */}
+          <Link href="/" className="text-foreground shrink-0 text-sm font-semibold tracking-tight">
+            Golftorget
+          </Link>
 
-        {/* Search */}
-        {sidebarOpen && (
-          <div className="mb-4 shrink-0 px-3">
-            <div className="bg-muted border-border text-muted-foreground flex h-9 items-center gap-2 rounded-lg border px-3 text-sm">
-              <MagnifyingGlassIcon className="h-3.5 w-3.5 shrink-0" />
-              <span className="flex-1">Søk</span>
-              <span className="bg-background border-border rounded border px-1.5 py-0.5 font-mono text-xs">
-                ⌘K
-              </span>
+          {/* Search */}
+          <form onSubmit={handleHeaderSearch} className="flex-1">
+            <div className="bg-muted mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full px-4 py-2.5">
+              <Search className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+              <input
+                type="text"
+                value={headerSearch}
+                onChange={(e) => setHeaderSearch(e.target.value)}
+                placeholder="Hva ser du etter?"
+                className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
+              />
             </div>
-          </div>
-        )}
+          </form>
 
-        {/* Nav */}
-        <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2">
-          {sidebarOpen && (
-            <p className="text-muted-foreground mb-1 px-2 text-[11px] font-medium tracking-widest uppercase">
-              Navigasjon
-            </p>
-          )}
-
-          {navItems.map((item) => {
-            const active = pathname === item.href
-            return (
-              <button
-                key={item.href}
-                onClick={() => handleNavClick(item.href)}
-                className={[
-                  'flex h-9 w-full shrink-0 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
-                  sidebarOpen ? '' : 'justify-center',
-                  active ? 'bg-muted text-highlight font-medium' : 'text-highlight hover:bg-muted',
-                ].join(' ')}
-              >
-                <span className="shrink-0">{item.icon}</span>
-                {sidebarOpen && (
-                  <>
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {item.label === 'Meldinger' && user && unreadMessages > 0 && (
-                      <span className="bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-                        {unreadMessages}
-                      </span>
-                    )}
-                  </>
-                )}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Bottom: theme + settings + user */}
-        <div className="border-border flex shrink-0 flex-col gap-0.5 border-t px-2 pt-3 pb-4">
-          <button
-            onClick={() => setDark(!dark)}
-            className={[
-              'text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
-              sidebarOpen ? '' : 'justify-center',
-            ].join(' ')}
-            aria-label="Bytt fargetema"
-          >
-            {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-            {sidebarOpen && <span>{dark ? 'Lyst tema' : 'Mørkt tema'}</span>}
-          </button>
-
-          <button
-            className={[
-              'text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
-              sidebarOpen ? '' : 'justify-center',
-            ].join(' ')}
-          >
-            <Cog6ToothIcon className="h-4 w-4" />
-            {sidebarOpen && <span>Innstillinger</span>}
-          </button>
-
-          {user ? (
-            <div className="relative mt-1">
-              {profilMeny && (
-                <div className="bg-background border-border absolute right-0 bottom-full left-0 mb-1 rounded-lg border p-1 shadow-lg">
-                  <form action={loggUt}>
-                    <button
-                      type="submit"
-                      className="text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors"
-                    >
-                      <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
-                      {sidebarOpen && <span>Logg ut</span>}
-                    </button>
-                  </form>
-                </div>
-              )}
-              <button
-                onClick={() => setProfilMeny(!profilMeny)}
-                className={[
-                  'hover:bg-muted flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 transition-colors',
-                  sidebarOpen ? '' : 'justify-center',
-                ].join(' ')}
-              >
-                <div className="bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-                  {(user.user_metadata?.full_name as string | undefined)
-                    ?.split(' ')
-                    .map((n: string) => n[0])
-                    .join('')
-                    .slice(0, 2)
-                    .toUpperCase() ??
-                    user.email?.[0]?.toUpperCase() ??
-                    '?'}
-                </div>
-                {sidebarOpen && (
-                  <div className="flex min-w-0 flex-col text-left">
-                    <span className="text-highlight truncate text-sm leading-tight font-medium">
-                      {(user.user_metadata?.full_name as string | undefined) ?? user.email}
-                    </span>
-                    <span className="text-highlight/50 text-xs leading-tight">Golfspiller</span>
-                  </div>
-                )}
-              </button>
-            </div>
-          ) : (
-            <div
-              className={[
-                'mt-1 flex flex-col gap-1.5 px-1',
-                sidebarOpen ? '' : 'items-center',
-              ].join(' ')}
+          {/* Right: desktop only */}
+          <div className="hidden shrink-0 items-center gap-1 md:flex">
+            <button
+              onClick={() => handleNavClick('/lagrede')}
+              className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+              aria-label="Lagrede"
             >
-              {sidebarOpen ? (
-                <>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => openModal('logg-inn')}
-                  >
-                    Logg inn
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => openModal('registrer')}
-                  >
-                    Registrer deg
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="primary"
-                  size="icon"
-                  onClick={() => openModal('logg-inn')}
-                  aria-label="Logg inn"
+              <Heart className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handleNavClick('/meldinger')}
+              className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+              aria-label="Meldinger"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handleNavClick('/selg')}
+              className="bg-primary-btn text-primary-btn-fg ml-1 rounded-full px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+            >
+              + Selg
+            </button>
+
+            {user ? (
+              <div className="relative ml-1" ref={profilRef}>
+                <button
+                  onClick={() => setProfilMeny(!profilMeny)}
+                  className="bg-muted text-muted-foreground flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-xs font-semibold transition-colors hover:opacity-80"
+                  aria-label="Profilmeny"
                 >
-                  <UserIcon className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col overflow-hidden p-3">
-        <main className="bg-card main-panel flex flex-1 flex-col overflow-hidden rounded-2xl">
-          <header className="flex h-14 shrink-0 items-center gap-4 px-4">
-            {/* Left: mobile menu + breadcrumbs */}
-            <div className="flex min-w-0 shrink-0 items-center gap-3">
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors md:hidden"
-                aria-label="Åpne meny"
-              >
-                <Bars3Icon className="h-5 w-5" />
-              </button>
-              <div className="hidden items-center gap-1.5 text-sm md:flex">
-                {breadcrumbs.map((crumb, i) => (
-                  <span key={i} className="flex items-center gap-1.5">
-                    {i > 0 && <span className="text-muted-foreground">/</span>}
-                    {crumb.href ? (
-                      <a
-                        href={crumb.href}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {crumb.label}
-                      </a>
-                    ) : (
-                      <span className="text-foreground font-medium">{crumb.label}</span>
-                    )}
-                  </span>
-                ))}
-              </div>
-              <span className="text-foreground text-sm font-semibold md:hidden">
-                {breadcrumbs[breadcrumbs.length - 1]?.label ?? 'Golftorget'}
-              </span>
-            </div>
-
-            {/* Center: search */}
-            <form onSubmit={handleHeaderSearch} className="flex flex-1 justify-center">
-              <div className="bg-muted border-border flex w-full max-w-sm items-center gap-2 rounded-full border px-4 py-2">
-                <MagnifyingGlassIcon className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
-                <input
-                  type="text"
-                  value={headerSearch}
-                  onChange={(e) => setHeaderSearch(e.target.value)}
-                  placeholder="Søk etter utstyr..."
-                  className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
-                />
-                <kbd className="border-border text-muted-foreground hidden rounded border px-1.5 py-0.5 font-mono text-[10px] md:block">
-                  ⌘K
-                </kbd>
-              </div>
-            </form>
-
-            {/* Right: theme + user */}
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                onClick={() => setDark(!dark)}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-8 w-8 items-center justify-center rounded-md transition-colors"
-                aria-label="Bytt fargetema"
-              >
-                {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-              </button>
-              {user ? (
-                <div className="relative">
+                  {initials}
+                </button>
+                <AnimatePresence>
                   {profilMeny && (
-                    <div className="bg-background border-border absolute top-full right-0 mt-1 rounded-lg border p-1 shadow-lg">
+                    <motion.div
+                      className="bg-background border-border absolute top-full right-0 mt-1.5 min-w-37 rounded-xl border p-1 shadow-lg"
+                      initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                      transition={{ duration: 0.12 }}
+                    >
+                      <button
+                        onClick={() => handleNavClick('/profil')}
+                        className="text-foreground hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm transition-colors"
+                      >
+                        <User className="h-4 w-4 shrink-0" />
+                        Profil
+                      </button>
                       <form action={loggUt}>
                         <button
                           type="submit"
-                          className="text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors"
+                          className="text-foreground hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm transition-colors"
                         >
-                          <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
-                          <span>Logg ut</span>
+                          <LogOut className="h-4 w-4 shrink-0" />
+                          Logg ut
                         </button>
                       </form>
-                    </div>
+                    </motion.div>
                   )}
-                  <button
-                    onClick={() => setProfilMeny(!profilMeny)}
-                    className="hover:bg-muted flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors"
-                    aria-label="Profilmeny"
-                  >
-                    <div className="bg-muted text-muted-foreground flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold">
-                      {(user.user_metadata?.full_name as string | undefined)
-                        ?.split(' ')
-                        .map((n: string) => n[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase() ??
-                        user.email?.[0]?.toUpperCase() ??
-                        '?'}
-                    </div>
-                  </button>
+                </AnimatePresence>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openModal('logg-inn')}
+                className="ml-1"
+              >
+                Logg inn
+              </Button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Page content ───────────────────────────────────────────────────── */}
+      <main className="flex-1 pb-16 md:pb-0">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, ease: 'easeOut' }}
+        >
+          {children}
+        </motion.div>
+      </main>
+
+      {/* ── Bottom nav (mobile only) ────────────────────────────────────────── */}
+      <nav className="bg-background fixed right-0 bottom-0 left-0 z-40 flex md:hidden">
+        {BOTTOM_NAV_ITEMS.map((item) => {
+          const Icon = item.icon
+          const active = pathname === item.href
+          const isCenter = 'center' in item && item.center
+
+          return (
+            <button
+              key={item.href}
+              onClick={() => handleNavClick(item.href)}
+              className="flex flex-1 flex-col items-center justify-center py-2 transition-colors"
+            >
+              {isCenter ? (
+                <div className="bg-primary-btn flex h-11 w-11 items-center justify-center rounded-full">
+                  <Icon className="text-primary-btn-fg h-5 w-5" />
                 </div>
               ) : (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => openModal('logg-inn')}
-                  className="hidden md:flex"
-                >
-                  Logg inn
-                </Button>
-              )}
-            </div>
-          </header>
-
-          <motion.div
-            key={pathname}
-            className="flex-1 touch-pan-y overflow-y-auto overscroll-none"
-            style={{ scrollbarWidth: 'none' }}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-          >
-            {children}
-          </motion.div>
-        </main>
-      </div>
-
-      {/* ── Mobile drawer ────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-40 bg-black/40 md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <motion.aside
-              className="bg-background text-foreground fixed inset-y-0 left-0 z-50 flex w-72 flex-col overflow-hidden md:hidden"
-              initial={{ x: -288 }}
-              animate={{ x: 0 }}
-              exit={{ x: -288 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-            >
-              {/* Logo + close */}
-              <div className="flex h-14 shrink-0 items-center justify-between px-3">
-                <span className="text-foreground text-sm font-semibold">Golftorget</span>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors"
-                  aria-label="Lukk meny"
-                >
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Search */}
-              <div className="mb-4 shrink-0 px-3">
-                <div className="bg-muted border-border text-muted-foreground flex h-9 items-center gap-2 rounded-lg border px-3 text-sm">
-                  <MagnifyingGlassIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="flex-1">Søk</span>
-                </div>
-              </div>
-
-              {/* Nav */}
-              <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2">
-                <p className="text-muted-foreground mb-1 px-2 text-[11px] font-medium tracking-widest uppercase">
-                  Navigasjon
-                </p>
-                {navItems.map((item) => {
-                  const active = pathname === item.href
-                  return (
-                    <button
-                      key={item.href}
-                      onClick={() => handleNavClick(item.href)}
-                      className={[
-                        'flex h-9 w-full shrink-0 cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors',
-                        active
-                          ? 'bg-muted text-highlight font-medium'
-                          : 'text-highlight hover:bg-muted',
-                      ].join(' ')}
-                    >
-                      <span className="shrink-0">{item.icon}</span>
-                      <span className="flex-1 text-left">{item.label}</span>
-                      {item.label === 'Meldinger' && user && unreadMessages > 0 && (
-                        <span className="bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-                          {unreadMessages}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Bottom */}
-              <div className="border-border flex shrink-0 flex-col gap-0.5 border-t px-2 pt-3 pb-4">
-                <button
-                  onClick={() => setDark(!dark)}
-                  className="text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors"
-                  aria-label="Bytt fargetema"
-                >
-                  {dark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
-                  <span>{dark ? 'Lyst tema' : 'Mørkt tema'}</span>
-                </button>
-
-                <button className="text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors">
-                  <Cog6ToothIcon className="h-4 w-4" />
-                  <span>Innstillinger</span>
-                </button>
-
-                {user ? (
-                  <div className="relative mt-1">
-                    {profilMeny && (
-                      <div className="bg-background border-border absolute right-0 bottom-full left-0 mb-1 rounded-lg border p-1 shadow-lg">
-                        <form action={loggUt}>
-                          <button
-                            type="submit"
-                            className="text-highlight hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors"
-                          >
-                            <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
-                            <span>Logg ut</span>
-                          </button>
-                        </form>
-                      </div>
+                <>
+                  <Icon
+                    className={cn(
+                      'h-5 w-5',
+                      active ? 'dark:text-foreground text-[#1A1A18]' : 'text-[#C0BDB6]'
                     )}
-                    <button
-                      onClick={() => setProfilMeny(!profilMeny)}
-                      className="hover:bg-muted flex h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 transition-colors"
-                    >
-                      <div className="bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-                        {(user.user_metadata?.full_name as string | undefined)
-                          ?.split(' ')
-                          .map((n: string) => n[0])
-                          .join('')
-                          .slice(0, 2)
-                          .toUpperCase() ??
-                          user.email?.[0]?.toUpperCase() ??
-                          '?'}
-                      </div>
-                      <div className="flex min-w-0 flex-col text-left">
-                        <span className="text-highlight truncate text-sm leading-tight font-medium">
-                          {(user.user_metadata?.full_name as string | undefined) ?? user.email}
-                        </span>
-                        <span className="text-highlight/50 text-xs leading-tight">Golfspiller</span>
-                      </div>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="mt-1 flex flex-col gap-1.5 px-1">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => {
-                        setMobileMenuOpen(false)
-                        openModal('logg-inn')
-                      }}
-                    >
-                      Logg inn
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => {
-                        setMobileMenuOpen(false)
-                        openModal('registrer')
-                      }}
-                    >
-                      Registrer deg
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+                  />
+                  <span
+                    className={cn(
+                      'mt-0.5 text-[10px] font-medium',
+                      active ? 'dark:text-foreground text-[#1A1A18]' : 'text-[#C0BDB6]'
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                </>
+              )}
+            </button>
+          )
+        })}
+      </nav>
 
       <AuthModal />
       <BekreftSlettModal />

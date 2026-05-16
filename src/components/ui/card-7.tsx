@@ -16,6 +16,7 @@ interface ListingCardProps extends React.HTMLAttributes<HTMLDivElement> {
   posted?: string
   actions?: React.ReactNode
   href?: string
+  flat?: boolean
 }
 
 export function ListingCard({
@@ -29,6 +30,7 @@ export function ListingCard({
   posted,
   actions,
   href,
+  flat,
   ...props
 }: ListingCardProps) {
   const Wrapper = href ? Link : 'div'
@@ -36,61 +38,59 @@ export function ListingCard({
   return (
     <motion.div
       whileHover={{
-        scale: 1.025,
-        boxShadow: '0px 12px 32px -6px hsl(var(--foreground) / 0.14)',
+        boxShadow: '0px 4px 20px -4px hsl(var(--foreground) / 0.12)',
         transition: { type: 'spring', stiffness: 320, damping: 22 },
       }}
       className={cn(
-        'group border-border/50 bg-card text-card-foreground flex cursor-pointer flex-col overflow-hidden rounded-2xl border shadow-sm',
+        'group text-card-foreground flex cursor-pointer flex-col overflow-hidden',
+        flat ? 'bg-transparent' : 'bg-card rounded-xl shadow-sm',
         className
       )}
       {...(props as React.ComponentProps<typeof motion.div>)}
     >
       <Wrapper href={href as string} className="flex flex-1 flex-col">
         {/* Image */}
-        <div className="bg-muted relative aspect-3/2 w-full overflow-hidden">
+        <div
+          className={cn(
+            'bg-muted relative aspect-square overflow-hidden',
+            flat ? 'm-2 rounded-sm' : 'w-full rounded-t-xl'
+          )}
+        >
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={name}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="absolute inset-0 h-full w-full object-cover"
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <ImageOff className="text-foreground/20 h-8 w-8" />
             </div>
           )}
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex flex-1 flex-col gap-1.5 px-3.5 py-3">
           {/* Title row */}
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate text-lg leading-tight font-bold">{name}</p>
-            </div>
+            <p className="truncate text-sm leading-snug font-medium">{name}</p>
             {condition && (
-              <span className="border-border text-muted-foreground shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium">
+              <span className="border-border text-muted-foreground shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium">
                 {condition}
               </span>
             )}
           </div>
 
           {/* Subtitle */}
-          <p className="text-muted-foreground text-sm">
-            {[brand, location].filter(Boolean).join(' · ')}
-            {posted && <> &bull; {posted}</>}
+          <p className="text-muted-foreground text-[10px] leading-snug">
+            {[brand, location, posted].filter(Boolean).join(' · ')}
           </p>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
           {/* Price + CTA */}
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-lg font-bold tabular-nums">
+          <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+            <p className="text-sm font-semibold tabular-nums">
               {price.toLocaleString('nb-NO')}{' '}
-              <span className="text-muted-foreground text-sm font-normal">kr</span>
+              <span className="text-muted-foreground font-normal">kr</span>
             </p>
             {actions && <div>{actions}</div>}
           </div>
