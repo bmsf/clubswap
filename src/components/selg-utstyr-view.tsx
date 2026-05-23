@@ -160,6 +160,12 @@ export function SelgUtstyrView({
   const [fraktInkludert, setFraktInkludert] = useState(false)
   const [isSubmittingNy, setIsSubmittingNy] = useState(false)
 
+  // ── Navigation guard ──────────────────────────────────────────────────────
+  const [pendingNavHref, setPendingNavHref] = useState<string | null>(null)
+
+  // Condition: any category-step data has been filled in
+  const hasUnsavedProgress = !redigerModus && (valgtModell !== null || uiKategori !== null)
+
   // ── React Hook Form (edit mode) ───────────────────────────────────────────
 
   const {
@@ -261,6 +267,70 @@ export function SelgUtstyrView({
     fraktInkludert,
   ])
 
+  // ── Navigation guard effects ──────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!hasUnsavedProgress) return
+
+    // Browser refresh / tab close
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    // In-app link clicks — capture phase so we run before Next.js
+    const handleClick = (e: MouseEvent) => {
+      const anchor = (e.target as Element).closest('a')
+      if (!anchor) return
+      const href = anchor.getAttribute('href') ?? ''
+      // Ignore hash-only, external, and same-page links
+      if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto'))
+        return
+      if (href === window.location.pathname) return
+      e.preventDefault()
+      e.stopPropagation()
+      setPendingNavHref(href)
+    }
+    document.addEventListener('click', handleClick, true)
+
+    // Back / forward button
+    const handlePopState = () => {
+      // Push the current state back so the URL doesn't change yet
+      history.pushState(null, '', window.location.href)
+      setPendingNavHref('__back__')
+    }
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('click', handleClick, true)
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [hasUnsavedProgress])
+
+  function confirmLeave() {
+    localStorage.removeItem('golftorget_listing_draft')
+    const href = pendingNavHref
+    setPendingNavHref(null)
+    if (href === '__back__') {
+      history.back()
+    } else if (href) {
+      router.push(href)
+    }
+  }
+
+  function saveDraftAndLeave() {
+    // Draft is already auto-saved to localStorage; just navigate
+    const href = pendingNavHref
+    setPendingNavHref(null)
+    if (href === '__back__') {
+      history.back()
+    } else if (href) {
+      router.push(href)
+    }
+  }
+
   // ── Navigation ───────────────────────────────────────────────────────────
 
   function gaTil(i: number) {
@@ -359,14 +429,23 @@ export function SelgUtstyrView({
 
   // ── Model selection (model-database-driven flow) ─────────────────────────
 
+  // DB categories that map directly to UiKategori (no Category type equivalent)
+  const DIRECT_UI_MAP: Partial<Record<string, { ui: UiKategori; underkat: string | null }>> = {
+    baller: { ui: 'baller', underkat: null },
+  }
+
   // Normalise DB category strings from golf_equipment to the canonical Category type
   function normaliserKategori(cat: string): Parameters<typeof kategoriTilUiKategori>[0] {
     const map: Record<string, Parameters<typeof kategoriTilUiKategori>[0]> = {
       iron: 'iron_set',
       irons: 'iron_set',
+      jernsett: 'iron_set',
       fairway: 'fairway_wood',
       bag: 'golf_bag',
+      stand_bag: 'golf_bag',
+      cart_bag: 'golf_bag',
       shoes: 'golf_shoes',
+      sko: 'golf_shoes',
       annet: 'other',
     }
     return (map[cat] ?? cat) as Parameters<typeof kategoriTilUiKategori>[0]
@@ -375,9 +454,17 @@ export function SelgUtstyrView({
   function velgModell(modell: ValgtModell | null) {
     setValgtModell(modell)
     if (!modell) return
-    const { ui, underkat } = kategoriTilUiKategori(normaliserKategori(modell.category))
-    setUiKategori(ui)
-    setUnderkategori(underkat)
+    const direct = DIRECT_UI_MAP[modell.category]
+    if (direct) {
+      setUiKategori(direct.ui)
+      setUnderkategori(direct.underkat)
+    } else {
+      const mapped = kategoriTilUiKategori(normaliserKategori(modell.category))
+      if (mapped) {
+        setUiKategori(mapped.ui)
+        setUnderkategori(mapped.underkat)
+      }
+    }
     setMerke(modell.brand)
     setTittel(`${modell.brand} ${modell.model}`)
   }
@@ -1820,6 +1907,62 @@ export function SelgUtstyrView({
           Steg {currentStep + 1} av {steg.length}: {steg[currentStep]?.tittel}
         </p>
       </div>
+
+      {/* Leave-page dialog */}
+      {pendingNavHref !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setPendingNavHref(null)}
+          />
+          <div className="bg-card border-border relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setPendingNavHref(null)}
+              className="text-muted-foreground hover:text-foreground absolute top-3.5 right-3.5 flex h-7 w-7 items-center justify-center rounded-full transition-colors"
+              aria-label="Lukk"
+            >
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path
+                  d="M1 1l11 11M12 1L1 12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+            <div className="flex flex-col items-center px-7 pt-8 pb-6">
+              <p className="text-foreground mb-1 text-[1.1rem] font-bold">Forlat siden?</p>
+              <p className="text-muted-foreground mb-6 text-center text-xs leading-relaxed">
+                Du har startet en annonse. Vil du lagre utkastet slik at du kan fortsette senere,
+                eller forlate uten å lagre?
+              </p>
+              <Button
+                onClick={saveDraftAndLeave}
+                className="bg-foreground text-background hover:bg-foreground/90 mb-2 h-10 w-full rounded-xl font-semibold"
+              >
+                Lagre utkast og forlat
+              </Button>
+              <Button
+                variant="outline"
+                onClick={confirmLeave}
+                className="border-border bg-background text-foreground hover:bg-muted h-10 w-full rounded-xl border"
+              >
+                Forlat uten å lagre
+              </Button>
+            </div>
+            <div className="border-border border-t px-7 py-4 text-center">
+              <button
+                type="button"
+                onClick={() => setPendingNavHref(null)}
+                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              >
+                Bli på siden
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

@@ -3,6 +3,12 @@
 import { useState, useTransition, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui/input'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import { searchModeller, type ModellGruppe } from '@/app/actions/searchModeller'
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/16/solid'
 import { cn } from '@/lib/utils'
@@ -17,22 +23,64 @@ export interface ValgtModell {
 
 const KATEGORI_LABEL: Record<string, string> = {
   driver: 'Driver',
-  fairway_wood: 'Fairway',
-  fairway: 'Fairway',
+  fairway_wood: 'Fairway wood',
+  fairway: 'Fairway wood',
   hybrid: 'Hybrid',
   iron_set: 'Jernsett',
   iron: 'Jern',
   single_iron: 'Enkeltjern',
   irons: 'Jernsett',
+  jernsett: 'Jernsett',
   wedge: 'Wedge',
   putter: 'Putter',
   golf_bag: 'Bag',
   bag: 'Bag',
+  stand_bag: 'Stand bag',
+  cart_bag: 'Cart bag',
   golf_shoes: 'Sko',
   shoes: 'Sko',
+  sko: 'Sko',
   rangefinder: 'Avstandsmåler',
+  baller: 'Baller',
   other: 'Annet',
   annet: 'Annet',
+}
+
+const KATEGORI_SORT_ORDER = [
+  'driver',
+  'fairway_wood',
+  'hybrid',
+  'jernsett',
+  'wedge',
+  'putter',
+  'stand_bag',
+  'cart_bag',
+  'sko',
+  'baller',
+  'rangefinder',
+  'annet',
+]
+
+interface KategoriEntry {
+  gruppe: ModellGruppe
+  equipmentId: string
+  count: number
+}
+
+function grupperEtterKategori(resultater: ModellGruppe[]): Map<string, KategoriEntry[]> {
+  const map = new Map<string, KategoriEntry[]>()
+  for (const gruppe of resultater) {
+    for (const v of gruppe.variants) {
+      if (!map.has(v.category)) map.set(v.category, [])
+      map.get(v.category)!.push({ gruppe, equipmentId: v.equipmentId, count: v.count })
+    }
+  }
+  // Sort categories by preferred order
+  const sorted = new Map<string, KategoriEntry[]>()
+  const knownOrder = KATEGORI_SORT_ORDER.filter((k) => map.has(k))
+  const rest = [...map.keys()].filter((k) => !KATEGORI_SORT_ORDER.includes(k))
+  for (const k of [...knownOrder, ...rest]) sorted.set(k, map.get(k)!)
+  return sorted
 }
 
 interface Props {
@@ -155,35 +203,46 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
                 </p>
               </div>
             ) : (
-              resultater.map((gruppe) => (
-                <div key={`${gruppe.brand}__${gruppe.model}`}>
-                  <p className="text-muted-foreground mb-2 text-xs font-medium">
-                    {gruppe.brand} {gruppe.model}
-                    {gruppe.year ? <span className="ml-1.5 font-mono">{gruppe.year}</span> : null}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {gruppe.variants.map((v) => (
-                      <button
-                        key={v.equipmentId}
-                        type="button"
-                        onClick={() => velgVariant(gruppe, v.category, v.equipmentId)}
-                        className="border-border bg-background hover:border-foreground/40 hover:bg-muted flex cursor-pointer flex-col items-start rounded-xl border px-4 py-3 text-left transition-all active:scale-[0.98]"
-                      >
-                        <span className="text-sm font-medium">
-                          {KATEGORI_LABEL[v.category] ?? v.category}
+              <Accordion multiple={false} className="w-full">
+                {[...grupperEtterKategori(resultater)].map(([kategori, entries]) => (
+                  <AccordionItem key={kategori} value={kategori}>
+                    <AccordionTrigger className="text-sm">
+                      <span>
+                        {KATEGORI_LABEL[kategori] ?? kategori}
+                        <span className="text-muted-foreground ml-1.5 font-normal">
+                          ({entries.length})
                         </span>
-                        <span className="text-muted-foreground mt-0.5 text-xs tabular-nums">
-                          {v.count === 0
-                            ? 'Ingen aktive'
-                            : v.count === 1
-                              ? '1 aktiv'
-                              : `${v.count} aktive`}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-col gap-0.5 pt-1 pb-2">
+                        {entries.map(({ gruppe, equipmentId, count }) => (
+                          <button
+                            key={equipmentId}
+                            type="button"
+                            onClick={() => velgVariant(gruppe, kategori, equipmentId)}
+                            className="hover:bg-muted flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left transition-colors"
+                          >
+                            <span className="text-sm">
+                              {gruppe.brand} {gruppe.model}
+                              {gruppe.year ? (
+                                <span className="text-muted-foreground ml-1.5 text-xs">
+                                  {gruppe.year}
+                                </span>
+                              ) : null}
+                            </span>
+                            {count > 0 && (
+                              <span className="text-muted-foreground ml-3 shrink-0 text-xs tabular-nums">
+                                {count === 1 ? '1 aktiv' : `${count} aktive`}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             )}
 
             <div className="border-border border-t pt-3">
