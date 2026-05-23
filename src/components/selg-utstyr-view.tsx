@@ -502,8 +502,8 @@ export function SelgUtstyrView({
 
     const payload = {
       kategori: uiKategoriTilDb(uiKategori, underkategori),
-      merke: merke || 'Ukjent',
-      modell: tittel || merke || 'Ukjent',
+      merke: valgtModell ? valgtModell.brand : merke || 'Ukjent',
+      modell: valgtModell ? valgtModell.model : tittel || merke || 'Ukjent',
       tilstand: NY_TILSTAND_LABEL[nyTilstand],
       pris: parseInt(pris),
       selgesFra: '',

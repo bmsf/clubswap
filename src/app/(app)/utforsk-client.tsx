@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ListingCard } from '@/components/ui/card-7'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Check, ChevronDown, ChevronRight, SlidersHorizontal } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, SlidersHorizontal, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { searchModeller, type ModellGruppe } from '@/app/actions/searchModeller'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -306,6 +307,91 @@ function CategoryTree({
   )
 }
 
+// ── ModellFilterRow ───────────────────────────────────────────────────────────
+
+function ModellFilterRow({
+  value,
+  onChange,
+}: {
+  value: { brand: string; model: string } | null
+  onChange: (v: { brand: string; model: string } | null) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<ModellGruppe[]>([])
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const q = e.target.value
+    setQuery(q)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (q.length < 2) {
+      setResults([])
+      return
+    }
+    timerRef.current = setTimeout(async () => {
+      const res = await searchModeller(q)
+      setResults(res)
+    }, 300)
+  }
+
+  if (value) {
+    return (
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">
+          {value.brand} {value.model}
+        </span>
+        <button
+          onClick={() => onChange(null)}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Fjern modellfilter"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <input
+        type="text"
+        value={query}
+        onChange={handleInput}
+        placeholder="Søk, f.eks. Stealth 2…"
+        className="bg-muted w-full rounded-lg px-3 py-2 text-sm outline-none"
+      />
+      {results.length > 0 && (
+        <div className="flex flex-col">
+          {results.map((r) => (
+            <button
+              key={`${r.brand}__${r.model}`}
+              onClick={() => {
+                onChange({ brand: r.brand, model: r.model })
+                setQuery('')
+                setResults([])
+              }}
+              className="hover:bg-muted flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-sm transition-colors"
+            >
+              <span>
+                {r.brand} {r.model}
+                {r.year ? ` (${r.year})` : ''}
+              </span>
+              {r.variants.some((v) => v.count > 0) && (
+                <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                  {r.variants.reduce((s, v) => s + v.count, 0)} annonser
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+      {query.length >= 2 && results.length === 0 && (
+        <p className="text-muted-foreground text-xs">Ingen modeller funnet</p>
+      )}
+    </div>
+  )
+}
+
 // ── FilterRow (accordion row inside drawer) ───────────────────────────────────
 
 function FilterRow({
@@ -443,6 +529,10 @@ export function UtforskClient({
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [openRows, setOpenRows] = useState<Set<string>>(new Set())
+  const [valgtModellFilter, setValgtModellFilter] = useState<{
+    brand: string
+    model: string
+  } | null>(null)
   const [kategorier, setKategorier] = useState<string[]>(initialKategori ?? [])
   const [merke, setMerke] = useState<string[]>([])
   const [modell, setModell] = useState<string[]>([])
@@ -467,6 +557,7 @@ export function UtforskClient({
   }
 
   function resetAllFilters() {
+    setValgtModellFilter(null)
     setKategorier([])
     setMerke([])
     setModell([])
@@ -491,6 +582,12 @@ export function UtforskClient({
 
   const filteredListings = useMemo(() => {
     let result = [...listings]
+
+    if (valgtModellFilter) {
+      result = result.filter(
+        (l) => l.merke === valgtModellFilter.brand && l.modell === valgtModellFilter.model
+      )
+    }
 
     if (kategorier.length > 0) {
       const dbValues = kategorier.flatMap((v) => KATEGORI_DB_VALUES[v] ?? [v])
@@ -535,9 +632,20 @@ export function UtforskClient({
     }
 
     return result
-  }, [listings, kategorier, merke, modell, tilstand, prisRange, skaft, sortering])
+  }, [
+    listings,
+    valgtModellFilter,
+    kategorier,
+    merke,
+    modell,
+    tilstand,
+    prisRange,
+    skaft,
+    sortering,
+  ])
 
   const totalActiveFilters =
+    (valgtModellFilter ? 1 : 0) +
     kategorier.length +
     merke.length +
     modell.length +
@@ -582,6 +690,21 @@ export function UtforskClient({
 
           {/* Scrollable filter rows */}
           <div className="flex-1 overflow-y-auto">
+            {/* Modell-søk — search by exact model name */}
+            <FilterRow
+              label="Modell-søk"
+              count={valgtModellFilter ? 1 : 0}
+              open={openRows.has('modell-sok')}
+              onToggle={() => toggleRow('modell-sok')}
+              summary={
+                valgtModellFilter
+                  ? `${valgtModellFilter.brand} ${valgtModellFilter.model}`
+                  : undefined
+              }
+            >
+              <ModellFilterRow value={valgtModellFilter} onChange={setValgtModellFilter} />
+            </FilterRow>
+
             {/* Kategori — tree with inline subcategories */}
             <FilterRow
               label="Kategori"
