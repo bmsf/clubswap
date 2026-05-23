@@ -26,15 +26,33 @@ const CONDITION_CLASSES: Record<string, string> = {
 
 const CATEGORY_LABELS: Record<string, string> = {
   driver: 'Driver',
-  fairway_wood: 'Fairway wood',
+  mini_driver: 'Mini driver',
+  fairway_wood: 'Fairway',
+  fairway: 'Fairway',
   hybrid: 'Hybrid',
-  irons: 'Jernkøller',
+  utility_iron: 'Utilityjern',
+  irons: 'Jernsett',
+  jernsett: 'Jernsett',
+  iron_set: 'Jernsett',
+  'enkelt-jern': 'Enkeltjern',
+  iron: 'Enkeltjern',
   wedge: 'Wedge',
   putter: 'Putter',
   bag: 'Golfbag',
+  stand_bag: 'Stand bag',
+  cart_bag: 'Cart bag',
+  tour_bag: 'Tour bag',
+  sko: 'Sko',
   shoes: 'Sko',
+  klaer: 'Klær',
   clothing: 'Klær',
+  hansker: 'Hansker',
+  baller: 'Baller',
+  rangefinder: 'Avstandsmåler',
+  gps: 'GPS-klokke',
+  elektronikk: 'Elektronikk',
   accessories: 'Tilbehør',
+  annet: 'Annet',
   other: 'Annet',
 }
 
@@ -124,8 +142,8 @@ export function ProductDetailPage({
   const conditionClass = CONDITION_CLASSES[tilstand] ?? 'bg-secondary text-secondary-foreground'
 
   const breadcrumbs = [
-    { label: 'Markedet', href: '/' },
-    { label: CATEGORY_LABELS[kategori] ?? kategori, href: `/?kategori=${kategori}` },
+    { label: 'Markedet', href: '/utforsk' },
+    { label: CATEGORY_LABELS[kategori] ?? kategori, href: `/utforsk` },
     { label: `${merke} ${modell}`, href: '#' },
   ]
 

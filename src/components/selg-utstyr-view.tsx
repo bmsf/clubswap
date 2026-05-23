@@ -27,7 +27,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CheckIcon,
-  ArrowRightIcon,
   PhotoIcon,
 } from '@heroicons/react/16/solid'
 import { createClient } from '@/supabase/client'
@@ -72,6 +71,7 @@ import {
 } from './selg-utstyr/bilde-opplaster'
 import { Felt, PillToggle, AiBadge } from './selg-utstyr/primitives'
 import { Fremdrift } from './selg-utstyr/fremdrift'
+import { ModellVelger, type ValgtModell } from './selg-utstyr/modell-velger'
 
 // ── Animation ─────────────────────────────────────────────────────────────────
 
@@ -145,6 +145,8 @@ export function SelgUtstyrView({
   const [tittel, setTittel] = useState('')
   const [merke, setMerke] = useState('')
   const [merkeOpen, setMerkeOpen] = useState(false)
+  const [valgtModell, setValgtModell] = useState<ValgtModell | null>(null)
+  const [manuellModell, setManuellModell] = useState(false)
   const [flex, setFlex] = useState<string | null>(null)
   const [skaftMateriale, setSkaftMateriale] = useState<'stal' | 'grafitt' | null>(null)
   const [antallKoller, setAntallKoller] = useState(1)
@@ -269,14 +271,25 @@ export function SelgUtstyrView({
 
   function nextStep() {
     if (!redigerModus && steg[currentStep]?.id === 'metode' && mode === 'ai') {
-      gaTil(2) // skip Kategori in AI path
+      const detaljerIdx = steg.findIndex((s) => s.id === 'detaljer')
+      gaTil(detaljerIdx >= 0 ? detaljerIdx : currentStep + 1)
+    } else if (!redigerModus && steg[currentStep]?.id === 'metode' && mode === 'manual') {
+      setUiKategori(null)
+      setUnderkategori(null)
+      setTittel('')
+      gaTil(currentStep + 1)
     } else if (currentStep < steg.length - 1) {
       gaTil(currentStep + 1)
     }
   }
 
   function prevStep() {
-    if (currentStep > 0) gaTil(currentStep - 1)
+    if (!redigerModus && steg[currentStep]?.id === 'detaljer' && mode === 'ai') {
+      const metodeIdx = steg.findIndex((s) => s.id === 'metode')
+      gaTil(metodeIdx >= 0 ? metodeIdx : currentStep - 1)
+    } else if (currentStep > 0) {
+      gaTil(currentStep - 1)
+    }
   }
 
   // ── Step validation ──────────────────────────────────────────────────────
@@ -300,11 +313,13 @@ export function SelgUtstyrView({
           return true
       }
     }
-    switch (steg[currentStep]?.id) {
+    switch (steg[currentStep]?.id as string) {
       case 'metode':
         return mode !== null
       case 'kategori':
-        return uiKategori !== null
+        return valgtModell !== null || (uiKategori !== null && tittel.trim().length >= 3)
+      case 'intro':
+        return tittel.trim().length >= 3 && uiKategori !== null
       case 'detaljer':
         return true
       case 'pris':
@@ -340,6 +355,31 @@ export function SelgUtstyrView({
 
   function fjernEksisterende(i: number) {
     setEksisterendeBilder((prev) => prev.filter((_, idx) => idx !== i))
+  }
+
+  // ── Model selection (model-database-driven flow) ─────────────────────────
+
+  // Normalise DB category strings from golf_equipment to the canonical Category type
+  function normaliserKategori(cat: string): Parameters<typeof kategoriTilUiKategori>[0] {
+    const map: Record<string, Parameters<typeof kategoriTilUiKategori>[0]> = {
+      iron: 'iron_set',
+      irons: 'iron_set',
+      fairway: 'fairway_wood',
+      bag: 'golf_bag',
+      shoes: 'golf_shoes',
+      annet: 'other',
+    }
+    return (map[cat] ?? cat) as Parameters<typeof kategoriTilUiKategori>[0]
+  }
+
+  function velgModell(modell: ValgtModell | null) {
+    setValgtModell(modell)
+    if (!modell) return
+    const { ui, underkat } = kategoriTilUiKategori(normaliserKategori(modell.category))
+    setUiKategori(ui)
+    setUnderkategori(underkat)
+    setMerke(modell.brand)
+    setTittel(`${modell.brand} ${modell.model}`)
   }
 
   // ── AI: trigger on upload (new create flow) ──────────────────────────────
@@ -560,82 +600,239 @@ export function SelgUtstyrView({
     onFjernEksisterende: fjernEksisterende,
   }
 
+  const TITTEL_MAKS = 60
+
   function renderMetodeFase() {
     return (
       <>
         <CardHeader>
-          <CardTitle>Hvordan vil du legge ut?</CardTitle>
-          <CardDescription>Velg metode for å registrere utstyret ditt</CardDescription>
+          <CardTitle>Hvordan vil du opprette annonsen?</CardTitle>
+          <CardDescription>Velg om du vil la AI hjelpe deg eller fylle inn selv</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setMode('ai')}
+            className={cn(
+              'w-full cursor-pointer rounded-2xl border-2 p-5 text-left transition-all',
+              mode === 'ai'
+                ? 'border-foreground bg-foreground/5'
+                : 'border-border hover:border-foreground/40'
+            )}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
+                <SparklesIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="font-semibold">Bruk AI</p>
+                <p className="text-muted-foreground mt-0.5 text-sm">
+                  Last opp et bilde og la AI fylle ut detaljer automatisk
+                </p>
+              </div>
+              {mode === 'ai' && <CheckIcon className="text-foreground ml-auto h-5 w-5 shrink-0" />}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMode('manual')}
+            className={cn(
+              'w-full cursor-pointer rounded-2xl border-2 p-5 text-left transition-all',
+              mode === 'manual'
+                ? 'border-foreground bg-foreground/5'
+                : 'border-border hover:border-foreground/40'
+            )}
+          >
+            <div className="flex items-start gap-4">
+              <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                <PhotoIcon className="text-muted-foreground h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-semibold">Fyll inn manuelt</p>
+                <p className="text-muted-foreground mt-0.5 text-sm">
+                  Fyll ut alle felt selv, trinn for trinn
+                </p>
+              </div>
+              {mode === 'manual' && (
+                <CheckIcon className="text-foreground ml-auto h-5 w-5 shrink-0" />
+              )}
+            </div>
+          </button>
+        </CardContent>
+      </>
+    )
+  }
+
+  const KATEGORI_CREATE_OPTIONS = [
+    { value: 'driver', label: 'Driver' },
+    { value: 'fairway', label: 'Fairway wood' },
+    { value: 'hybrid', label: 'Hybrid' },
+    { value: 'jernsett', label: 'Jernsett' },
+    { value: 'enkelt_jern', label: 'Enkelt jern' },
+    { value: 'wedge', label: 'Wedge' },
+    { value: 'putter', label: 'Putter' },
+    { value: 'bag', label: 'Bag' },
+    { value: 'sko', label: 'Sko' },
+    { value: 'annet', label: 'Annet' },
+  ] as const
+
+  type KategoriCreateValue = (typeof KATEGORI_CREATE_OPTIONS)[number]['value']
+
+  const KATEGORI_CREATE_TO_UI: Record<KategoriCreateValue, UiKategori> = {
+    driver: 'trekker',
+    fairway: 'trekker',
+    hybrid: 'trekker',
+    jernsett: 'jernshaft',
+    enkelt_jern: 'jernshaft',
+    wedge: 'jernshaft',
+    putter: 'putter',
+    bag: 'bag',
+    sko: 'sko',
+    annet: 'annet',
+  }
+
+  function renderKategoriFase() {
+    const selectedKat = KATEGORI_CREATE_OPTIONS.find((o) => o.value === underkategori)?.value ?? ''
+
+    const TITTEL_MAKS_KAT = 60
+
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Hva selger du?</CardTitle>
+          <CardDescription>Søk etter modell og velg kategori</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            {(
-              [
-                {
-                  key: 'manual' as const,
-                  icon: ArrowRightIcon,
-                  tittel: 'Fyll ut manuelt',
-                  beskrivelse: 'Du fyller ut skjemaet selv',
-                },
-                {
-                  key: 'ai' as const,
-                  icon: SparklesIcon,
-                  tittel: 'AI-assistert',
-                  beskrivelse: 'Last opp et bilde, så fyller AI ut for deg',
-                },
-              ] as const
-            ).map(({ key, icon: Icon, tittel: t, beskrivelse }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setMode(key)}
-                className={cn(
-                  'flex cursor-pointer flex-col items-start gap-3 rounded-2xl border-2 p-5 text-left transition-all',
-                  mode === key
-                    ? 'border-foreground bg-foreground/5 dark:bg-foreground/10'
-                    : 'border-border hover:border-foreground/40'
-                )}
-              >
-                <div
-                  className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-xl',
-                    mode === key
-                      ? 'bg-foreground/10 text-foreground dark:bg-foreground/20'
-                      : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-foreground text-sm font-semibold">{t}</p>
-                  <p className="text-muted-foreground mt-0.5 text-xs">{beskrivelse}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <AnimatePresence>
-            {mode === 'ai' && (
+          <AnimatePresence mode="wait">
+            {!manuellModell ? (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25 }}
-                className="overflow-hidden"
+                key="modell-sok"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
-                <div className="border-border mt-4 border-t pt-4">
-                  <p className="text-foreground mb-3 text-sm font-medium">Last opp bilde</p>
-                  <BildeOpplaster
-                    bilder={bilder}
-                    eksisterendeBilder={[]}
-                    onLeggTil={leggTilOgAnalyser}
-                    onFjern={fjernBilde}
-                    onFjernEksisterende={() => {}}
-                  />
-                  <p className="text-muted-foreground mt-3 text-xs">
-                    Bildet sendes til AI for gjenkjenning og du tas direkte til utfylling.
-                  </p>
+                <ModellVelger
+                  value={valgtModell}
+                  onChange={velgModell}
+                  onManuell={() => {
+                    setValgtModell(null)
+                    setManuellModell(true)
+                  }}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="manuell"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Manuell registrering</p>
+                  <button
+                    type="button"
+                    onClick={() => setManuellModell(false)}
+                    className="text-muted-foreground hover:text-foreground cursor-pointer text-xs underline underline-offset-2 transition-colors"
+                  >
+                    Søk i modellbase
+                  </button>
                 </div>
+
+                <SimpleSelect
+                  value={selectedKat}
+                  onValueChange={(v) => {
+                    const kat = v as KategoriCreateValue
+                    setUiKategori(KATEGORI_CREATE_TO_UI[kat])
+                    setUnderkategori(kat)
+                  }}
+                  placeholder="Velg kategori"
+                  options={[...KATEGORI_CREATE_OPTIONS]}
+                />
+
+                <AnimatePresence>
+                  {uiKategori !== null && (
+                    <motion.div
+                      key="tittel"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="space-y-1"
+                    >
+                      <Label>Tittel</Label>
+                      <Input
+                        value={tittel}
+                        onChange={(e) => setTittel(e.target.value.slice(0, TITTEL_MAKS_KAT))}
+                        placeholder="f.eks. TaylorMade Stealth 2 Driver"
+                        autoFocus
+                      />
+                      <p className="text-muted-foreground text-xs">
+                        {tittel.length}/{TITTEL_MAKS_KAT} tegn
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {tittel.trim().length >= 3 && (
+                    <motion.div
+                      key="merke"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="space-y-1"
+                    >
+                      <Label>Merke</Label>
+                      <div className="relative">
+                        <Input
+                          value={merke}
+                          onChange={(e) => setMerke(e.target.value)}
+                          onFocus={() => setMerkeOpen(true)}
+                          onBlur={() => setTimeout(() => setMerkeOpen(false), 150)}
+                          placeholder="Søk etter merke…"
+                        />
+                        <AnimatePresence>
+                          {merkeOpen &&
+                            GOLF_MERKER.filter(
+                              (m) =>
+                                merke.trim() === '' || m.toLowerCase().includes(merke.toLowerCase())
+                            ).length > 0 && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -4 }}
+                                transition={{ duration: 0.12 }}
+                                className="border-border bg-background absolute top-full right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border shadow-lg"
+                              >
+                                {GOLF_MERKER.filter(
+                                  (m) =>
+                                    merke.trim() === '' ||
+                                    m.toLowerCase().includes(merke.toLowerCase())
+                                ).map((m) => (
+                                  <button
+                                    key={m}
+                                    type="button"
+                                    onMouseDown={() => {
+                                      setMerke(m)
+                                      setMerkeOpen(false)
+                                    }}
+                                    className="hover:bg-muted flex w-full cursor-pointer items-center px-4 py-2.5 text-left text-sm transition-colors"
+                                  >
+                                    {m}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
@@ -644,51 +841,64 @@ export function SelgUtstyrView({
     )
   }
 
-  function renderKategoriFase() {
+  function renderIntroFase() {
     const harUnderkat = uiKategori !== null && (UNDERKATEGORI_OPTIONS[uiKategori]?.length ?? 0) > 0
 
     return (
       <>
         <CardHeader>
-          <CardTitle>Kategori</CardTitle>
-          <CardDescription>Velg hvilken type utstyr du ønsker å selge</CardDescription>
+          <CardTitle>Hva skal du selge?</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Category dropdown */}
-          <Felt label="Kategori" required>
+        <CardContent className="divide-border space-y-0 divide-y px-6">
+          {/* Tittel */}
+          <div className="pb-6">
+            <div className="bg-muted rounded-2xl px-4 py-3">
+              <p className="text-muted-foreground mb-1 text-xs">Tittel</p>
+              <input
+                value={tittel}
+                onChange={(e) => setTittel(e.target.value.slice(0, TITTEL_MAKS))}
+                placeholder="f.eks. TaylorMade Stealth 2 Driver"
+                className="text-foreground placeholder:text-muted-foreground/60 w-full bg-transparent text-base outline-none"
+                autoFocus
+              />
+            </div>
+            <p className="text-muted-foreground mt-2 text-xs">
+              {tittel.length}/{TITTEL_MAKS} tegn
+            </p>
+          </div>
+
+          {/* Kategori */}
+          <div className="space-y-4 pt-6">
+            <h2 className="text-xl font-semibold">Kategori</h2>
             <SimpleSelect
               value={uiKategori ?? ''}
               onValueChange={(v) => {
                 setUiKategori(v as UiKategori)
                 setUnderkategori(null)
               }}
-              placeholder="Velg kategori…"
+              placeholder="Hovedkategori"
               options={UI_KATEGORI_OPTIONS}
             />
-          </Felt>
 
-          {/* Subcategory */}
-          <AnimatePresence>
-            {harUnderkat && (
-              <motion.div
-                key={uiKategori}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-              >
-                <Felt label="Underkategori">
+            <AnimatePresence>
+              {harUnderkat && (
+                <motion.div
+                  key={uiKategori}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
                   <SimpleSelect
                     value={underkategori ?? ''}
                     onValueChange={setUnderkategori}
-                    placeholder="Velg underkategori…"
+                    placeholder="Underkategori"
                     options={UNDERKATEGORI_OPTIONS[uiKategori!]}
-                    className=""
                   />
-                </Felt>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </CardContent>
       </>
     )
@@ -1469,11 +1679,13 @@ export function SelgUtstyrView({
           return null
       }
     }
-    switch (steg[currentStep]?.id) {
+    switch (steg[currentStep]?.id as string) {
       case 'metode':
         return renderMetodeFase()
       case 'kategori':
         return renderKategoriFase()
+      case 'intro':
+        return renderIntroFase()
       case 'detaljer':
         return renderDetaljerFase()
       case 'pris':

@@ -154,7 +154,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => handleNavClick('/selg')}
               className="bg-primary-btn text-primary-btn-fg ml-1 rounded-full px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
             >
-              + Selg
+              Ny annonse
             </button>
 
             {user ? (

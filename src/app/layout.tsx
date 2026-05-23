@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Apply dark class based on system preference before first paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var d=document.documentElement,s=localStorage.getItem('gt-theme');if(s==='dark'||(!s&&window.matchMedia('(prefers-color-scheme:dark)').matches))d.classList.add('dark')}catch(e){}})()`,
+            __html: `(function(){try{var d=document.documentElement,s=localStorage.getItem('gt-theme');if(s==='dark')d.classList.add('dark')}catch(e){}})()`,
           }}
         />
       </head>

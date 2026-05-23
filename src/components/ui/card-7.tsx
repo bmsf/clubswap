@@ -37,10 +37,6 @@ export function ListingCard({
 
   return (
     <motion.div
-      whileHover={{
-        boxShadow: '0px 4px 20px -4px hsl(var(--foreground) / 0.12)',
-        transition: { type: 'spring', stiffness: 320, damping: 22 },
-      }}
       className={cn(
         'group text-card-foreground flex cursor-pointer flex-col overflow-hidden',
         flat ? 'bg-transparent' : 'bg-card rounded-xl shadow-sm',
@@ -67,6 +63,7 @@ export function ListingCard({
               <ImageOff className="text-foreground/20 h-8 w-8" />
             </div>
           )}
+          <div className="bg-foreground/0 group-hover:bg-foreground/10 absolute inset-0 transition-colors duration-200" />
         </div>
 
         {/* Content */}
@@ -75,7 +72,7 @@ export function ListingCard({
           <div className="flex items-start justify-between gap-2">
             <p className="truncate text-sm leading-snug font-medium">{name}</p>
             {condition && (
-              <span className="border-border text-muted-foreground shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium">
+              <span className="text-muted-foreground bg-muted shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium">
                 {condition}
               </span>
             )}
