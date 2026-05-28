@@ -46,9 +46,9 @@ function BildeThumbnail({
       <button
         type="button"
         onClick={onFjern}
-        className="absolute top-1.5 right-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+        className="absolute top-1.5 right-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
       >
-        <XMarkIcon className="h-3.5 w-3.5" />
+        <XMarkIcon className="size-3.5" />
       </button>
       {erForside && (
         <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white">
@@ -98,8 +98,8 @@ export function BildeOpplaster({
           )}
           onClick={() => fileRef.current?.click()}
         >
-          <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
-            <ArrowUpTrayIcon className="text-muted-foreground h-5 w-5" />
+          <div className="bg-muted flex size-12 items-center justify-center rounded-full">
+            <ArrowUpTrayIcon className="text-muted-foreground size-5" />
           </div>
           <div className="text-center">
             <p className="text-foreground text-sm font-medium">
@@ -144,7 +144,7 @@ export function BildeOpplaster({
               onClick={() => fileRef.current?.click()}
               className="hover:border-primary/50 flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-neutral-950/10 transition-colors"
             >
-              <PhotoIcon className="text-muted-foreground h-5 w-5" />
+              <PhotoIcon className="text-muted-foreground size-5" />
             </button>
           )}
         </div>

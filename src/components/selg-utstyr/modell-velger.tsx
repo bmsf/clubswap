@@ -140,7 +140,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
             className="text-muted-foreground hover:text-foreground ml-3 cursor-pointer rounded-lg p-1.5 transition-colors"
             aria-label="Fjern valg"
           >
-            <XMarkIcon className="h-4 w-4" />
+            <XMarkIcon className="size-4" />
           </button>
         </div>
         <p className="text-muted-foreground text-xs">
@@ -174,7 +174,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
     <div className="space-y-4">
       {/* Search input */}
       <div className="relative">
-        <MagnifyingGlassIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+        <MagnifyingGlassIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
           value={query}
           onChange={handleChange}
@@ -219,7 +219,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="flex flex-col gap-0.5 pt-1 pb-2">
-                        {entries.map(({ gruppe, equipmentId, count }) => (
+                        {entries.map(({ gruppe, equipmentId }) => (
                           <button
                             key={equipmentId}
                             type="button"

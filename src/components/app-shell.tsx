@@ -1,7 +1,7 @@
 'use client'
 
 import '@/bones/registry'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,6 +14,25 @@ import { Button } from '@/components/ui/button'
 import { Search, Heart, MessageSquare, Plus, User, Home, LogOut } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { cn } from '@/lib/utils'
+
+// ── FraRedirect — isolated so useSearchParams doesn't bail out the whole page ──
+
+function FraRedirect({ user, authLoaded }: { user: SupabaseUser | null; authLoaded: boolean }) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const { openModal } = useAuthModal()
+
+  useEffect(() => {
+    if (!authLoaded) return
+    const fra = searchParams.get('fra')
+    if (fra && !user) {
+      openModal('logg-inn', fra)
+      router.replace('/')
+    }
+  }, [authLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return null
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -32,7 +51,6 @@ const BOTTOM_NAV_ITEMS = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [authLoaded, setAuthLoaded] = useState(false)
@@ -55,16 +73,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     })
     return () => subscription.unsubscribe()
   }, [])
-
-  // Open auth modal when middleware redirects with ?fra=
-  useEffect(() => {
-    if (!authLoaded) return
-    const fra = searchParams.get('fra')
-    if (fra && !user) {
-      openModal('logg-inn', fra)
-      router.replace('/')
-    }
-  }, [authLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close profile menu on navigation
   useEffect(() => {
@@ -123,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Search */}
           <form onSubmit={handleHeaderSearch} className="flex-1">
             <div className="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full bg-neutral-100 px-4 py-2.5">
-              <Search className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+              <Search className="text-muted-foreground size-3.5 shrink-0" />
               <input
                 type="text"
                 value={headerSearch}
@@ -138,17 +146,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="hidden shrink-0 items-center gap-1 md:flex">
             <button
               onClick={() => handleNavClick('/lagrede')}
-              className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+              className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
               aria-label="Lagrede"
             >
-              <Heart className="h-4 w-4" />
+              <Heart className="size-4" />
             </button>
             <button
               onClick={() => handleNavClick('/meldinger')}
-              className="text-muted-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+              className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
               aria-label="Meldinger"
             >
-              <MessageSquare className="h-4 w-4" />
+              <MessageSquare className="size-4" />
             </button>
             <Button
               variant="primary"
@@ -163,7 +171,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="relative ml-1" ref={profilRef}>
                 <button
                   onClick={() => setProfilMeny(!profilMeny)}
-                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-950 transition-colors hover:bg-neutral-200"
+                  className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-950 transition-colors hover:bg-neutral-200"
                   aria-label="Profilmeny"
                 >
                   {initials}
@@ -181,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         onClick={() => handleNavClick('/profil')}
                         className="text-foreground hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm transition-colors"
                       >
-                        <User className="h-4 w-4 shrink-0" />
+                        <User className="size-4 shrink-0" />
                         Profil
                       </button>
                       <form action={loggUt}>
@@ -189,7 +197,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           type="submit"
                           className="text-foreground hover:bg-muted flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm transition-colors"
                         >
-                          <LogOut className="h-4 w-4 shrink-0" />
+                          <LogOut className="size-4 shrink-0" />
                           Logg ut
                         </button>
                       </form>
@@ -239,14 +247,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="flex flex-1 flex-col items-center justify-center py-2 transition-colors"
             >
               {isCenter ? (
-                <div className="bg-primary-btn flex h-11 w-11 items-center justify-center rounded-full">
-                  <Icon className="text-primary-btn-fg h-5 w-5" />
+                <div className="bg-primary-btn flex size-11 items-center justify-center rounded-full">
+                  <Icon className="text-primary-btn-fg size-5" />
                 </div>
               ) : (
                 <>
                   <Icon
                     className={cn(
-                      'h-5 w-5',
+                      'size-5',
                       active ? 'dark:text-foreground text-[#1A1A18]' : 'text-[#C0BDB6]'
                     )}
                   />
@@ -267,6 +275,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <AuthModal />
       <BekreftSlettModal />
+      <Suspense>
+        <FraRedirect user={user} authLoaded={authLoaded} />
+      </Suspense>
     </div>
   )
 }

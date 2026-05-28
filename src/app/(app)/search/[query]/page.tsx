@@ -204,9 +204,9 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
           />
           <button
             onClick={() => handleSearch(searchInput)}
-            className="bg-primary-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-85"
+            className="bg-primary-btn flex size-9 shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-85"
           >
-            <MagnifyingGlassIcon className="text-primary-btn-fg h-3.5 w-3.5" />
+            <MagnifyingGlassIcon className="text-primary-btn-fg size-3.5" />
           </button>
         </div>
 
@@ -261,7 +261,7 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
             </SelectContent>
           </Select>
           <button className="text-muted-foreground hover:text-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-neutral-950/10 px-4 text-sm font-medium transition-colors">
-            <ListFilter className="h-3.5 w-3.5" />
+            <ListFilter className="size-3.5" />
             Filter
           </button>
         </div>
@@ -295,7 +295,7 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
               onClick={() => chipsRef.current?.scrollBy({ left: 150, behavior: 'smooth' })}
               className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex w-8 items-center justify-center transition-colors"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="size-4" />
             </button>
           )}
         </div>
@@ -334,7 +334,7 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
             </div>
           </div>
           <button className="text-muted-foreground hover:text-foreground flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-neutral-950/10 px-3 text-sm font-medium transition-colors">
-            <ListFilter className="h-3.5 w-3.5" />
+            <ListFilter className="size-3.5" />
             Filter
           </button>
         </div>

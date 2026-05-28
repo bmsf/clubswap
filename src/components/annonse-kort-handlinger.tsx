@@ -15,7 +15,7 @@ export function AnnonseKortHandlinger({ id }: { id: string }) {
     <div className="flex items-center gap-1.5 border-t border-neutral-950/10 px-4 py-3">
       <Button asChild variant="outline" size="sm" className="flex-1">
         <a href={`/annonser/${id}/rediger`}>
-          <PencilIcon className="h-3.5 w-3.5" />
+          <PencilIcon className="size-3.5" />
           Rediger
         </a>
       </Button>
@@ -26,7 +26,7 @@ export function AnnonseKortHandlinger({ id }: { id: string }) {
         className="flex-1 text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
         onClick={() => openSlett(id)}
       >
-        <TrashIcon className="h-3.5 w-3.5" />
+        <TrashIcon className="size-3.5" />
         Slett
       </Button>
     </div>
@@ -85,7 +85,7 @@ export function BekreftSlettModal() {
         <button
           type="button"
           onClick={closeModal}
-          className="text-muted-foreground hover:text-foreground absolute top-3.5 right-3.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-colors"
+          className="text-muted-foreground hover:text-foreground absolute top-3.5 right-3.5 flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors"
           aria-label="Lukk"
         >
           <svg
@@ -104,8 +104,8 @@ export function BekreftSlettModal() {
 
         {/* Innhold */}
         <div className="flex flex-col items-center px-7 pt-8 pb-6">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 shadow-md dark:bg-red-950/40">
-            <TrashIcon className="h-6 w-6 text-red-500" />
+          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-red-100 shadow-md dark:bg-red-950/40">
+            <TrashIcon className="size-6 text-red-500" />
           </div>
 
           <h1 className="text-foreground mb-1 text-[1.1rem] font-bold">Slett annonse</h1>

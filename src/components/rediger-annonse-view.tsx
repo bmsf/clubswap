@@ -160,7 +160,7 @@ function Forhandsvisning({
           <img src={forsideBilde} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <ArchiveBoxIcon className="text-muted-foreground/30 h-12 w-12" />
+            <ArchiveBoxIcon className="text-muted-foreground/30 size-12" />
           </div>
         )}
         {tilstandData && (
@@ -194,7 +194,7 @@ function Forhandsvisning({
         </p>
         {selgesFra && (
           <p className="text-muted-foreground flex items-center gap-1 text-xs">
-            <MapPinIcon className="h-3 w-3" />
+            <MapPinIcon className="size-3" />
             {selgesFra}
           </p>
         )}
@@ -592,12 +592,12 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
         >
           {isPending ? (
             <>
-              <ArrowPathIcon className="h-4 w-4 animate-spin" />
+              <ArrowPathIcon className="size-4 animate-spin" />
               Lagrer…
             </>
           ) : (
             <>
-              <CheckIcon className="h-4 w-4" />
+              <CheckIcon className="size-4" />
               Lagre endringer
             </>
           )}
@@ -633,7 +633,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
               'Beskriv eventuell slitasje ærlig og nøyaktig',
             ].map((tips) => (
               <li key={tips} className="flex items-start gap-2">
-                <CheckIcon className="text-primary mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <CheckIcon className="text-primary mt-0.5 size-3.5 shrink-0" />
                 {tips}
               </li>
             ))}

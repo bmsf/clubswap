@@ -42,13 +42,18 @@ export function ModellSok({
     [kategori]
   )
 
+  const sokRef = useRef(sok)
+  useEffect(() => {
+    sokRef.current = sok
+  }, [sok])
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => sok(sokeTekst), 300)
+    debounceRef.current = setTimeout(() => sokRef.current(sokeTekst), 300)
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [sokeTekst, sok])
+  }, [sokeTekst])
 
   if (manuell) return null
 

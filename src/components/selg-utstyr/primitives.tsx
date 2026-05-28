@@ -12,7 +12,7 @@ import { KJENTE_SKAFT } from './constants'
 export function AiBadge() {
   return (
     <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-      <SparklesIcon className="h-2.5 w-2.5" />
+      <SparklesIcon className="size-2.5" />
       Foreslått av AI
     </span>
   )

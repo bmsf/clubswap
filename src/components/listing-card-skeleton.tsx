@@ -12,6 +12,8 @@ const FIXTURE_PROPS = {
   posted: '2t siden',
 }
 
+const FIXTURE_CARD = <ListingCard {...FIXTURE_PROPS} />
+
 function CardFallback() {
   return (
     <div className="animate-pulse overflow-hidden rounded-xl">
@@ -34,7 +36,7 @@ export function ListingCardSkeleton() {
       color="#e5dfd1"
       darkColor="#2b2b2b"
       fallback={<CardFallback />}
-      fixture={<ListingCard {...FIXTURE_PROPS} />}
+      fixture={FIXTURE_CARD}
     >
       <></>
     </Skeleton>

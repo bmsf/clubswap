@@ -73,7 +73,7 @@ export default async function LandingPage() {
           className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors"
         >
           Se alle annonser
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="size-3.5" />
         </Link>
       </div>
 

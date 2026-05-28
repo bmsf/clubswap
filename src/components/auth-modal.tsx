@@ -64,7 +64,7 @@ export function AuthModal() {
         <button
           type="button"
           onClick={closeModal}
-          className="text-muted-foreground hover:text-foreground absolute top-3.5 right-3.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-colors"
+          className="text-muted-foreground hover:text-foreground absolute top-3.5 right-3.5 flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors"
           aria-label="Lukk"
         >
           <svg

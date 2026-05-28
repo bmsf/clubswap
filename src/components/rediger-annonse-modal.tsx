@@ -140,7 +140,7 @@ export function RedigerAnnonseModal() {
           <button
             type="button"
             onClick={closeModal}
-            className="text-muted-foreground hover:text-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded-full transition-colors"
+            className="text-muted-foreground hover:text-foreground flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors"
             aria-label="Lukk"
           >
             <svg
@@ -162,7 +162,7 @@ export function RedigerAnnonseModal() {
         <div className="p-6">
           {laster || !mapped ? (
             <div className="flex h-48 items-center justify-center">
-              <ArrowPathIcon className="text-muted-foreground h-6 w-6 animate-spin" />
+              <ArrowPathIcon className="text-muted-foreground size-6 animate-spin" />
             </div>
           ) : (
             <SelgUtstyrView

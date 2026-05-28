@@ -73,7 +73,7 @@ export function AdresseVelger({ value, onChange }: Props) {
           value ? 'bg-muted' : 'hover:bg-muted/50'
         )}
       >
-        <MapPinIcon className="text-muted-foreground h-4 w-4 shrink-0" />
+        <MapPinIcon className="text-muted-foreground size-4 shrink-0" />
         <span className="flex-1 text-sm">
           {value ? (
             <span>
@@ -84,7 +84,7 @@ export function AdresseVelger({ value, onChange }: Props) {
             <span className="text-muted-foreground">Legg til adresse</span>
           )}
         </span>
-        <ChevronRightIcon className="text-muted-foreground h-4 w-4 shrink-0" />
+        <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
       </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
@@ -105,10 +105,12 @@ export function AdresseVelger({ value, onChange }: Props) {
             ) : (
               <div className="divide-y divide-neutral-950/10 overflow-hidden rounded-xl border border-neutral-950/10">
                 {adresser.map((a) => (
-                  <button
+                  <div
                     key={a.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => velgAdresse(a)}
+                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && velgAdresse(a)}
                     className={cn(
                       'flex w-full cursor-pointer items-center gap-3 px-4 py-3.5 text-left transition-colors',
                       value?.id === a.id ? 'bg-foreground text-background' : 'hover:bg-muted'
@@ -116,15 +118,13 @@ export function AdresseVelger({ value, onChange }: Props) {
                   >
                     <span
                       className={cn(
-                        'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2',
+                        'flex size-4 shrink-0 items-center justify-center rounded-full border-2',
                         value?.id === a.id
                           ? 'border-background bg-background'
                           : 'border-muted-foreground'
                       )}
                     >
-                      {value?.id === a.id && (
-                        <span className="bg-foreground h-2 w-2 rounded-full" />
-                      )}
+                      {value?.id === a.id && <span className="bg-foreground size-2 rounded-full" />}
                     </span>
                     <div className="flex-1">
                       <p
@@ -155,9 +155,9 @@ export function AdresseVelger({ value, onChange }: Props) {
                       )}
                       aria-label="Slett adresse"
                     >
-                      <TrashIcon className="h-3.5 w-3.5" />
+                      <TrashIcon className="size-3.5" />
                     </button>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -209,7 +209,7 @@ export function AdresseVelger({ value, onChange }: Props) {
                 onClick={() => setVisNyForm(true)}
                 className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 pt-1 text-sm transition-colors"
               >
-                <PlusIcon className="h-4 w-4" />
+                <PlusIcon className="size-4" />
                 Legg til ny adresse
               </button>
             )}

@@ -186,13 +186,13 @@ function CheckOption({
       <div className="flex items-center gap-3">
         <div
           className={cn(
-            'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
+            'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
             checked
               ? 'border-foreground bg-foreground'
               : 'hover:border-foreground/50 border-neutral-950/10'
           )}
         >
-          {checked && <Check className="text-background h-2.5 w-2.5" />}
+          {checked && <Check className="text-background size-2.5" />}
         </div>
         <span className="text-sm">{label}</span>
       </div>
@@ -271,7 +271,7 @@ function CategoryTree({
                 )}
                 <ChevronDown
                   className={cn(
-                    'text-muted-foreground h-4 w-4 transition-transform duration-150',
+                    'text-muted-foreground size-4 transition-transform duration-150',
                     isOpen && 'rotate-180'
                   )}
                 />
@@ -347,7 +347,7 @@ function ModellFilterRow({
           className="text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Fjern modellfilter"
         >
-          <X className="h-4 w-4" />
+          <X className="size-4" />
         </button>
       </div>
     )
@@ -430,9 +430,9 @@ function FilterRow({
             <span className="text-muted-foreground max-w-32 truncate text-xs">{summary}</span>
           )}
           {open ? (
-            <ChevronDown className="text-muted-foreground h-4 w-4" />
+            <ChevronDown className="text-muted-foreground size-4" />
           ) : (
-            <ChevronRight className="text-muted-foreground h-4 w-4" />
+            <ChevronRight className="text-muted-foreground size-4" />
           )}
         </div>
       </button>
@@ -479,11 +479,11 @@ function SortDropdown({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((p) => !p)}
-        className="text-foreground hover:text-foreground/70 flex items-center gap-1.5 px-4 py-4 text-base font-medium transition-colors select-none"
+        className="text-foreground hover:text-foreground/70 flex items-center gap-1.5 p-4 text-base font-medium transition-colors select-none"
       >
         Sort: {label}
         <ChevronDown
-          className={cn('h-4 w-4 transition-transform duration-150', open && 'rotate-180')}
+          className={cn('size-4 transition-transform duration-150', open && 'rotate-180')}
         />
       </button>
       <AnimatePresence>
@@ -510,7 +510,7 @@ function SortDropdown({
                 )}
               >
                 {opt.label}
-                {value === opt.value && <Check className="h-3.5 w-3.5" />}
+                {value === opt.value && <Check className="size-3.5" />}
               </button>
             ))}
           </motion.div>
@@ -668,7 +668,7 @@ export function UtforskClient({
               onClick={() => setDrawerOpen(true)}
               className="text-foreground hover:text-foreground/70 flex items-center gap-2.5 py-4 text-base font-medium transition-colors select-none"
             >
-              <SlidersHorizontal className="h-5 w-5" />
+              <SlidersHorizontal className="size-5" />
               Filtre
               {totalActiveFilters > 0 && (
                 <span className="bg-foreground text-background flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums">

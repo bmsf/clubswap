@@ -197,6 +197,7 @@ export function SelgUtstyrView({
       const saved = localStorage.getItem('golftorget_listing_draft')
       if (!saved) return
       const d = JSON.parse(saved) as Record<string, unknown>
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (d.mode === 'manual' || d.mode === 'ai') setMode(d.mode)
       if (d.listemetode === 'selg' || d.listemetode === 'bytt') setListemetode(d.listemetode)
       if (typeof d.uiKategori === 'string') setUiKategori(d.uiKategori as UiKategori)
@@ -497,22 +498,6 @@ export function SelgUtstyrView({
     setTittel(`${modell.brand} ${modell.model}`)
   }
 
-  // ── AI: trigger on upload (new create flow) ──────────────────────────────
-
-  function leggTilOgAnalyser(files: FileList | null) {
-    if (!files || files.length === 0) return
-    const file = files[0]
-    const feil = validerFiler([file])
-    if (feil) {
-      toast.error(feil)
-      return
-    }
-    const entry: BildeEntry = { file, url: URL.createObjectURL(file) }
-    setBilder([entry])
-    gaTil(2)
-    void analyserNy(file)
-  }
-
   async function analyserNy(file: File) {
     setAnalyserer(true)
     try {
@@ -736,8 +721,8 @@ export function SelgUtstyrView({
             )}
           >
             <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
-                <SparklesIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
+                <SparklesIcon className="size-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
                 <p className="font-semibold">Bruk AI</p>
@@ -745,7 +730,7 @@ export function SelgUtstyrView({
                   Last opp et bilde og la AI fylle ut detaljer automatisk
                 </p>
               </div>
-              {mode === 'ai' && <CheckIcon className="text-foreground ml-auto h-5 w-5 shrink-0" />}
+              {mode === 'ai' && <CheckIcon className="text-foreground ml-auto size-5 shrink-0" />}
             </div>
           </button>
 
@@ -760,8 +745,8 @@ export function SelgUtstyrView({
             )}
           >
             <div className="flex items-start gap-4">
-              <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
-                <PhotoIcon className="text-muted-foreground h-5 w-5" />
+              <div className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-xl">
+                <PhotoIcon className="text-muted-foreground size-5" />
               </div>
               <div>
                 <p className="font-semibold">Fyll inn manuelt</p>
@@ -770,7 +755,7 @@ export function SelgUtstyrView({
                 </p>
               </div>
               {mode === 'manual' && (
-                <CheckIcon className="text-foreground ml-auto h-5 w-5 shrink-0" />
+                <CheckIcon className="text-foreground ml-auto size-5 shrink-0" />
               )}
             </div>
           </button>
@@ -1052,7 +1037,7 @@ export function SelgUtstyrView({
           <CardContent>
             <div className="space-y-5">
               <div className="flex items-center gap-2">
-                <SparklesIcon className="h-4 w-4 animate-pulse text-amber-500" />
+                <SparklesIcon className="size-4 animate-pulse text-amber-500" />
                 <span className="animate-pulse text-sm font-medium text-amber-700 dark:text-amber-300">
                   AI analyserer bildet…
                 </span>
@@ -1380,7 +1365,7 @@ export function SelgUtstyrView({
                             : 'hover:border-foreground/40 border-neutral-950/10'
                         )}
                       >
-                        <span className={cn('h-2.5 w-2.5 rounded-full', t.dotKlasse)} />
+                        <span className={cn('size-2.5 rounded-full', t.dotKlasse)} />
                         {t.label}
                       </button>
                     ))}
@@ -1507,14 +1492,14 @@ export function SelgUtstyrView({
                   >
                     <span
                       className={cn(
-                        'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2',
+                        'flex size-4 shrink-0 items-center justify-center rounded-full border-2',
                         fraktPakke === opt.value
                           ? 'border-background bg-background'
                           : 'border-muted-foreground'
                       )}
                     >
                       {fraktPakke === opt.value && (
-                        <span className="bg-foreground h-2 w-2 rounded-full" />
+                        <span className="bg-foreground size-2 rounded-full" />
                       )}
                     </span>
                     <div>
@@ -1557,7 +1542,7 @@ export function SelgUtstyrView({
               >
                 <span
                   className={cn(
-                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform',
+                    'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg transition-transform',
                     kanMotes ? 'translate-x-5' : 'translate-x-0'
                   )}
                 />
@@ -1963,7 +1948,7 @@ export function SelgUtstyrView({
                 disabled={currentStep === 0}
                 className="rounded-xl"
               >
-                <ChevronLeftIcon className="h-4 w-4" />
+                <ChevronLeftIcon className="size-4" />
                 Tilbake
               </Button>
             </motion.div>
@@ -1984,13 +1969,13 @@ export function SelgUtstyrView({
                   >
                     {isSubmitting ? (
                       <>
-                        <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                        <ArrowPathIcon className="size-4 animate-spin" />
                         Lagrer…
                       </>
                     ) : (
                       <>
                         Lagre endringer
-                        <CheckIcon className="h-4 w-4" />
+                        <CheckIcon className="size-4" />
                       </>
                     )}
                   </Button>
@@ -2004,13 +1989,13 @@ export function SelgUtstyrView({
                   >
                     {isSubmittingNy ? (
                       <>
-                        <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                        <ArrowPathIcon className="size-4 animate-spin" />
                         Publiserer…
                       </>
                     ) : (
                       <>
                         Legg ut annonse
-                        <CheckIcon className="h-4 w-4" />
+                        <CheckIcon className="size-4" />
                       </>
                     )}
                   </Button>
@@ -2024,7 +2009,7 @@ export function SelgUtstyrView({
                   className="rounded-xl"
                 >
                   Neste
-                  <ChevronRightIcon className="h-4 w-4" />
+                  <ChevronRightIcon className="size-4" />
                 </Button>
               )}
             </motion.div>
@@ -2068,7 +2053,7 @@ export function SelgUtstyrView({
             <button
               type="button"
               onClick={() => setPendingNavHref(null)}
-              className="text-muted-foreground hover:text-foreground absolute top-3.5 right-3.5 flex h-7 w-7 items-center justify-center rounded-full transition-colors"
+              className="text-muted-foreground hover:text-foreground absolute top-3.5 right-3.5 flex size-7 items-center justify-center rounded-full transition-colors"
               aria-label="Lukk"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none">

@@ -86,7 +86,7 @@ export function UtstyrSok({ category, placeholder, value, onChange, onManuell }:
           className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
           aria-label="Fjern valg"
         >
-          <XMarkIcon className="h-4 w-4" />
+          <XMarkIcon className="size-4" />
         </button>
       </div>
     )

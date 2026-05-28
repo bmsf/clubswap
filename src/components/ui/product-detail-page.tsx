@@ -161,7 +161,7 @@ export function ProductDetailPage({
             <Link href={item.href} className="hover:text-primary transition-colors">
               {item.label}
             </Link>
-            {index < breadcrumbs.length - 1 && <ChevronRight className="mx-1 h-4 w-4 shrink-0" />}
+            {index < breadcrumbs.length - 1 && <ChevronRight className="mx-1 size-4 shrink-0" />}
           </React.Fragment>
         ))}
       </nav>
@@ -169,10 +169,10 @@ export function ProductDetailPage({
       {/* Action buttons row */}
       <div className="mb-6 flex items-center justify-end gap-2">
         <Button variant="ghost" size="icon" aria-label="Lagre annonse">
-          <Heart className="h-5 w-5" />
+          <Heart className="size-5" />
         </Button>
         <Button variant="ghost" size="icon" aria-label="Del annonse">
-          <Share2 className="h-5 w-5" />
+          <Share2 className="size-5" />
         </Button>
       </div>
 
@@ -197,7 +197,7 @@ export function ProductDetailPage({
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <ImageOff className="text-muted-foreground/30 h-12 w-12" />
+                  <ImageOff className="text-muted-foreground/30 size-12" />
                 </div>
               )}
             </motion.div>
@@ -211,7 +211,7 @@ export function ProductDetailPage({
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
                   className={cn(
-                    'h-2 w-2 rounded-full transition-colors',
+                    'size-2 rounded-full transition-colors',
                     currentImageIndex === index
                       ? 'bg-primary'
                       : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
@@ -230,7 +230,7 @@ export function ProductDetailPage({
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
                   className={cn(
-                    'h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors',
+                    'size-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors',
                     currentImageIndex === index ? 'border-primary' : 'border-transparent'
                   )}
                 >
@@ -265,7 +265,7 @@ export function ProductDetailPage({
             <span className="text-4xl font-bold">{pris.toLocaleString('nb-NO')} kr</span>
             {tilbyrFrakt && (
               <span className="text-muted-foreground ml-2 inline-flex items-center gap-1 text-sm">
-                <Truck className="h-3.5 w-3.5" />
+                <Truck className="size-3.5" />
                 Frakt tilgjengelig
               </span>
             )}
@@ -274,7 +274,7 @@ export function ProductDetailPage({
           {/* CTA */}
           <div className="my-6 flex gap-2">
             <Button size="lg" className="flex-1 gap-2">
-              <Send className="h-5 w-5" />
+              <Send className="size-5" />
               Kontakt selger
             </Button>
           </div>
@@ -288,7 +288,7 @@ export function ProductDetailPage({
                   variant="secondary"
                   className="gap-1.5 px-3 py-1 text-sm font-normal"
                 >
-                  <Tag className="h-3.5 w-3.5" />
+                  <Tag className="size-3.5" />
                   {badge.label}
                 </Badge>
               ))}
@@ -298,7 +298,7 @@ export function ProductDetailPage({
           {/* Location */}
           {selgesFra && (
             <div className="text-muted-foreground mb-4 flex items-center gap-1.5 text-sm">
-              <MapPin className="h-4 w-4 shrink-0" />
+              <MapPin className="size-4 shrink-0" />
               <span>{selgesFra}</span>
             </div>
           )}
@@ -317,7 +317,7 @@ export function ProductDetailPage({
           <div className="mt-8 border-t pt-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
+                <Avatar className="size-12">
                   {seller.avatarUrl && <AvatarImage src={seller.avatarUrl} alt={seller.name} />}
                   <AvatarFallback>
                     {(seller.name || seller.username).charAt(0).toUpperCase()}

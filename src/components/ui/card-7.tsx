@@ -60,7 +60,7 @@ export function ListingCard({
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
-              <ImageOff className="text-foreground/20 h-8 w-8" />
+              <ImageOff className="text-foreground/20 size-8" />
             </div>
           )}
           <div className="bg-foreground/0 group-hover:bg-foreground/10 absolute inset-0 transition-colors duration-200" />

@@ -21,7 +21,7 @@ export function Fremdrift({
       <div className="mb-3 flex justify-between">
         {steg.map((s, i) => (
           <div key={s.id} className="flex flex-col items-center">
-            <div className="relative flex h-3.5 w-3.5 items-center justify-center">
+            <div className="relative flex size-3.5 items-center justify-center">
               {i === currentStep && (
                 <span className="bg-foreground/25 absolute inset-0 animate-ping rounded-full" />
               )}
@@ -29,7 +29,7 @@ export function Fremdrift({
                 type="button"
                 onClick={() => i < currentStep && onGaTil(i)}
                 className={cn(
-                  'relative flex h-3.5 w-3.5 items-center justify-center rounded-full transition-colors duration-300',
+                  'relative flex size-3.5 items-center justify-center rounded-full transition-colors duration-300',
                   i < currentStep
                     ? 'bg-foreground cursor-pointer'
                     : i === currentStep
@@ -38,7 +38,7 @@ export function Fremdrift({
                 )}
                 whileTap={i < currentStep ? { scale: 0.9 } : {}}
               >
-                {i < currentStep && <CheckIcon className="h-2.5 w-2.5 text-white" />}
+                {i < currentStep && <CheckIcon className="size-2.5 text-white" />}
               </motion.button>
             </div>
             <span
