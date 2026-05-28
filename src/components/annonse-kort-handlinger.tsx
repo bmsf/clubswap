@@ -12,7 +12,7 @@ export function AnnonseKortHandlinger({ id }: { id: string }) {
   const { openModal: openSlett } = useBekreftSlettModal()
 
   return (
-    <div className="border-border flex items-center gap-1.5 border-t px-4 py-3">
+    <div className="flex items-center gap-1.5 border-t border-neutral-950/10 px-4 py-3">
       <Button asChild variant="outline" size="sm" className="flex-1">
         <a href={`/annonser/${id}/rediger`}>
           <PencilIcon className="h-3.5 w-3.5" />
@@ -78,7 +78,7 @@ export function BekreftSlettModal() {
       <div
         role="dialog"
         aria-modal="true"
-        className="bg-card border-border relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border shadow-2xl"
+        className="bg-card relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 shadow-2xl"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Lukk-knapp */}
@@ -118,7 +118,7 @@ export function BekreftSlettModal() {
               type="button"
               onClick={closeModal}
               disabled={isPending}
-              className="border-border text-foreground hover:bg-muted flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl border text-sm font-medium transition-colors disabled:opacity-60"
+              className="text-foreground hover:bg-muted flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl border border-neutral-950/10 text-sm font-medium transition-colors disabled:opacity-60"
             >
               Avbryt
             </button>

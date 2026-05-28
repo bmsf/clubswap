@@ -184,7 +184,7 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
   return (
     <>
       {/* Search header */}
-      <section className="border-border border-b px-6 py-12 text-center lg:px-20 lg:py-16">
+      <section className="border-b border-neutral-950/10 px-6 py-12 text-center lg:px-20 lg:py-16">
         <h1 className="text-foreground text-[clamp(2rem,6vw,3rem)] font-[650] tracking-tight capitalize">
           {query}
         </h1>
@@ -260,7 +260,7 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
               <SelectItem value="pris-hoy">Pris: høy til lav</SelectItem>
             </SelectContent>
           </Select>
-          <button className="border-border text-muted-foreground hover:text-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-xl border px-4 text-sm font-medium transition-colors">
+          <button className="text-muted-foreground hover:text-foreground flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-neutral-950/10 px-4 text-sm font-medium transition-colors">
             <ListFilter className="h-3.5 w-3.5" />
             Filter
           </button>
@@ -333,7 +333,7 @@ export default function SearchPage({ params }: { params: Promise<{ query: string
               </div>
             </div>
           </div>
-          <button className="border-border text-muted-foreground hover:text-foreground flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors">
+          <button className="text-muted-foreground hover:text-foreground flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-neutral-950/10 px-3 text-sm font-medium transition-colors">
             <ListFilter className="h-3.5 w-3.5" />
             Filter
           </button>

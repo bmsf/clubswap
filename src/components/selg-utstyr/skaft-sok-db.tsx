@@ -2,7 +2,7 @@
 
 import { useTransition, useState, useRef, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
-import { searchShafts, type ShaftResult } from '@/app/actions/searchShafts'
+import { searchShafts, type ShaftResultat } from '@/app/actions/searchShafts'
 import { XMarkIcon } from '@heroicons/react/16/solid'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +22,7 @@ interface Props {
 
 export function SkaftSokDb({ category, placeholder, value, onChange }: Props) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<ShaftResult[]>([])
+  const [results, setResults] = useState<ShaftResultat[]>([])
   const [open, setOpen] = useState(false)
 
   const [isPending, startTransition] = useTransition()
@@ -60,7 +60,7 @@ export function SkaftSokDb({ category, placeholder, value, onChange }: Props) {
     }, 250)
   }
 
-  function handleSelect(r: ShaftResult) {
+  function handleSelect(r: ShaftResultat) {
     onChange({ id: r.id, brand: r.brand, model: r.model, category: r.category })
     setQuery('')
     setOpen(false)
@@ -94,7 +94,7 @@ export function SkaftSokDb({ category, placeholder, value, onChange }: Props) {
         className={cn(isPending && 'opacity-60')}
       />
       {open && (
-        <div className="border-border absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border bg-white shadow-lg dark:bg-zinc-900">
+        <div className="absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 bg-white shadow-lg dark:bg-zinc-900">
           {results.length > 0 ? (
             results.map((r) => (
               <button

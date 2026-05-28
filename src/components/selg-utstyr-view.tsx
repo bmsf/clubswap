@@ -72,6 +72,9 @@ import {
 import { Felt, PillToggle, AiBadge } from './selg-utstyr/primitives'
 import { Fremdrift } from './selg-utstyr/fremdrift'
 import { ModellVelger, type ValgtModell } from './selg-utstyr/modell-velger'
+import { SkaftVelger, type ValgtSkaft } from './selg-utstyr/skaft-velger'
+import { AdresseVelger } from './selg-utstyr/adresse-velger'
+import { type Adresse } from '@/app/actions/adresser'
 
 // ── Animation ─────────────────────────────────────────────────────────────────
 
@@ -148,16 +151,21 @@ export function SelgUtstyrView({
   const [valgtModell, setValgtModell] = useState<ValgtModell | null>(null)
   const [manuellModell, setManuellModell] = useState(false)
   const [flex, setFlex] = useState<string | null>(null)
-  const [skaftMateriale, setSkaftMateriale] = useState<'stal' | 'grafitt' | null>(null)
+  const [skaftValg, setSkaftValg] = useState<'uten' | 'ukjent' | 'kjent'>('ukjent')
+  const [valgtSkaft, setValgtSkaft] = useState<ValgtSkaft | null>(null)
   const [antallKoller, setAntallKoller] = useState(1)
   const [loft, setLoft] = useState('')
+  const [headcover, setHeadcover] = useState<boolean | null>(null)
   const [putterLengde, setPutterLengde] = useState('')
   const [hoselType, setHoselType] = useState<string | null>(null)
   const [skoStorrelse, setSkoStorrelse] = useState('')
   const [piggType, setPiggType] = useState<'soft' | 'fast' | null>(null)
   const [nyTilstand, setNyTilstand] = useState<NyTilstand | null>(null)
+  const [beskrivelse, setBeskrivelse] = useState('')
+  const [adresseCreate, setAdresseCreate] = useState<Adresse | null>(null)
   const [pris, setPris] = useState('')
-  const [fraktInkludert, setFraktInkludert] = useState(false)
+  const [fraktPakke, setFraktPakke] = useState<'liten' | 'medium' | 'stor' | null>(null)
+  const [kanMotes, setKanMotes] = useState(false)
   const [isSubmittingNy, setIsSubmittingNy] = useState(false)
 
   // ── Navigation guard ──────────────────────────────────────────────────────
@@ -197,14 +205,14 @@ export function SelgUtstyrView({
       if (typeof d.tittel === 'string') setTittel(d.tittel)
       if (typeof d.merke === 'string') setMerke(d.merke)
       if (d.flex === null || typeof d.flex === 'string') setFlex(d.flex as string | null)
-      if (
-        d.skaftMateriale === 'stal' ||
-        d.skaftMateriale === 'grafitt' ||
-        d.skaftMateriale === null
-      )
-        setSkaftMateriale(d.skaftMateriale as 'stal' | 'grafitt' | null)
+      if (d.skaftValg === 'uten' || d.skaftValg === 'ukjent' || d.skaftValg === 'kjent')
+        setSkaftValg(d.skaftValg)
+      if (d.valgtSkaft && typeof d.valgtSkaft === 'object')
+        setValgtSkaft(d.valgtSkaft as ValgtSkaft)
       if (typeof d.antallKoller === 'number') setAntallKoller(d.antallKoller)
       if (typeof d.loft === 'string') setLoft(d.loft)
+      if (typeof d.headcover === 'boolean' || d.headcover === null)
+        setHeadcover(d.headcover as boolean | null)
       if (typeof d.putterLengde === 'string') setPutterLengde(d.putterLengde)
       if (d.hoselType === null || typeof d.hoselType === 'string')
         setHoselType(d.hoselType as string | null)
@@ -215,7 +223,17 @@ export function SelgUtstyrView({
       if (validTilstander.includes(d.nyTilstand as NyTilstand))
         setNyTilstand(d.nyTilstand as NyTilstand)
       if (typeof d.pris === 'string') setPris(d.pris)
-      if (typeof d.fraktInkludert === 'boolean') setFraktInkludert(d.fraktInkludert)
+      if (
+        d.fraktPakke === 'liten' ||
+        d.fraktPakke === 'medium' ||
+        d.fraktPakke === 'stor' ||
+        d.fraktPakke === null
+      )
+        setFraktPakke(d.fraktPakke as 'liten' | 'medium' | 'stor' | null)
+      if (typeof d.kanMotes === 'boolean') setKanMotes(d.kanMotes)
+      if (typeof d.beskrivelse === 'string') setBeskrivelse(d.beskrivelse)
+      if (d.adresseCreate && typeof d.adresseCreate === 'object')
+        setAdresseCreate(d.adresseCreate as Adresse)
     } catch {
       // ignore
     }
@@ -234,16 +252,21 @@ export function SelgUtstyrView({
       tittel,
       merke,
       flex,
-      skaftMateriale,
+      skaftValg,
+      valgtSkaft,
       antallKoller,
       loft,
+      headcover,
       putterLengde,
       hoselType,
       skoStorrelse,
       piggType,
       nyTilstand,
+      beskrivelse,
+      adresseCreate,
       pris,
-      fraktInkludert,
+      fraktPakke,
+      kanMotes,
     }
     localStorage.setItem('golftorget_listing_draft', JSON.stringify(draft))
   }, [
@@ -255,16 +278,21 @@ export function SelgUtstyrView({
     tittel,
     merke,
     flex,
-    skaftMateriale,
+    skaftValg,
+    valgtSkaft,
     antallKoller,
     loft,
+    headcover,
     putterLengde,
     hoselType,
     skoStorrelse,
     piggType,
     nyTilstand,
+    beskrivelse,
+    adresseCreate,
     pris,
-    fraktInkludert,
+    fraktPakke,
+    kanMotes,
   ])
 
   // ── Navigation guard effects ──────────────────────────────────────────────
@@ -532,12 +560,8 @@ export function SelgUtstyrView({
         setFlex(data.shaft_flex as string)
         filled.add('flex')
       }
-      if (data.shaft_type === 'steel') {
-        setSkaftMateriale('stal')
-        filled.add('skaftMateriale')
-      } else if (data.shaft_type === 'graphite') {
-        setSkaftMateriale('grafitt')
-        filled.add('skaftMateriale')
+      if (data.shaft_type) {
+        setSkaftValg('kjent')
       }
       if (data.loft) {
         setLoft(String(data.loft as number))
@@ -592,13 +616,17 @@ export function SelgUtstyrView({
       merke: valgtModell ? valgtModell.brand : merke || 'Ukjent',
       modell: valgtModell ? valgtModell.model : tittel || merke || 'Ukjent',
       tilstand: NY_TILSTAND_LABEL[nyTilstand],
+      beskrivelse: beskrivelse.trim() || undefined,
       pris: parseInt(pris),
-      selgesFra: '',
-      tilbyrFrakt: !fraktInkludert,
+      selgesFra: adresseCreate?.poststed ?? '',
+      tilbyrFrakt: fraktPakke !== null,
       bilder: nyeBildeUrls,
-      ...(flex ? { shaftFlex: flex } : {}),
-      ...(skaftMateriale ? { skaftMateriale: skaftMateriale === 'stal' ? 'Stål' : 'Grafitt' } : {}),
-      ...(loft ? { loft: `${loft}°` } : {}),
+      ...(skaftValg === 'kjent' && flex ? { shaftFlex: flex } : {}),
+      ...(skaftValg === 'kjent' && valgtSkaft
+        ? { skaftMerke: valgtSkaft.brand, skaftModell: valgtSkaft.model }
+        : {}),
+      ...(loft ? { loft } : {}),
+      ...(headcover !== null ? { headcover } : {}),
     }
 
     try {
@@ -704,7 +732,7 @@ export function SelgUtstyrView({
               'w-full cursor-pointer rounded-2xl border-2 p-5 text-left transition-all',
               mode === 'ai'
                 ? 'border-foreground bg-foreground/5'
-                : 'border-border hover:border-foreground/40'
+                : 'hover:border-foreground/40 border-neutral-950/10'
             )}
           >
             <div className="flex items-start gap-4">
@@ -728,7 +756,7 @@ export function SelgUtstyrView({
               'w-full cursor-pointer rounded-2xl border-2 p-5 text-left transition-all',
               mode === 'manual'
                 ? 'border-foreground bg-foreground/5'
-                : 'border-border hover:border-foreground/40'
+                : 'hover:border-foreground/40 border-neutral-950/10'
             )}
           >
             <div className="flex items-start gap-4">
@@ -894,7 +922,7 @@ export function SelgUtstyrView({
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -4 }}
                                 transition={{ duration: 0.12 }}
-                                className="border-border bg-background absolute top-full right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border shadow-lg"
+                                className="bg-background absolute top-full right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-neutral-950/10 shadow-lg"
                               >
                                 {GOLF_MERKER.filter(
                                   (m) =>
@@ -936,7 +964,7 @@ export function SelgUtstyrView({
         <CardHeader>
           <CardTitle>Hva skal du selge?</CardTitle>
         </CardHeader>
-        <CardContent className="divide-border space-y-0 divide-y px-6">
+        <CardContent className="space-y-0 divide-y divide-neutral-950/10 px-6">
           {/* Tittel */}
           <div className="pb-6">
             <div className="bg-muted rounded-2xl px-4 py-3">
@@ -1002,7 +1030,8 @@ export function SelgUtstyrView({
     const showMerke = tittel.trim().length > 0
     const showCatFields = merke.trim().length > 0
     const showTilstand = merke.trim().length > 0
-    const showBilder = nyTilstand !== null
+    const showBilder = merke.trim().length > 0
+    const showBeskrivelse = nyTilstand !== null
 
     const harSkaftFields = uiKategori === 'jernshaft' || uiKategori === 'trekker'
     const erPutter = uiKategori === 'putter'
@@ -1082,7 +1111,7 @@ export function SelgUtstyrView({
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -4 }}
                           transition={{ duration: 0.12 }}
-                          className="border-border bg-background absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border shadow-lg"
+                          className="bg-background absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 shadow-lg"
                         >
                           {filteredMerker.map((m) => (
                             <button
@@ -1117,37 +1146,28 @@ export function SelgUtstyrView({
                 exit="exit"
                 className="space-y-4"
               >
-                <Felt label="Flex" aiBadge={aiFields.has('flex')}>
-                  <SimpleSelect
-                    value={flex ?? ''}
-                    onValueChange={setFlex}
-                    placeholder="Velg flex…"
-                    options={NY_FLEX_OPTIONS}
-                    className=""
-                  />
-                </Felt>
-                <Felt label="Sjaft-materiale" aiBadge={aiFields.has('skaftMateriale')}>
-                  <PillToggle
-                    options={[
-                      { value: 'stal', label: 'Stål' },
-                      { value: 'grafitt', label: 'Grafitt' },
-                    ]}
-                    value={skaftMateriale}
-                    onChange={setSkaftMateriale}
-                  />
-                </Felt>
                 {uiKategori === 'trekker' && (
-                  <Felt label="Loft (grader)" aiBadge={aiFields.has('loft')}>
-                    <Input
-                      type="number"
-                      value={loft}
-                      onChange={(e) => setLoft(e.target.value)}
-                      placeholder="f.eks. 10.5"
-                      min={0}
-                      max={60}
-                      className=""
-                    />
-                  </Felt>
+                  <>
+                    <Felt label="Loft (grader)" aiBadge={aiFields.has('loft')}>
+                      <SimpleSelect
+                        value={loft}
+                        onValueChange={setLoft}
+                        placeholder="Velg loft…"
+                        options={DRIVER_LOFT_OPTIONS}
+                        className=""
+                      />
+                    </Felt>
+                    <Felt label="Original headcover">
+                      <PillToggle
+                        options={[
+                          { value: 'true', label: 'Ja' },
+                          { value: 'false', label: 'Nei' },
+                        ]}
+                        value={headcover === true ? 'true' : headcover === false ? 'false' : null}
+                        onChange={(v) => setHeadcover(v === null ? null : v === 'true')}
+                      />
+                    </Felt>
+                  </>
                 )}
                 {uiKategori === 'jernshaft' && (
                   <Felt label="Antall køller">
@@ -1163,6 +1183,95 @@ export function SelgUtstyrView({
                     />
                   </Felt>
                 )}
+
+                {/* Shaft section */}
+                <div className="space-y-3 border-t border-neutral-950/10 pt-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Skaft</Label>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSkaftValg('uten')
+                          setValgtSkaft(null)
+                          setFlex(null)
+                        }}
+                        className={cn(
+                          'cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                          skaftValg === 'uten'
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'hover:border-foreground/40 border-neutral-950/10'
+                        )}
+                      >
+                        Uten skaft
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSkaftValg('ukjent')
+                          setValgtSkaft(null)
+                          setFlex(null)
+                        }}
+                        className={cn(
+                          'cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                          skaftValg === 'ukjent'
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'hover:border-foreground/40 border-neutral-950/10'
+                        )}
+                      >
+                        Ukjent skaft
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSkaftValg('kjent')}
+                        className={cn(
+                          'cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                          skaftValg === 'kjent'
+                            ? 'border-foreground bg-foreground text-background'
+                            : 'hover:border-foreground/40 border-neutral-950/10'
+                        )}
+                      >
+                        Legg til skaft
+                      </button>
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {skaftValg === 'kjent' && (
+                      <motion.div
+                        key="skaft-velger"
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.18 }}
+                        className="space-y-3"
+                      >
+                        <SkaftVelger
+                          value={valgtSkaft}
+                          onChange={setValgtSkaft}
+                          shaftCategory={
+                            uiKategori === 'trekker'
+                              ? 'driver_fairway'
+                              : uiKategori === 'jernshaft'
+                                ? 'iron'
+                                : undefined
+                          }
+                        />
+                        {valgtSkaft && (
+                          <Felt label="Flex">
+                            <SimpleSelect
+                              value={flex ?? ''}
+                              onValueChange={setFlex}
+                              placeholder="Velg flex…"
+                              options={NY_FLEX_OPTIONS}
+                              className=""
+                            />
+                          </Felt>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1268,7 +1377,7 @@ export function SelgUtstyrView({
                           'flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
                           nyTilstand === t.value
                             ? `${t.klasse} ring-2 ring-current ring-offset-1`
-                            : 'border-border hover:border-foreground/40'
+                            : 'hover:border-foreground/40 border-neutral-950/10'
                         )}
                       >
                         <span className={cn('h-2.5 w-2.5 rounded-full', t.dotKlasse)} />
@@ -1291,11 +1400,41 @@ export function SelgUtstyrView({
                 animate="visible"
                 exit="exit"
               >
-                <div className="border-border border-t pt-5">
+                <div className="border-t border-neutral-950/10 pt-5">
                   <p className="text-foreground mb-3 text-sm font-medium">Bilder</p>
                   <BildeOpplaster {...bildeOpplasterProps} />
                   <p className="text-muted-foreground mt-2 text-xs">
                     Maks {MAKS_ANTALL_BILDER} bilder · Første bilde blir forsidebilde
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 6. Beskrivelse */}
+          <AnimatePresence>
+            {showBeskrivelse && (
+              <motion.div
+                key="beskrivelse"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div className="space-y-1 border-t border-neutral-950/10 pt-5">
+                  <div className="flex items-center justify-between">
+                    <Label>Beskrivelse</Label>
+                    <span className="text-muted-foreground text-xs">Valgfritt</span>
+                  </div>
+                  <Textarea
+                    value={beskrivelse}
+                    onChange={(e) => setBeskrivelse(e.target.value.slice(0, 1000))}
+                    placeholder="Beskriv tilstanden nærmere, inkluderte tilbehør, evt. skader osv."
+                    rows={4}
+                    className="resize-none"
+                  />
+                  <p className="text-muted-foreground text-right text-xs">
+                    {beskrivelse.length}/1000
                   </p>
                 </div>
               </motion.div>
@@ -1307,9 +1446,6 @@ export function SelgUtstyrView({
   }
 
   function renderPrisFase() {
-    const prisNummer = parseInt(pris)
-    const prisGyldig = !isNaN(prisNummer) && prisNummer > 0
-
     return (
       <>
         <CardHeader>
@@ -1317,102 +1453,115 @@ export function SelgUtstyrView({
           <CardDescription>Sett en pris og publiser annonsen din</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-8 lg:grid-cols-2">
-            {/* Left: price + frakt */}
-            <div className="space-y-5">
-              <Felt label="Pris" required>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={pris}
-                    onChange={(e) => setPris(e.target.value)}
-                    placeholder="f.eks. 2490"
-                    className="pr-10"
-                    min={0}
-                  />
-                  <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm">
-                    kr
-                  </span>
-                </div>
-                {uiKategori && (
-                  <p className="text-muted-foreground mt-1.5 text-xs">
-                    Typisk: {PRIS_ANBEFALINGER[uiKategori]}
-                  </p>
-                )}
-              </Felt>
+          <div className="space-y-5">
+            <Felt label="Pris" required>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={pris}
+                  onChange={(e) => setPris(e.target.value)}
+                  placeholder="Pris"
+                  className="pr-14"
+                  min={0}
+                />
+                <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm">
+                  NOK
+                </span>
+              </div>
+              {uiKategori && (
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  Typisk: {PRIS_ANBEFALINGER[uiKategori]}
+                </p>
+              )}
+            </Felt>
 
-              <Felt label="Frakt">
-                <div className="border-border overflow-hidden rounded-xl border">
+            <Felt label="Sted">
+              <AdresseVelger value={adresseCreate} onChange={setAdresseCreate} />
+            </Felt>
+
+            <div className="space-y-2">
+              <Label>Frakt</Label>
+              <p className="text-muted-foreground text-xs">
+                Kjøper betaler frakt. Velg pakkestørrelse eller la være for frakt inkludert i pris.
+              </p>
+              <div className="divide-y divide-neutral-950/10 overflow-hidden rounded-xl border border-neutral-950/10">
+                {(
+                  [
+                    {
+                      value: 'liten',
+                      label: 'Liten pakke',
+                      desc: 'F.eks. golfballer, hansker, tilbehør',
+                    },
+                    { value: 'medium', label: 'Medium pakke', desc: 'F.eks. wedge, putter, jern' },
+                    { value: 'stor', label: 'Stor pakke', desc: 'F.eks. driver, jernset, golfbag' },
+                  ] as const
+                ).map((opt) => (
                   <button
+                    key={opt.value}
                     type="button"
-                    onClick={() => setFraktInkludert(true)}
+                    onClick={() => setFraktPakke(fraktPakke === opt.value ? null : opt.value)}
                     className={cn(
-                      'w-full cursor-pointer px-4 py-2.5 text-left text-sm transition-colors',
-                      fraktInkludert
-                        ? 'bg-foreground text-background font-medium'
-                        : 'hover:bg-muted text-foreground'
+                      'flex w-full cursor-pointer items-center gap-3 px-4 py-3.5 text-left transition-colors',
+                      fraktPakke === opt.value ? 'bg-foreground text-background' : 'hover:bg-muted'
                     )}
                   >
-                    Frakt inkludert
-                  </button>
-                  <div className="border-border border-t" />
-                  <button
-                    type="button"
-                    onClick={() => setFraktInkludert(false)}
-                    className={cn(
-                      'w-full cursor-pointer px-4 py-2.5 text-left text-sm transition-colors',
-                      !fraktInkludert
-                        ? 'bg-foreground text-background font-medium'
-                        : 'hover:bg-muted text-foreground'
-                    )}
-                  >
-                    Kjøper betaler frakt
-                  </button>
-                </div>
-              </Felt>
-            </div>
-
-            {/* Right: live preview */}
-            <div className="space-y-3">
-              <p className="text-foreground text-sm font-medium">Forhåndsvisning</p>
-              <div className="border-border overflow-hidden rounded-2xl border shadow-sm">
-                <div className="bg-muted aspect-4/3">
-                  {bilder[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={bilder[0].url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <PhotoIcon className="text-muted-foreground/30 h-10 w-10" />
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2 p-4">
-                  <p className="line-clamp-2 text-sm font-semibold">{tittel || 'Annonsetittel'}</p>
-                  {merke && <p className="text-muted-foreground text-xs">{merke}</p>}
-                  <div className="flex items-center justify-between gap-2">
-                    {nyTilstand && (
-                      <span
+                    <span
+                      className={cn(
+                        'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2',
+                        fraktPakke === opt.value
+                          ? 'border-background bg-background'
+                          : 'border-muted-foreground'
+                      )}
+                    >
+                      {fraktPakke === opt.value && (
+                        <span className="bg-foreground h-2 w-2 rounded-full" />
+                      )}
+                    </span>
+                    <div>
+                      <p
                         className={cn(
-                          'rounded-full border px-2 py-0.5 text-[11px] font-medium',
-                          NY_TILSTANDER.find((t) => t.value === nyTilstand)?.klasse
+                          'text-sm font-medium',
+                          fraktPakke === opt.value ? 'text-background' : 'text-foreground'
                         )}
                       >
-                        {NY_TILSTANDER.find((t) => t.value === nyTilstand)?.label}
-                      </span>
-                    )}
-                    {prisGyldig && (
-                      <span className="text-foreground text-sm font-semibold">
-                        {prisNummer.toLocaleString('nb-NO')} kr
-                      </span>
-                    )}
-                  </div>
-                  {uiKategori && (
-                    <span className="bg-muted text-muted-foreground inline-block rounded-full px-2 py-0.5 text-xs">
-                      {UI_KATEGORI_OPTIONS.find((o) => o.value === uiKategori)?.label}
-                    </span>
-                  )}
-                </div>
+                        {opt.label}
+                      </p>
+                      <p
+                        className={cn(
+                          'text-xs',
+                          fraktPakke === opt.value ? 'text-background/70' : 'text-muted-foreground'
+                        )}
+                      >
+                        {opt.desc}
+                      </p>
+                    </div>
+                  </button>
+                ))}
               </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-neutral-950/10 px-4 py-3.5">
+              <div>
+                <p className="text-sm font-medium">Kan møtes</p>
+                <p className="text-muted-foreground text-xs">Møt kjøper for overlevering</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={kanMotes}
+                onClick={() => setKanMotes(!kanMotes)}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                  kanMotes ? 'bg-foreground' : 'bg-muted-foreground/30'
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform',
+                    kanMotes ? 'translate-x-5' : 'translate-x-0'
+                  )}
+                />
+              </button>
             </div>
           </div>
         </CardContent>
@@ -1661,7 +1810,7 @@ export function SelgUtstyrView({
                     'flex cursor-pointer flex-col items-start rounded-xl border px-4 py-3 text-left transition-all',
                     tilstand === t.value
                       ? `${t.klasse} ring-foreground ring-2 ring-offset-1`
-                      : 'border-border hover:border-foreground/40'
+                      : 'hover:border-foreground/40 border-neutral-950/10'
                   )}
                 >
                   <span
@@ -1805,7 +1954,7 @@ export function SelgUtstyrView({
             </motion.div>
           </AnimatePresence>
 
-          <CardFooter className="border-border justify-between gap-3 border-t pt-5 pb-5">
+          <CardFooter className="justify-between gap-3 border-t border-neutral-950/10 pt-5 pb-5">
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Button
                 type="button"
@@ -1915,7 +2064,7 @@ export function SelgUtstyrView({
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setPendingNavHref(null)}
           />
-          <div className="bg-card border-border relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border shadow-2xl">
+          <div className="bg-card relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 shadow-2xl">
             <button
               type="button"
               onClick={() => setPendingNavHref(null)}
@@ -1946,12 +2095,12 @@ export function SelgUtstyrView({
               <Button
                 variant="outline"
                 onClick={confirmLeave}
-                className="border-border bg-background text-foreground hover:bg-muted h-10 w-full rounded-xl border"
+                className="bg-background text-foreground hover:bg-muted h-10 w-full rounded-xl border border-neutral-950/10"
               >
                 Forlat uten å lagre
               </Button>
             </div>
-            <div className="border-border border-t px-7 py-4 text-center">
+            <div className="border-t border-neutral-950/10 px-7 py-4 text-center">
               <button
                 type="button"
                 onClick={() => setPendingNavHref(null)}

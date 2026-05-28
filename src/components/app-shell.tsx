@@ -111,9 +111,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     '?'
 
   return (
-    <div className="bg-background text-foreground flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-white text-neutral-950 antialiased">
       {/* ── Top navbar ─────────────────────────────────────────────────────── */}
-      <header className="bg-background sticky top-0 z-40 h-16">
+      <header className="sticky top-0 z-40 h-16 border-b border-neutral-950/10 bg-white text-neutral-950">
         <div className="mx-auto flex h-full w-full max-w-7xl items-center gap-3 px-4 md:gap-4 md:px-6">
           {/* Brand */}
           <Link href="/" className="text-foreground shrink-0 text-sm font-semibold tracking-tight">
@@ -122,7 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Search */}
           <form onSubmit={handleHeaderSearch} className="flex-1">
-            <div className="bg-muted mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full px-4 py-2.5">
+            <div className="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full bg-neutral-100 px-4 py-2.5">
               <Search className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
               <input
                 type="text"
@@ -150,18 +150,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <MessageSquare className="h-4 w-4" />
             </button>
-            <button
+            <Button
+              variant="primary"
+              size="default"
               onClick={() => handleNavClick('/selg')}
-              className="bg-primary-btn text-primary-btn-fg ml-1 rounded-full px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+              className="ml-1"
             >
               Ny annonse
-            </button>
+            </Button>
 
             {user ? (
               <div className="relative ml-1" ref={profilRef}>
                 <button
                   onClick={() => setProfilMeny(!profilMeny)}
-                  className="bg-muted text-muted-foreground flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-xs font-semibold transition-colors hover:opacity-80"
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-950 transition-colors hover:bg-neutral-200"
                   aria-label="Profilmeny"
                 >
                   {initials}
@@ -169,7 +171,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <AnimatePresence>
                   {profilMeny && (
                     <motion.div
-                      className="bg-background border-border absolute top-full right-0 mt-1.5 min-w-37 rounded-xl border p-1 shadow-lg"
+                      className="absolute top-full right-0 mt-1.5 min-w-37 rounded-xl border border-neutral-950/10 bg-white p-1 shadow-lg"
                       initial={{ opacity: 0, y: -4, scale: 0.97 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.97 }}
@@ -198,7 +200,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ) : (
               <Button
                 variant="outline"
-                size="sm"
+                size="default"
                 onClick={() => openModal('logg-inn')}
                 className="ml-1"
               >
@@ -211,18 +213,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Page content ───────────────────────────────────────────────────── */}
       <main className="flex-1 pb-16 md:pb-0">
-        <motion.div
-          key={pathname}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, ease: 'easeOut' }}
-        >
-          {children}
-        </motion.div>
+        <div className="mx-auto min-h-screen max-w-7xl border-x border-neutral-950/10">
+          <motion.div
+            key={pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+          >
+            {children}
+          </motion.div>
+        </div>
       </main>
 
       {/* ── Bottom nav (mobile only) ────────────────────────────────────────── */}
-      <nav className="bg-background fixed right-0 bottom-0 left-0 z-40 flex md:hidden">
+      <nav className="fixed right-0 bottom-0 left-0 z-40 flex bg-white text-neutral-950 md:hidden">
         {BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const active = pathname === item.href

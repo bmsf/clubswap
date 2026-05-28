@@ -98,6 +98,7 @@ export interface ListingDetailProps {
   selgesFra?: string | null
   tilbyrFrakt: boolean
   bilder: string[]
+  beskrivelse?: string | null
   skadebeskrivelse?: string | null
   aarsmodell?: string | null
   shaftFlex?: string | null
@@ -117,6 +118,7 @@ export function ProductDetailPage({
   selgesFra,
   tilbyrFrakt,
   bilder,
+  beskrivelse,
   skadebeskrivelse,
   aarsmodell,
   shaftFlex,
@@ -302,8 +304,13 @@ export function ProductDetailPage({
           )}
 
           {/* Description */}
-          {skadebeskrivelse && (
-            <p className="text-muted-foreground text-sm leading-relaxed">{skadebeskrivelse}</p>
+          {(beskrivelse || skadebeskrivelse) && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-semibold">Beskrivelse</p>
+              <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                {beskrivelse || skadebeskrivelse}
+              </p>
+            </div>
           )}
 
           {/* Seller */}

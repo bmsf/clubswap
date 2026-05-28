@@ -4,25 +4,24 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[calc(infinity*1px-1px)] text-sm font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 active:scale-[0.97]',
   {
     variants: {
       variant: {
         default:
-          'bg-highlight-btn text-foreground dark:text-[#1d1d1d] hover:opacity-90 shadow-[0_2px_6px_rgba(0,0,0,0.10)]',
-        primary:
-          'bg-primary-btn text-primary-btn-fg shadow-[0_2px_8px_rgba(0,0,0,0.18)] hover:opacity-90',
+          'bg-white text-neutral-950 shadow-sm ring-1 ring-neutral-950/10 hover:bg-neutral-50',
+        primary: 'bg-neutral-950 text-white shadow-lg ring-1 ring-neutral-950 hover:bg-neutral-800',
         outline:
-          'border border-border/70 bg-background text-foreground hover:bg-muted hover:border-border',
-        ghost: 'text-foreground hover:bg-muted',
-        destructive: 'bg-red-500 text-white hover:bg-red-600 shadow-[0_2px_6px_rgba(0,0,0,0.12)]',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'bg-white text-neutral-950 shadow-sm ring-1 ring-neutral-950/10 hover:bg-neutral-50 hover:ring-neutral-950/15',
+        ghost: 'text-neutral-950 hover:bg-neutral-100',
+        destructive: 'bg-red-500 text-white hover:bg-red-600',
+        link: 'text-neutral-950 underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-10 px-5',
-        sm: 'h-8 px-4 text-xs',
-        lg: 'h-11 px-7',
-        icon: 'h-10 w-10',
+        default: 'px-3 py-[3px]',
+        sm: 'px-2.5 py-[1px] text-xs',
+        lg: 'px-4 py-[5px] text-base',
+        icon: 'size-9',
       },
     },
     defaultVariants: {

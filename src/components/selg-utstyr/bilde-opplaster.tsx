@@ -93,7 +93,7 @@ export function BildeOpplaster({
             onLeggTil(e.dataTransfer.files)
           }}
           className={cn(
-            'border-border mb-4 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 transition-colors',
+            'mb-4 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-neutral-950/10 px-6 py-10 transition-colors',
             dragOver ? 'border-primary bg-primary/5' : 'hover:border-primary/50 cursor-pointer'
           )}
           onClick={() => fileRef.current?.click()}
@@ -142,7 +142,7 @@ export function BildeOpplaster({
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="border-border hover:border-primary/50 flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed transition-colors"
+              className="hover:border-primary/50 flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-neutral-950/10 transition-colors"
             >
               <PhotoIcon className="text-muted-foreground h-5 w-5" />
             </button>

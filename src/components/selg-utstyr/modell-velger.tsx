@@ -69,8 +69,12 @@ interface KategoriEntry {
 
 function grupperEtterKategori(resultater: ModellGruppe[]): Map<string, KategoriEntry[]> {
   const map = new Map<string, KategoriEntry[]>()
+  const seen = new Set<string>()
   for (const gruppe of resultater) {
     for (const v of gruppe.variants) {
+      const dupeKey = `${gruppe.brand}__${gruppe.model}__${v.category}`
+      if (seen.has(dupeKey)) continue
+      seen.add(dupeKey)
       if (!map.has(v.category)) map.set(v.category, [])
       map.get(v.category)!.push({ gruppe, equipmentId: v.equipmentId, count: v.count })
     }
@@ -128,7 +132,6 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
             </p>
             <p className="text-muted-foreground mt-0.5 text-xs">
               {KATEGORI_LABEL[value.category] ?? value.category}
-              {value.year ? ` · ${value.year}` : ''}
             </p>
           </div>
           <button
@@ -197,7 +200,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
             className="space-y-4"
           >
             {resultater.length === 0 ? (
-              <div className="border-border rounded-xl border border-dashed px-4 py-6 text-center">
+              <div className="rounded-xl border border-dashed border-neutral-950/10 px-4 py-6 text-center">
                 <p className="text-muted-foreground text-sm">
                   Ingen modeller funnet for &ldquo;{query}&rdquo;
                 </p>
@@ -225,17 +228,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
                           >
                             <span className="text-sm">
                               {gruppe.brand} {gruppe.model}
-                              {gruppe.year ? (
-                                <span className="text-muted-foreground ml-1.5 text-xs">
-                                  {gruppe.year}
-                                </span>
-                              ) : null}
                             </span>
-                            {count > 0 && (
-                              <span className="text-muted-foreground ml-3 shrink-0 text-xs tabular-nums">
-                                {count === 1 ? '1 aktiv' : `${count} aktive`}
-                              </span>
-                            )}
                           </button>
                         ))}
                       </div>
@@ -245,7 +238,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
               </Accordion>
             )}
 
-            <div className="border-border border-t pt-3">
+            <div className="border-t border-neutral-950/10 pt-3">
               <button
                 type="button"
                 onClick={onManuell}

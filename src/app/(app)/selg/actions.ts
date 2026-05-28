@@ -8,12 +8,15 @@ export type AnnonseInput = {
   annetMerke?: string
   modell: string
   aarsmodell?: string
+  skaftMerke?: string
   skaftModell?: string
   shaftFlex?: string
   haandighet?: string
   loft?: string
+  headcover?: boolean
   skaftMateriale?: string
   tilstand: string
+  beskrivelse?: string
   skadebeskrivelse?: string
   pris: number
   selgesFra?: string
@@ -44,12 +47,15 @@ export async function publiserAnnonse(
       merke,
       modell: input.modell,
       aarsmodell: input.aarsmodell ?? null,
+      skaft_merke: input.skaftMerke ?? null,
       skaft_modell: input.skaftModell ?? null,
       shaft_flex: input.shaftFlex ?? null,
       haandighet: input.haandighet ?? null,
       loft: input.loft ?? null,
+      includes_headcover: input.headcover ?? null,
       skaft_materiale: input.skaftMateriale ?? null,
       tilstand: input.tilstand,
+      beskrivelse: input.beskrivelse ?? null,
       skadebeskrivelse: input.skadebeskrivelse ?? null,
       pris: input.pris,
       selges_fra: input.selgesFra ?? '',
@@ -88,12 +94,15 @@ export async function oppdaterAnnonse(
       merke,
       modell: input.modell,
       aarsmodell: input.aarsmodell ?? null,
+      skaft_merke: input.skaftMerke ?? null,
       skaft_modell: input.skaftModell ?? null,
       shaft_flex: input.shaftFlex ?? null,
       haandighet: input.haandighet ?? null,
       loft: input.loft ?? null,
+      includes_headcover: input.headcover ?? null,
       skaft_materiale: input.skaftMateriale ?? null,
       tilstand: input.tilstand,
+      beskrivelse: input.beskrivelse ?? null,
       skadebeskrivelse: input.skadebeskrivelse ?? null,
       pris: input.pris,
       selges_fra: input.selgesFra ?? '',

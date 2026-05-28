@@ -88,7 +88,7 @@ export function SkaftSok({
         onBlur={() => setTimeout(() => setVis(false), 150)}
       />
       {vis && kandidater.length > 0 && (
-        <div className="border-border bg-background absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border shadow-lg">
+        <div className="bg-background absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 shadow-lg">
           {kandidater.map((s, i) => (
             <button
               key={i}
@@ -130,7 +130,7 @@ export function PillToggle<T extends string>({
           type="button"
           onClick={() => onChange(opt.value)}
           className={cn(
-            'border-border focus:border-foreground/50 h-11 cursor-pointer rounded-xl border px-4 text-sm transition-colors outline-none',
+            'focus:border-foreground/50 h-11 cursor-pointer rounded-xl border border-neutral-950/10 px-4 text-sm transition-colors outline-none',
             value === opt.value
               ? 'border-foreground bg-foreground/8 text-foreground font-medium'
               : 'hover:border-foreground/40'

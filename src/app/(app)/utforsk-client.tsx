@@ -187,7 +187,9 @@ function CheckOption({
         <div
           className={cn(
             'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
-            checked ? 'border-foreground bg-foreground' : 'border-border hover:border-foreground/50'
+            checked
+              ? 'border-foreground bg-foreground'
+              : 'hover:border-foreground/50 border-neutral-950/10'
           )}
         >
           {checked && <Check className="text-background h-2.5 w-2.5" />}
@@ -255,7 +257,7 @@ function CategoryTree({
         ).length
 
         return (
-          <div key={k.value} className="border-border border-b last:border-0">
+          <div key={k.value} className="border-b border-neutral-950/10 last:border-0">
             <button
               onClick={() => toggleGroup(k.value)}
               className="flex w-full items-center justify-between py-3 text-left select-none"
@@ -410,7 +412,7 @@ function FilterRow({
   children: React.ReactNode
 }) {
   return (
-    <div className="border-border border-b last:border-0">
+    <div className="border-b border-neutral-950/10 last:border-0">
       <button
         onClick={onToggle}
         className="flex w-full items-center justify-between px-5 py-4 text-left select-none"
@@ -477,11 +479,11 @@ function SortDropdown({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((p) => !p)}
-        className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 px-4 py-3 text-sm transition-colors select-none"
+        className="text-foreground hover:text-foreground/70 flex items-center gap-1.5 px-4 py-4 text-base font-medium transition-colors select-none"
       >
         Sort: {label}
         <ChevronDown
-          className={cn('h-3.5 w-3.5 transition-transform duration-150', open && 'rotate-180')}
+          className={cn('h-4 w-4 transition-transform duration-150', open && 'rotate-180')}
         />
       </button>
       <AnimatePresence>
@@ -491,7 +493,7 @@ function SortDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.12 }}
-            className="border-border bg-background absolute top-full left-0 z-50 mt-1 w-44 rounded-xl border p-2 shadow-lg"
+            className="bg-background absolute top-full left-0 z-50 mt-1 w-44 rounded-xl border border-neutral-950/10 p-2 shadow-lg"
           >
             {SORT_OPTIONS.map((opt) => (
               <button
@@ -658,15 +660,15 @@ export function UtforskClient({
   return (
     <>
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
-      <div className="bg-background sticky top-16 z-30">
+      <div>
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex items-center justify-between">
             {/* Left: Filtre button */}
             <button
               onClick={() => setDrawerOpen(true)}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-2 py-3 text-sm transition-colors select-none"
+              className="text-foreground hover:text-foreground/70 flex items-center gap-2.5 py-4 text-base font-medium transition-colors select-none"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="h-5 w-5" />
               Filtre
               {totalActiveFilters > 0 && (
                 <span className="bg-foreground text-background flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums">
@@ -684,7 +686,7 @@ export function UtforskClient({
       {/* ── Filter drawer ─────────────────────────────────────────────────── */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent side="left" className="flex w-full flex-col p-0 sm:max-w-sm">
-          <SheetHeader className="border-border border-b px-5 py-4">
+          <SheetHeader className="border-b border-neutral-950/10 px-5 py-4">
             <SheetTitle className="text-base font-semibold">Filtre</SheetTitle>
           </SheetHeader>
 
@@ -842,7 +844,7 @@ export function UtforskClient({
           </div>
 
           {/* Footer */}
-          <div className="border-border border-t px-5 py-4">
+          <div className="border-t border-neutral-950/10 px-5 py-4">
             <div className="flex items-center justify-between gap-3">
               <button
                 onClick={resetAllFilters}
