@@ -167,7 +167,71 @@ export const TILSTANDER: {
 
 // ── Shaft options ─────────────────────────────────────────────────────────────
 
-export const DRIVER_LOFT_OPTIONS = ['9°', '9.5°', '10°', '10.5°', '11°', '11.5°', '12°']
+export const DRIVER_LOFT_OPTIONS = ['8°', '9°', '10°', '10.5°', '11°', '11.5°', '12°']
+
+// ── Loft/type per kategori ─────────────────────────────────────────────────────
+export const FAIRWAY_LOFT_OPTIONS: { value: string; label: string }[] = [
+  { value: '3 Wood', label: '3 Wood' },
+  { value: '3+ Wood', label: '3+ Wood' },
+  { value: '4 Wood', label: '4 Wood' },
+  { value: '4+ Wood', label: '4+ Wood' },
+  { value: '5 Wood', label: '5 Wood' },
+  { value: '7 Wood', label: '7 Wood' },
+  { value: '9 Wood', label: '9 Wood' },
+  { value: '11 Wood', label: '11 Wood' },
+]
+
+export const HYBRID_LOFT_OPTIONS: { value: string; label: string }[] = [
+  { value: '2-Hybrid', label: '2-Hybrid' },
+  { value: '3-Hybrid', label: '3-Hybrid' },
+  { value: '4-Hybrid', label: '4-Hybrid' },
+  { value: '5-Hybrid', label: '5-Hybrid' },
+  { value: '6-Hybrid', label: '6-Hybrid' },
+  { value: '7-Hybrid', label: '7-Hybrid' },
+  { value: '8-Hybrid', label: '8-Hybrid' },
+  { value: 'A-Hybrid', label: 'A-Hybrid' },
+  { value: 'S-Hybrid', label: 'S-Hybrid' },
+]
+
+export const WEDGE_LOFT_OPTIONS: { value: string; label: string }[] = [
+  { value: '48°', label: '48°' },
+  { value: '50°', label: '50°' },
+  { value: '52°', label: '52°' },
+  { value: '54°', label: '54°' },
+  { value: '56°', label: '56°' },
+  { value: '58°', label: '58°' },
+  { value: '60°', label: '60°' },
+]
+
+/** Loft-/type-valg for en løst db-kategori, eller null hvis kategorien ikke har loft. */
+export function loftOptionerForDb(dbKat: string): { value: string; label: string }[] | null {
+  switch (dbKat) {
+    case 'driver':
+      return DRIVER_LOFT_OPTIONS.map((l) => ({ value: l, label: l }))
+    case 'fairway_wood':
+      return FAIRWAY_LOFT_OPTIONS
+    case 'hybrid':
+      return HYBRID_LOFT_OPTIONS
+    case 'wedge':
+      return WEDGE_LOFT_OPTIONS
+    default:
+      return null
+  }
+}
+
+// ── Skaft lengde (relativ til standard) ────────────────────────────────────────
+export const SKAFT_LENGDE_OPTIONS: { value: string; label: string }[] = [
+  { value: '-2', label: '-2"' },
+  { value: '-1.5', label: '-1,5"' },
+  { value: '-1', label: '-1"' },
+  { value: '-0.5', label: '-0,5"' },
+  { value: 'standard', label: 'Standard' },
+  { value: '+0.5', label: '+0,5"' },
+  { value: '+1', label: '+1"' },
+  { value: '+1.5', label: '+1,5"' },
+  { value: '+2', label: '+2"' },
+  { value: 'custom', label: 'Egendefinert' },
+]
 
 export const KJENTE_SKAFT: { navn: string; type: 'steel' | 'graphite' }[] = [
   { navn: 'Fujikura Ventus Blue', type: 'graphite' },
@@ -285,6 +349,7 @@ export const MAKS_ANTALL_BILDER = 8
 export type UiKategori =
   | 'jernshaft'
   | 'trekker'
+  | 'wedge'
   | 'putter'
   | 'baller'
   | 'bag'
@@ -292,11 +357,12 @@ export type UiKategori =
   | 'tilbehor'
   | 'annet'
 
-export type NyTilstand = 'ny' | 'som_ny' | 'bra' | 'ok' | 'slitt'
+export type NyTilstand = 'ny' | 'utmerket' | 'god' | 'akseptabel'
 
 export const UI_KATEGORI_OPTIONS: { value: UiKategori; label: string }[] = [
   { value: 'jernshaft', label: 'Jernkøller' },
   { value: 'trekker', label: 'Trekker' },
+  { value: 'wedge', label: 'Wedge' },
   { value: 'putter', label: 'Putter' },
   { value: 'baller', label: 'Baller' },
   { value: 'bag', label: 'Bag' },
@@ -317,6 +383,7 @@ export const UNDERKATEGORI_OPTIONS: Record<UiKategori, { value: string; label: s
     { value: 'fairway_tre', label: 'Fairway tre' },
     { value: 'hybridtrekker', label: 'Hybridtrekker' },
   ],
+  wedge: [],
   putter: [
     { value: 'bladputter', label: 'Bladputter' },
     { value: 'malteputter', label: 'Malteputter' },
@@ -348,6 +415,8 @@ export function uiKategoriTilDb(ui: UiKategori, underkat: string | null): string
       if (underkat === 'fairway_tre') return 'fairway_wood'
       if (underkat === 'hybridtrekker') return 'hybrid'
       return 'driver'
+    case 'wedge':
+      return 'wedge'
     case 'putter':
       return 'putter'
     case 'baller':
@@ -376,7 +445,7 @@ export function kategoriTilUiKategori(kat: Category): { ui: UiKategori; underkat
     case 'single_iron':
       return { ui: 'jernshaft', underkat: 'enkelt_jern' }
     case 'wedge':
-      return { ui: 'jernshaft', underkat: 'enkelt_jern' }
+      return { ui: 'wedge', underkat: null }
     case 'putter':
       return { ui: 'putter', underkat: 'bladputter' }
     case 'golf_bag':
@@ -393,56 +462,54 @@ export function kategoriTilUiKategori(kat: Category): { ui: UiKategori; underkat
 export const NY_TILSTANDER: {
   value: NyTilstand
   label: string
+  beskrivelse: string
   klasse: string
   dotKlasse: string
 }[] = [
   {
     value: 'ny',
     label: 'Ny',
+    beskrivelse: 'Ubrukt, i eller uten innpakning',
     klasse:
       'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
     dotKlasse: 'bg-emerald-500',
   },
   {
-    value: 'som_ny',
-    label: 'Som ny',
+    value: 'utmerket',
+    label: 'Utmerket',
+    beskrivelse: 'Brukt, maks 2-3 runder',
     klasse:
       'border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-950 dark:text-green-300',
     dotKlasse: 'bg-green-400',
   },
   {
-    value: 'bra',
-    label: 'Bra',
+    value: 'god',
+    label: 'God',
+    beskrivelse: 'Brukt, meget god stand, ingen skader',
     klasse: 'border-primary/30 bg-primary/8 text-primary',
     dotKlasse: 'bg-primary',
   },
   {
-    value: 'ok',
-    label: 'OK',
+    value: 'akseptabel',
+    label: 'Akseptabel',
+    beskrivelse: 'Brukt, men noe kosmetisk slitasje',
     klasse:
       'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300',
     dotKlasse: 'bg-amber-500',
-  },
-  {
-    value: 'slitt',
-    label: 'Slitt',
-    klasse:
-      'border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-950 dark:text-red-300',
-    dotKlasse: 'bg-red-500',
   },
 ]
 
 export const NY_TILSTAND_LABEL: Record<NyTilstand, string> = {
   ny: 'Ny',
-  som_ny: 'Som ny',
-  bra: 'God',
-  ok: 'Akseptabel',
-  slitt: 'Slitt',
+  utmerket: 'Utmerket',
+  god: 'God',
+  akseptabel: 'Akseptabel',
 }
 
 export const PRIS_ANBEFALINGER: Record<UiKategori, string> = {
   jernshaft: '500–4 000 kr',
   trekker: '300–3 500 kr',
+  wedge: '300–2 000 kr',
   putter: '300–2 500 kr',
   baller: '50–500 kr',
   bag: '200–2 000 kr',
@@ -465,17 +532,60 @@ export const GOLF_MERKER = [
 ]
 
 export const NY_FLEX_OPTIONS: { value: string; label: string }[] = [
-  { value: 'L', label: 'Dame' },
-  { value: 'A', label: 'Senior' },
-  { value: 'R', label: 'Regular' },
-  { value: 'S', label: 'Stiff' },
-  { value: 'X', label: 'X-Stiff' },
+  { value: 'regular', label: 'Regular Flex' },
+  { value: 'stiff', label: 'Stiff Flex' },
+  { value: 'lite_a', label: 'Lite/A Flex' },
+  { value: 'x_stiff', label: 'X-Stiff Flex' },
+  { value: 'tour_stiff', label: 'Tour-Stiff Flex' },
 ]
 
 export const HOSEL_OPTIONS = [
   { value: 'straight', label: 'Straight' },
   { value: 'offset', label: 'Offset' },
   { value: 'double_bend', label: 'Double-bend' },
+]
+
+// ── Jernsett: hvilke køller settet inneholder ──────────────────────────────────
+// Rekkefølgen er den kanoniske sorteringsrekkefølgen for visning og områdeformat.
+export const JERN_KOLLER_OPTIONS: { value: string; label: string }[] = [
+  { value: '3', label: '3' },
+  { value: '4', label: '4' },
+  { value: '5', label: '5' },
+  { value: '6', label: '6' },
+  { value: '7', label: '7' },
+  { value: '8', label: '8' },
+  { value: '9', label: '9' },
+  { value: 'P', label: 'P' },
+  { value: 'A', label: 'A' },
+  { value: 'S', label: 'S' },
+]
+
+const KOLLER_REKKEFOLGE = JERN_KOLLER_OPTIONS.map((k) => k.value)
+
+/**
+ * Formaterer valgte jernkøller. Sammenhengende utvalg vises som område ("4–P"),
+ * ellers som kommaliste ("4, 6, 8"). Returnerer tom streng for tomt utvalg.
+ */
+export function formaterKoller(koller: string[]): string {
+  const sortert = KOLLER_REKKEFOLGE.filter((k) => koller.includes(k))
+  if (sortert.length === 0) return ''
+  if (sortert.length === 1) return sortert[0]
+
+  const indekser = sortert.map((k) => KOLLER_REKKEFOLGE.indexOf(k))
+  const sammenhengende = indekser.every((idx, i) => i === 0 || idx === indekser[i - 1] + 1)
+
+  return sammenhengende ? `${sortert[0]}–${sortert[sortert.length - 1]}` : sortert.join(', ')
+}
+
+// ── Materiale / håndighet — kodene matcher filter på /utforsk + detaljsiden ─────
+export const SKAFT_MATERIALE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'graphite', label: 'Grafitt' },
+  { value: 'steel', label: 'Stål' },
+]
+
+export const HAND_OPTIONS: { value: string; label: string }[] = [
+  { value: 'right', label: 'Høyre' },
+  { value: 'left', label: 'Venstre' },
 ]
 
 export const ALLE_STEG_CREATE = [

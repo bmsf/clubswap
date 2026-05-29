@@ -11,7 +11,7 @@ import { AuthModal } from '@/components/auth-modal'
 import { useAuthModal } from '@/store/auth-modal'
 import { BekreftSlettModal } from '@/components/annonse-kort-handlinger'
 import { Button } from '@/components/ui/button'
-import { Search, Heart, MessageSquare, Plus, User, Home, LogOut } from 'lucide-react'
+import { Search, Heart, MessageSquare, Plus, User, Home, LogOut, LogIn } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { cn } from '@/lib/utils'
 
@@ -39,7 +39,7 @@ function FraRedirect({ user, authLoaded }: { user: SupabaseUser | null; authLoad
 const PROTECTED_ROUTES = ['/selg', '/annonser', '/lagrede', '/meldinger', '/profil']
 
 const BOTTOM_NAV_ITEMS = [
-  { icon: Home, label: 'Utforsk', href: '/' },
+  { icon: Home, label: 'Hjem', href: '/' },
   { icon: Heart, label: 'Lagrede', href: '/lagrede' },
   { icon: Plus, label: 'Selg', href: '/selg', center: true },
   { icon: MessageSquare, label: 'Meldinger', href: '/meldinger' },
@@ -144,20 +144,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Right: desktop only */}
           <div className="hidden shrink-0 items-center gap-1 md:flex">
-            <button
-              onClick={() => handleNavClick('/lagrede')}
-              className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
-              aria-label="Lagrede"
-            >
-              <Heart className="size-4" />
-            </button>
-            <button
-              onClick={() => handleNavClick('/meldinger')}
-              className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
-              aria-label="Meldinger"
-            >
-              <MessageSquare className="size-4" />
-            </button>
+            {authLoaded && user && (
+              <>
+                <button
+                  onClick={() => handleNavClick('/lagrede')}
+                  className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
+                  aria-label="Lagrede"
+                >
+                  <Heart className="size-4" />
+                </button>
+                <button
+                  onClick={() => handleNavClick('/meldinger')}
+                  className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
+                  aria-label="Meldinger"
+                >
+                  <MessageSquare className="size-4" />
+                </button>
+              </>
+            )}
             <Button
               variant="primary"
               size="default"
@@ -167,7 +171,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Ny annonse
             </Button>
 
-            {user ? (
+            {!authLoaded ? (
+              <div className="ml-1 size-9 animate-pulse rounded-full bg-neutral-100" />
+            ) : user ? (
               <div className="relative ml-1" ref={profilRef}>
                 <button
                   onClick={() => setProfilMeny(!profilMeny)}
@@ -236,14 +242,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── Bottom nav (mobile only) ────────────────────────────────────────── */}
       <nav className="fixed right-0 bottom-0 left-0 z-40 flex bg-white text-neutral-950 md:hidden">
         {BOTTOM_NAV_ITEMS.map((item) => {
-          const Icon = item.icon
+          // Profil-fanen blir «Logg inn» for uinnloggede brukere
+          const loggInnFane = item.href === '/profil' && authLoaded && !user
+          const Icon = loggInnFane ? LogIn : item.icon
+          const label = loggInnFane ? 'Logg inn' : item.label
           const active = pathname === item.href
           const isCenter = 'center' in item && item.center
 
           return (
             <button
               key={item.href}
-              onClick={() => handleNavClick(item.href)}
+              onClick={() =>
+                loggInnFane ? openModal('logg-inn', '/profil') : handleNavClick(item.href)
+              }
               className="flex flex-1 flex-col items-center justify-center py-2 transition-colors"
             >
               {isCenter ? (
@@ -264,7 +275,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       active ? 'dark:text-foreground text-[#1A1A18]' : 'text-[#C0BDB6]'
                     )}
                   >
-                    {item.label}
+                    {label}
                   </span>
                 </>
               )}

@@ -9,15 +9,26 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { formaterKoller } from '@/components/selg-utstyr/constants'
 
 const CONDITION_LABELS: Record<string, string> = {
+  ny: 'Ny',
+  utmerket: 'Utmerket',
+  god: 'God',
+  akseptabel: 'Akseptabel',
+  // legacy
   mint: 'Ny',
-  very_good: 'Meget god',
+  very_good: 'Utmerket',
   good: 'God',
   fair: 'Akseptabel',
 }
 
 const CONDITION_CLASSES: Record<string, string> = {
+  ny: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  utmerket: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  god: 'bg-primary/10 text-primary',
+  akseptabel: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  // legacy
   mint: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   very_good: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   good: 'bg-primary/10 text-primary',
@@ -57,11 +68,14 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 const SHAFT_FLEX_LABELS: Record<string, string> = {
+  regular: 'Regular Flex',
+  stiff: 'Stiff Flex',
+  lite_a: 'Lite/A Flex',
+  x_stiff: 'X-Stiff Flex',
+  tour_stiff: 'Tour-Stiff Flex',
+  // legacy
   ladies: 'Ladies',
   senior: 'Senior',
-  regular: 'Regular',
-  stiff: 'Stiff',
-  x_stiff: 'X-Stiff',
 }
 
 const SHAFT_MATERIAL_LABELS: Record<string, string> = {
@@ -72,6 +86,17 @@ const SHAFT_MATERIAL_LABELS: Record<string, string> = {
 const HAND_LABELS: Record<string, string> = {
   right: 'Høyrehendt',
   left: 'Venstrehendt',
+}
+
+const HOSEL_LABELS: Record<string, string> = {
+  straight: 'Straight hosel',
+  offset: 'Offset hosel',
+  double_bend: 'Double-bend hosel',
+}
+
+const PIGG_LABELS: Record<string, string> = {
+  soft: 'Soft spikes',
+  fast: 'Fast/spikeless',
 }
 
 interface SpecBadge {
@@ -106,6 +131,12 @@ export interface ListingDetailProps {
   loft?: string | null
   haandighet?: string | null
   skaftModell?: string | null
+  skaftLengde?: string | null
+  koller?: string[] | null
+  putterLengde?: string | null
+  hoselType?: string | null
+  skoStorrelse?: string | null
+  piggType?: string | null
   seller: Seller
 }
 
@@ -126,17 +157,31 @@ export function ProductDetailPage({
   loft,
   haandighet,
   skaftModell,
+  skaftLengde,
+  koller,
+  putterLengde,
+  hoselType,
+  skoStorrelse,
+  piggType,
   seller,
 }: ListingDetailProps) {
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0)
 
   const specBadges: SpecBadge[] = [
     { label: CATEGORY_LABELS[kategori] ?? kategori },
+    ...(koller && koller.length > 0 ? [{ label: `Jern: ${formaterKoller(koller)}` }] : []),
     ...(aarsmodell ? [{ label: aarsmodell }] : []),
     ...(shaftFlex ? [{ label: SHAFT_FLEX_LABELS[shaftFlex] ?? shaftFlex }] : []),
     ...(skaftMateriale ? [{ label: SHAFT_MATERIAL_LABELS[skaftMateriale] ?? skaftMateriale }] : []),
-    ...(loft ? [{ label: `${loft}°` }] : []),
+    ...(skaftLengde && skaftLengde !== 'standard'
+      ? [{ label: `Skaftlengde: ${skaftLengde}` }]
+      : []),
+    ...(loft ? [{ label: loft }] : []),
     ...(haandighet ? [{ label: HAND_LABELS[haandighet] ?? haandighet }] : []),
+    ...(putterLengde ? [{ label: `Lengde ${putterLengde} cm` }] : []),
+    ...(hoselType ? [{ label: HOSEL_LABELS[hoselType] ?? hoselType }] : []),
+    ...(skoStorrelse ? [{ label: `Størrelse EU ${skoStorrelse}` }] : []),
+    ...(piggType ? [{ label: PIGG_LABELS[piggType] ?? piggType }] : []),
     ...(skaftModell ? [{ label: skaftModell }] : []),
   ]
 

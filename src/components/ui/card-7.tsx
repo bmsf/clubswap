@@ -14,6 +14,7 @@ interface ListingCardProps extends React.HTMLAttributes<HTMLDivElement> {
   price: number
   location?: string | null
   posted?: string
+  clubsLabel?: string
   actions?: React.ReactNode
   href?: string
   flat?: boolean
@@ -28,6 +29,7 @@ export function ListingCard({
   price,
   location,
   posted,
+  clubsLabel,
   actions,
   href,
   flat,
@@ -82,6 +84,12 @@ export function ListingCard({
           <p className="text-muted-foreground text-[10px] leading-snug">
             {[brand, location, posted].filter(Boolean).join(' · ')}
           </p>
+
+          {clubsLabel && (
+            <p className="text-foreground/70 text-[10px] leading-snug font-medium">
+              Jern: {clubsLabel}
+            </p>
+          )}
 
           {/* Price + CTA */}
           <div className="mt-auto flex items-center justify-between gap-2 pt-1">

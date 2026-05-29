@@ -57,11 +57,16 @@ import {
   uiKategoriTilDb,
   kategoriTilUiKategori,
   NY_TILSTANDER,
-  NY_TILSTAND_LABEL,
   PRIS_ANBEFALINGER,
   GOLF_MERKER,
   NY_FLEX_OPTIONS,
   HOSEL_OPTIONS,
+  JERN_KOLLER_OPTIONS,
+  SKAFT_MATERIALE_OPTIONS,
+  SKAFT_LENGDE_OPTIONS,
+  HAND_OPTIONS,
+  loftOptionerForDb,
+  formaterKoller,
 } from './selg-utstyr/constants'
 import {
   BildeOpplaster,
@@ -110,6 +115,9 @@ type Props = {
   onSuccess?: () => void
 }
 
+// Wizard nav-knapper: samme stil som root Button, men større padding
+const NAV_KNAPP_KLASSE = 'px-[calc(--spacing(5)-1px)] py-[calc(--spacing(2.5)-1px)]'
+
 export function SelgUtstyrView({
   annonseId,
   initialData,
@@ -153,9 +161,14 @@ export function SelgUtstyrView({
   const [flex, setFlex] = useState<string | null>(null)
   const [skaftValg, setSkaftValg] = useState<'uten' | 'ukjent' | 'kjent'>('ukjent')
   const [valgtSkaft, setValgtSkaft] = useState<ValgtSkaft | null>(null)
-  const [antallKoller, setAntallKoller] = useState(1)
+  const [valgteKoller, setValgteKoller] = useState<string[]>([])
   const [loft, setLoft] = useState('')
   const [headcover, setHeadcover] = useState<boolean | null>(null)
+  const [nyHaandighet, setNyHaandighet] = useState<'right' | 'left' | null>(null)
+  const [nySkaftMateriale, setNySkaftMateriale] = useState<'graphite' | 'steel' | null>(null)
+  const [skaftLengde, setSkaftLengde] = useState('')
+  const [skaftLengdeCustom, setSkaftLengdeCustom] = useState('')
+  const [nyAarsmodell, setNyAarsmodell] = useState('')
   const [putterLengde, setPutterLengde] = useState('')
   const [hoselType, setHoselType] = useState<string | null>(null)
   const [skoStorrelse, setSkoStorrelse] = useState('')
@@ -210,17 +223,28 @@ export function SelgUtstyrView({
         setSkaftValg(d.skaftValg)
       if (d.valgtSkaft && typeof d.valgtSkaft === 'object')
         setValgtSkaft(d.valgtSkaft as ValgtSkaft)
-      if (typeof d.antallKoller === 'number') setAntallKoller(d.antallKoller)
+      if (Array.isArray(d.valgteKoller)) setValgteKoller(d.valgteKoller as string[])
       if (typeof d.loft === 'string') setLoft(d.loft)
       if (typeof d.headcover === 'boolean' || d.headcover === null)
         setHeadcover(d.headcover as boolean | null)
+      if (d.nyHaandighet === 'right' || d.nyHaandighet === 'left' || d.nyHaandighet === null)
+        setNyHaandighet(d.nyHaandighet as 'right' | 'left' | null)
+      if (
+        d.nySkaftMateriale === 'graphite' ||
+        d.nySkaftMateriale === 'steel' ||
+        d.nySkaftMateriale === null
+      )
+        setNySkaftMateriale(d.nySkaftMateriale as 'graphite' | 'steel' | null)
+      if (typeof d.skaftLengde === 'string') setSkaftLengde(d.skaftLengde)
+      if (typeof d.skaftLengdeCustom === 'string') setSkaftLengdeCustom(d.skaftLengdeCustom)
+      if (typeof d.nyAarsmodell === 'string') setNyAarsmodell(d.nyAarsmodell)
       if (typeof d.putterLengde === 'string') setPutterLengde(d.putterLengde)
       if (d.hoselType === null || typeof d.hoselType === 'string')
         setHoselType(d.hoselType as string | null)
       if (typeof d.skoStorrelse === 'string') setSkoStorrelse(d.skoStorrelse)
       if (d.piggType === 'soft' || d.piggType === 'fast' || d.piggType === null)
         setPiggType(d.piggType as 'soft' | 'fast' | null)
-      const validTilstander: NyTilstand[] = ['ny', 'som_ny', 'bra', 'ok', 'slitt']
+      const validTilstander: NyTilstand[] = ['ny', 'utmerket', 'god', 'akseptabel']
       if (validTilstander.includes(d.nyTilstand as NyTilstand))
         setNyTilstand(d.nyTilstand as NyTilstand)
       if (typeof d.pris === 'string') setPris(d.pris)
@@ -255,9 +279,14 @@ export function SelgUtstyrView({
       flex,
       skaftValg,
       valgtSkaft,
-      antallKoller,
+      valgteKoller,
       loft,
       headcover,
+      nyHaandighet,
+      nySkaftMateriale,
+      skaftLengde,
+      skaftLengdeCustom,
+      nyAarsmodell,
       putterLengde,
       hoselType,
       skoStorrelse,
@@ -281,9 +310,14 @@ export function SelgUtstyrView({
     flex,
     skaftValg,
     valgtSkaft,
-    antallKoller,
+    valgteKoller,
     loft,
     headcover,
+    nyHaandighet,
+    nySkaftMateriale,
+    skaftLengde,
+    skaftLengdeCustom,
+    nyAarsmodell,
     putterLengde,
     hoselType,
     skoStorrelse,
@@ -419,8 +453,18 @@ export function SelgUtstyrView({
         return valgtModell !== null || (uiKategori !== null && tittel.trim().length >= 3)
       case 'intro':
         return tittel.trim().length >= 3 && uiKategori !== null
-      case 'detaljer':
+      case 'detaljer': {
+        if (!nyTilstand) return false
+        const harSkaft =
+          uiKategori === 'jernshaft' || uiKategori === 'trekker' || uiKategori === 'wedge'
+        const harHand = harSkaft || uiKategori === 'putter'
+        const dbKat = uiKategori ? uiKategoriTilDb(uiKategori, underkategori) : null
+        const loftKreves = dbKat ? loftOptionerForDb(dbKat) !== null : false
+        if (harSkaft && skaftValg !== 'uten' && (!nySkaftMateriale || !flex)) return false
+        if (harHand && !nyHaandighet) return false
+        if (loftKreves && !loft) return false
         return true
+      }
       case 'pris':
         return true
       default:
@@ -531,9 +575,9 @@ export function SelgUtstyrView({
       if (data.condition_estimate) {
         const condMap: Record<string, NyTilstand> = {
           ny: 'ny',
-          meget_god: 'som_ny',
-          god: 'bra',
-          akseptabel: 'ok',
+          meget_god: 'utmerket',
+          god: 'god',
+          akseptabel: 'akseptabel',
         }
         const mapped = condMap[data.condition_estimate as string]
         if (mapped) {
@@ -596,22 +640,39 @@ export function SelgUtstyrView({
       nyeBildeUrls.push(urlData.publicUrl)
     }
 
+    const skaftLengdeVerdi =
+      skaftValg !== 'uten'
+        ? skaftLengde === 'custom'
+          ? skaftLengdeCustom.trim() || undefined
+          : skaftLengde || undefined
+        : undefined
+
     const payload = {
       kategori: uiKategoriTilDb(uiKategori, underkategori),
       merke: valgtModell ? valgtModell.brand : merke || 'Ukjent',
       modell: valgtModell ? valgtModell.model : tittel || merke || 'Ukjent',
-      tilstand: NY_TILSTAND_LABEL[nyTilstand],
+      tilstand: nyTilstand,
       beskrivelse: beskrivelse.trim() || undefined,
       pris: parseInt(pris),
       selgesFra: adresseCreate?.poststed ?? '',
       tilbyrFrakt: fraktPakke !== null,
       bilder: nyeBildeUrls,
-      ...(skaftValg === 'kjent' && flex ? { shaftFlex: flex } : {}),
+      ...(skaftValg !== 'uten' && flex ? { shaftFlex: flex } : {}),
       ...(skaftValg === 'kjent' && valgtSkaft
         ? { skaftMerke: valgtSkaft.brand, skaftModell: valgtSkaft.model }
         : {}),
+      ...(skaftLengdeVerdi ? { skaftLengde: skaftLengdeVerdi } : {}),
       ...(loft ? { loft } : {}),
       ...(headcover !== null ? { headcover } : {}),
+      ...(valgteKoller.length > 0 ? { koller: valgteKoller } : {}),
+      ...(nyHaandighet ? { haandighet: nyHaandighet } : {}),
+      ...(nySkaftMateriale ? { skaftMateriale: nySkaftMateriale } : {}),
+      ...(uiKategori === 'baller' && nyAarsmodell ? { aarsmodell: nyAarsmodell } : {}),
+      ...(putterLengde ? { putterLengde } : {}),
+      ...(hoselType ? { hoselType } : {}),
+      ...(skoStorrelse ? { skoStorrelse } : {}),
+      ...(piggType ? { piggType } : {}),
+      kanMotes,
     }
 
     try {
@@ -653,7 +714,8 @@ export function SelgUtstyrView({
     }
 
     const bildeUrls = [...eksisterendeBilder, ...nyeBildeUrls]
-    const tilstandLabel = TILSTANDER.find((t) => t.value === tilstand)?.label ?? tilstand
+    // Lagre tilstand som kode (konsistent med ny-flyten): meget_god → utmerket
+    const tilstandKode = tilstand === 'meget_god' ? 'utmerket' : (tilstand ?? undefined)
 
     if (!kategori) {
       toast.error('Velg en kategori.')
@@ -665,12 +727,16 @@ export function SelgUtstyrView({
       merke: data.merke,
       modell: data.modell,
       aarsmodell: data.aarsmodell,
-      haandighet: data.hand === 'right' ? 'Høyre' : data.hand === 'left' ? 'Venstre' : undefined,
+      haandighet: data.hand === 'right' ? 'right' : data.hand === 'left' ? 'left' : undefined,
       loft: data.loft,
       shaftFlex: data.shaftFlex,
       skaftMateriale:
-        data.skaftType === 'steel' ? 'Stål' : data.skaftType === 'graphite' ? 'Grafitt' : undefined,
-      tilstand: tilstandLabel,
+        data.skaftType === 'steel'
+          ? 'steel'
+          : data.skaftType === 'graphite'
+            ? 'graphite'
+            : undefined,
+      tilstand: tilstandKode,
       skadebeskrivelse: data.skadebeskrivelse,
       pris: data.pris,
       selgesFra: data.selgesFra,
@@ -907,7 +973,7 @@ export function SelgUtstyrView({
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -4 }}
                                 transition={{ duration: 0.12 }}
-                                className="bg-background absolute top-full right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-neutral-950/10 shadow-lg"
+                                className="absolute top-full right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-neutral-950/10 bg-white shadow-lg"
                               >
                                 {GOLF_MERKER.filter(
                                   (m) =>
@@ -1018,10 +1084,20 @@ export function SelgUtstyrView({
     const showBilder = merke.trim().length > 0
     const showBeskrivelse = nyTilstand !== null
 
-    const harSkaftFields = uiKategori === 'jernshaft' || uiKategori === 'trekker'
+    // Skaftfelt (materiale, flex, lengde) for køller med skaft
+    const harSkaftFields =
+      uiKategori === 'jernshaft' || uiKategori === 'trekker' || uiKategori === 'wedge'
     const erPutter = uiKategori === 'putter'
     const erSko = uiKategori === 'sko'
     const erPiggsko = underkategori === 'piggsko'
+    // Kun ekte jernsett (ikke hybrid/enkeltjern) skal velge hvilke køller som inngår
+    const erJernsett =
+      uiKategori === 'jernshaft' && (underkategori === 'jernsett' || underkategori === null)
+    // Håndighet er relevant for alle køller
+    const harHaandighet = harSkaftFields || uiKategori === 'putter'
+    // Loft-/type-valg basert på løst db-kategori (driver/fairway/hybrid/wedge)
+    const dbKat = uiKategori ? uiKategoriTilDb(uiKategori, underkategori) : null
+    const loftOpts = dbKat ? loftOptionerForDb(dbKat) : null
 
     const filteredMerker = GOLF_MERKER.filter(
       (m) => merke.trim() === '' || m.toLowerCase().includes(merke.toLowerCase())
@@ -1096,7 +1172,7 @@ export function SelgUtstyrView({
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -4 }}
                           transition={{ duration: 0.12 }}
-                          className="bg-background absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 shadow-lg"
+                          className="absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 bg-white shadow-lg"
                         >
                           {filteredMerker.map((m) => (
                             <button
@@ -1120,6 +1196,41 @@ export function SelgUtstyrView({
             )}
           </AnimatePresence>
 
+          {/* 2b. Felles felt: årsmodell + håndighet */}
+          <AnimatePresence>
+            {showCatFields && (
+              <motion.div
+                key="felles-felt"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-4"
+              >
+                {uiKategori === 'baller' && (
+                  <Felt label="Årsmodell" aiBadge={aiFields.has('aarsmodell')}>
+                    <SimpleSelect
+                      value={nyAarsmodell}
+                      onValueChange={setNyAarsmodell}
+                      placeholder="Velg årsmodell…"
+                      options={AARSMODELL_VALG}
+                      className=""
+                    />
+                  </Felt>
+                )}
+                {harHaandighet && (
+                  <Felt label="Håndighet">
+                    <PillToggle
+                      options={HAND_OPTIONS}
+                      value={nyHaandighet}
+                      onChange={(v) => setNyHaandighet(v as 'right' | 'left' | null)}
+                    />
+                  </Felt>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* 3. Category-specific fields */}
           <AnimatePresence>
             {showCatFields && harSkaftFields && (
@@ -1131,41 +1242,62 @@ export function SelgUtstyrView({
                 exit="exit"
                 className="space-y-4"
               >
-                {uiKategori === 'trekker' && (
-                  <>
-                    <Felt label="Loft (grader)" aiBadge={aiFields.has('loft')}>
-                      <SimpleSelect
-                        value={loft}
-                        onValueChange={setLoft}
-                        placeholder="Velg loft…"
-                        options={DRIVER_LOFT_OPTIONS}
-                        className=""
-                      />
-                    </Felt>
-                    <Felt label="Original headcover">
-                      <PillToggle
-                        options={[
-                          { value: 'true', label: 'Ja' },
-                          { value: 'false', label: 'Nei' },
-                        ]}
-                        value={headcover === true ? 'true' : headcover === false ? 'false' : null}
-                        onChange={(v) => setHeadcover(v === null ? null : v === 'true')}
-                      />
-                    </Felt>
-                  </>
-                )}
-                {uiKategori === 'jernshaft' && (
-                  <Felt label="Antall køller">
-                    <Input
-                      type="number"
-                      value={antallKoller}
-                      onChange={(e) =>
-                        setAntallKoller(Math.max(1, Math.min(14, parseInt(e.target.value) || 1)))
-                      }
-                      min={1}
-                      max={14}
-                      className="max-w-25"
+                {loftOpts && (
+                  <Felt label="Loft / type" aiBadge={aiFields.has('loft')}>
+                    <SimpleSelect
+                      value={loft}
+                      onValueChange={setLoft}
+                      placeholder="Velg loft / type…"
+                      options={loftOpts}
+                      className=""
                     />
+                  </Felt>
+                )}
+                {(dbKat === 'driver' || dbKat === 'fairway_wood' || dbKat === 'hybrid') && (
+                  <Felt label="Original headcover">
+                    <PillToggle
+                      options={[
+                        { value: 'true', label: 'Ja' },
+                        { value: 'false', label: 'Nei' },
+                      ]}
+                      value={headcover === true ? 'true' : headcover === false ? 'false' : null}
+                      onChange={(v) => setHeadcover(v === null ? null : v === 'true')}
+                    />
+                  </Felt>
+                )}
+                {erJernsett && (
+                  <Felt label="Hvilke køller inngår?">
+                    <div className="flex flex-wrap gap-1.5">
+                      {JERN_KOLLER_OPTIONS.map((k) => {
+                        const valgt = valgteKoller.includes(k.value)
+                        return (
+                          <button
+                            key={k.value}
+                            type="button"
+                            onClick={() =>
+                              setValgteKoller((prev) =>
+                                prev.includes(k.value)
+                                  ? prev.filter((v) => v !== k.value)
+                                  : [...prev, k.value]
+                              )
+                            }
+                            className={cn(
+                              'flex size-9 cursor-pointer items-center justify-center rounded-full border text-sm font-medium transition-all',
+                              valgt
+                                ? 'border-foreground bg-foreground text-background'
+                                : 'hover:border-foreground/40 border-neutral-950/10'
+                            )}
+                          >
+                            {k.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {valgteKoller.length > 0 && (
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        Inkluderer: {formaterKoller(valgteKoller)} · {valgteKoller.length} køller
+                      </p>
+                    )}
                   </Felt>
                 )}
 
@@ -1221,6 +1353,47 @@ export function SelgUtstyrView({
                     </div>
                   </div>
 
+                  {skaftValg !== 'uten' && (
+                    <>
+                      <Felt label="Skaftmateriale">
+                        <PillToggle
+                          options={SKAFT_MATERIALE_OPTIONS}
+                          value={nySkaftMateriale}
+                          onChange={(v) => setNySkaftMateriale(v as 'graphite' | 'steel' | null)}
+                        />
+                      </Felt>
+
+                      <Felt label="Flex">
+                        <SimpleSelect
+                          value={flex ?? ''}
+                          onValueChange={setFlex}
+                          placeholder="Velg flex…"
+                          options={NY_FLEX_OPTIONS}
+                          className=""
+                        />
+                      </Felt>
+
+                      <Felt label="Skaftlengde">
+                        <div className="space-y-2">
+                          <SimpleSelect
+                            value={skaftLengde}
+                            onValueChange={setSkaftLengde}
+                            placeholder="Velg lengde (valgfritt)…"
+                            options={SKAFT_LENGDE_OPTIONS}
+                            className=""
+                          />
+                          {skaftLengde === 'custom' && (
+                            <Input
+                              value={skaftLengdeCustom}
+                              onChange={(e) => setSkaftLengdeCustom(e.target.value)}
+                              placeholder={'f.eks. -2,5" eller 46"'}
+                            />
+                          )}
+                        </div>
+                      </Felt>
+                    </>
+                  )}
+
                   <AnimatePresence>
                     {skaftValg === 'kjent' && (
                       <motion.div
@@ -1237,22 +1410,13 @@ export function SelgUtstyrView({
                           shaftCategory={
                             uiKategori === 'trekker'
                               ? 'driver_fairway'
-                              : uiKategori === 'jernshaft'
-                                ? 'iron'
-                                : undefined
+                              : uiKategori === 'wedge'
+                                ? 'wedge'
+                                : uiKategori === 'jernshaft'
+                                  ? 'iron'
+                                  : undefined
                           }
                         />
-                        {valgtSkaft && (
-                          <Felt label="Flex">
-                            <SimpleSelect
-                              value={flex ?? ''}
-                              onValueChange={setFlex}
-                              placeholder="Velg flex…"
-                              options={NY_FLEX_OPTIONS}
-                              className=""
-                            />
-                          </Felt>
-                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1352,21 +1516,31 @@ export function SelgUtstyrView({
                     <Label>Tilstand</Label>
                     {aiFields.has('tilstand') && <AiBadge />}
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-2">
                     {NY_TILSTANDER.map((t) => (
                       <button
                         key={t.value}
                         type="button"
                         onClick={() => setNyTilstand(t.value)}
                         className={cn(
-                          'flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
+                          'flex w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all',
                           nyTilstand === t.value
                             ? `${t.klasse} ring-2 ring-current ring-offset-1`
                             : 'hover:border-foreground/40 border-neutral-950/10'
                         )}
                       >
-                        <span className={cn('size-2.5 rounded-full', t.dotKlasse)} />
-                        {t.label}
+                        <span className={cn('size-2.5 shrink-0 rounded-full', t.dotKlasse)} />
+                        <span className="flex flex-col">
+                          <span className="text-sm font-medium">{t.label}</span>
+                          <span
+                            className={cn(
+                              'text-xs',
+                              nyTilstand === t.value ? 'opacity-80' : 'text-muted-foreground'
+                            )}
+                          >
+                            {t.beskrivelse}
+                          </span>
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -1925,7 +2099,7 @@ export function SelgUtstyrView({
       <Fremdrift steg={[...steg]} currentStep={currentStep} onGaTil={gaTil} />
 
       <form onSubmit={(e) => e.preventDefault()}>
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-neutral-950/10 bg-white">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentStep}
@@ -1940,20 +2114,20 @@ export function SelgUtstyrView({
           </AnimatePresence>
 
           <CardFooter className="justify-between gap-3 border-t border-neutral-950/10 pt-5 pb-5">
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <div>
               <Button
                 type="button"
                 variant="outline"
                 onClick={prevStep}
                 disabled={currentStep === 0}
-                className="rounded-xl"
+                className={NAV_KNAPP_KLASSE}
               >
                 <ChevronLeftIcon className="size-4" />
                 Tilbake
               </Button>
-            </motion.div>
+            </div>
 
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <div>
               {erSisteSteg ? (
                 redigerModus ? (
                   <Button
@@ -1965,7 +2139,7 @@ export function SelgUtstyrView({
                       )()
                     }
                     disabled={!isStegGyldig() || isSubmitting}
-                    className="rounded-xl"
+                    className={NAV_KNAPP_KLASSE}
                   >
                     {isSubmitting ? (
                       <>
@@ -1985,7 +2159,7 @@ export function SelgUtstyrView({
                     variant="primary"
                     onClick={() => void submitNy()}
                     disabled={!pris || parseInt(pris) <= 0 || isSubmittingNy}
-                    className="rounded-xl"
+                    className={NAV_KNAPP_KLASSE}
                   >
                     {isSubmittingNy ? (
                       <>
@@ -2006,13 +2180,13 @@ export function SelgUtstyrView({
                   variant="primary"
                   onClick={nextStep}
                   disabled={!isStegGyldig()}
-                  className="rounded-xl"
+                  className={NAV_KNAPP_KLASSE}
                 >
                   Neste
                   <ChevronRightIcon className="size-4" />
                 </Button>
               )}
-            </motion.div>
+            </div>
           </CardFooter>
         </Card>
       </form>
@@ -2049,7 +2223,7 @@ export function SelgUtstyrView({
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setPendingNavHref(null)}
           />
-          <div className="bg-card relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 shadow-2xl">
+          <div className="relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 bg-white shadow-2xl">
             <button
               type="button"
               onClick={() => setPendingNavHref(null)}

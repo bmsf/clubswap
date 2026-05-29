@@ -4,9 +4,10 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ListingCard } from '@/components/ui/card-7'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Check, ChevronDown, ChevronRight, SlidersHorizontal, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Filter, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { searchModeller, type ModellGruppe } from '@/app/actions/searchModeller'
+import { formaterKoller } from '@/components/selg-utstyr/constants'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ export type Listing = {
   skaft_materiale?: string | null
   haandighet?: string | null
   loft?: string | null
+  koller?: string[] | null
 }
 
 type SortOption = 'nyeste' | 'pris-lav' | 'pris-høy'
@@ -115,25 +117,36 @@ const MERKE_OPTIONS = [
 
 const TILSTAND_OPTIONS = [
   { value: 'ny', label: 'Ny' },
-  { value: 'som_ny', label: 'Som ny' },
-  { value: 'bra', label: 'Bra' },
-  { value: 'ok', label: 'OK' },
-  { value: 'slitt', label: 'Slitt' },
+  { value: 'utmerket', label: 'Utmerket' },
+  { value: 'god', label: 'God' },
+  { value: 'akseptabel', label: 'Akseptabel' },
 ]
 
+// Eldre verdier (engelske koder + norske etiketter) → nye koder
 const TILSTAND_LEGACY: Record<string, string> = {
   mint: 'ny',
-  very_good: 'som_ny',
-  good: 'bra',
-  fair: 'ok',
+  Ny: 'ny',
+  very_good: 'utmerket',
+  som_ny: 'utmerket',
+  'Som ny': 'utmerket',
+  'Meget god': 'utmerket',
+  good: 'god',
+  bra: 'god',
+  Bra: 'god',
+  God: 'god',
+  fair: 'akseptabel',
+  ok: 'akseptabel',
+  OK: 'akseptabel',
+  Akseptabel: 'akseptabel',
+  slitt: 'akseptabel',
+  Slitt: 'akseptabel',
 }
 
 const TILSTAND_LABEL: Record<string, string> = {
   ny: 'Ny',
-  som_ny: 'Som ny',
-  bra: 'Bra',
-  ok: 'OK',
-  slitt: 'Slitt',
+  utmerket: 'Utmerket',
+  god: 'God',
+  akseptabel: 'Akseptabel',
 }
 
 const SKAFT_OPTIONS = [
@@ -464,7 +477,6 @@ function SortDropdown({
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const label = SORT_OPTIONS.find((o) => o.value === value)?.label ?? 'Nyeste'
 
   useEffect(() => {
     if (!open) return
@@ -479,9 +491,9 @@ function SortDropdown({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((p) => !p)}
-        className="text-foreground hover:text-foreground/70 flex items-center gap-1.5 p-4 text-base font-medium transition-colors select-none"
+        className="text-foreground hover:text-foreground/70 flex items-center gap-1.5 py-4 text-sm font-medium transition-colors select-none"
       >
-        Sort: {label}
+        Sorter
         <ChevronDown
           className={cn('size-4 transition-transform duration-150', open && 'rotate-180')}
         />
@@ -660,22 +672,30 @@ export function UtforskClient({
   return (
     <>
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
-      <div>
+      <div className="border-b border-neutral-950/10">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex items-center justify-between">
-            {/* Left: Filtre button */}
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className="text-foreground hover:text-foreground/70 flex items-center gap-2.5 py-4 text-base font-medium transition-colors select-none"
-            >
-              <SlidersHorizontal className="size-5" />
-              Filtre
+            {/* Left: Filtre + Nullstill */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="text-foreground hover:text-foreground/70 flex items-center gap-2 py-4 text-sm font-medium transition-colors select-none"
+              >
+                <Filter className="size-4" />
+                {totalActiveFilters > 0 ? `${totalActiveFilters} Filtre` : 'Filtre'}
+              </button>
               {totalActiveFilters > 0 && (
-                <span className="bg-foreground text-background flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums">
-                  {totalActiveFilters}
-                </span>
+                <>
+                  <span className="h-4 w-px bg-neutral-950/10" />
+                  <button
+                    onClick={resetAllFilters}
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors select-none"
+                  >
+                    Nullstill alt
+                  </button>
+                </>
               )}
-            </button>
+            </div>
 
             {/* Right: Sort */}
             <SortDropdown value={sortering} onChange={setSortering} />
@@ -888,6 +908,11 @@ export function UtforskClient({
                   posted={relativTid(listing.opprettet_at)}
                   imageUrl={forsideBilde(listing.bilder)}
                   href={`/annonser/${listing.id}`}
+                  clubsLabel={
+                    listing.kategori === 'jernsett' && listing.koller && listing.koller.length > 0
+                      ? formaterKoller(listing.koller)
+                      : undefined
+                  }
                 />
               </div>
             ))}

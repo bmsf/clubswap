@@ -15,6 +15,13 @@ export type AnnonseInput = {
   loft?: string
   headcover?: boolean
   skaftMateriale?: string
+  skaftLengde?: string
+  koller?: string[]
+  putterLengde?: string
+  hoselType?: string
+  skoStorrelse?: string
+  piggType?: string
+  kanMotes?: boolean
   tilstand: string
   beskrivelse?: string
   skadebeskrivelse?: string
@@ -54,6 +61,13 @@ export async function publiserAnnonse(
       loft: input.loft ?? null,
       includes_headcover: input.headcover ?? null,
       skaft_materiale: input.skaftMateriale ?? null,
+      skaft_lengde: input.skaftLengde ?? null,
+      koller: input.koller ?? null,
+      putter_lengde: input.putterLengde ?? null,
+      hosel_type: input.hoselType ?? null,
+      sko_storrelse: input.skoStorrelse ?? null,
+      pigg_type: input.piggType ?? null,
+      kan_motes: input.kanMotes ?? null,
       tilstand: input.tilstand,
       beskrivelse: input.beskrivelse ?? null,
       skadebeskrivelse: input.skadebeskrivelse ?? null,
@@ -101,6 +115,13 @@ export async function oppdaterAnnonse(
       loft: input.loft ?? null,
       includes_headcover: input.headcover ?? null,
       skaft_materiale: input.skaftMateriale ?? null,
+      skaft_lengde: input.skaftLengde ?? null,
+      koller: input.koller ?? null,
+      putter_lengde: input.putterLengde ?? null,
+      hosel_type: input.hoselType ?? null,
+      sko_storrelse: input.skoStorrelse ?? null,
+      pigg_type: input.piggType ?? null,
+      kan_motes: input.kanMotes ?? null,
       tilstand: input.tilstand,
       beskrivelse: input.beskrivelse ?? null,
       skadebeskrivelse: input.skadebeskrivelse ?? null,
