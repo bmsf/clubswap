@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -220,12 +220,14 @@ export function SelgUtstyrView({
 
   // ── Navigation guard ──────────────────────────────────────────────────────
   const [pendingNavHref, setPendingNavHref] = useState<string | null>(null)
+  // Settes når draft-gjenoppretting er ferdig, slik at vi kan ta en baseline.
+  const [restoreComplete, setRestoreComplete] = useState(false)
+  // Baseline = skjematilstanden slik den var ved innlasting (gjenopprettet utkast
+  // eller tomme defaults). Brukes til å skille faktisk input fra gjenoppretting.
+  const [baseline, setBaseline] = useState<string | null>(null)
 
   // Vis valideringsfeil etter første «Neste»-forsøk på et steg
   const [visFeil, setVisFeil] = useState(false)
-
-  // Condition: any category-step data has been filled in
-  const hasUnsavedProgress = !redigerModus && (valgtModell !== null || uiKategori !== null)
 
   // ── React Hook Form (edit mode) ───────────────────────────────────────────
 
@@ -248,9 +250,12 @@ export function SelgUtstyrView({
     if (redigerModus) return
     try {
       const saved = localStorage.getItem('golftorget_listing_draft')
-      if (!saved) return
+      if (!saved) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setRestoreComplete(true)
+        return
+      }
       const d = JSON.parse(saved) as Record<string, unknown>
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (d.mode === 'manual' || d.mode === 'ai') setMode(d.mode)
       if (d.listemetode === 'selg' || d.listemetode === 'bytt') setListemetode(d.listemetode)
       if (typeof d.uiKategori === 'string') setUiKategori(d.uiKategori as UiKategori)
@@ -302,14 +307,14 @@ export function SelgUtstyrView({
     } catch {
       // ignore
     }
+    setRestoreComplete(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── localStorage: save on every change ───────────────────────────────────
+  // ── Draft snapshot (persisted + used for dirty detection) ─────────────────
 
-  useEffect(() => {
-    if (redigerModus) return
-    const draft = {
+  const draftSnapshot = useMemo(
+    () => ({
       mode,
       listemetode,
       uiKategori,
@@ -337,38 +342,65 @@ export function SelgUtstyrView({
       pris,
       fraktPakke,
       kanMotes,
-    }
-    localStorage.setItem('golftorget_listing_draft', JSON.stringify(draft))
-  }, [
-    redigerModus,
-    mode,
-    listemetode,
-    uiKategori,
-    underkategori,
-    tittel,
-    merke,
-    flex,
-    skaftValg,
-    valgtSkaft,
-    valgteKoller,
-    loft,
-    headcover,
-    nyHaandighet,
-    nySkaftMateriale,
-    skaftLengde,
-    skaftLengdeCustom,
-    nyAarsmodell,
-    putterLengde,
-    hoselType,
-    skoStorrelse,
-    piggType,
-    nyTilstand,
-    beskrivelse,
-    adresseCreate,
-    pris,
-    fraktPakke,
-    kanMotes,
-  ])
+    }),
+    [
+      mode,
+      listemetode,
+      uiKategori,
+      underkategori,
+      tittel,
+      merke,
+      flex,
+      skaftValg,
+      valgtSkaft,
+      valgteKoller,
+      loft,
+      headcover,
+      nyHaandighet,
+      nySkaftMateriale,
+      skaftLengde,
+      skaftLengdeCustom,
+      nyAarsmodell,
+      putterLengde,
+      hoselType,
+      skoStorrelse,
+      piggType,
+      nyTilstand,
+      beskrivelse,
+      adresseCreate,
+      pris,
+      fraktPakke,
+      kanMotes,
+    ]
+  )
+  const draftString = useMemo(() => JSON.stringify(draftSnapshot), [draftSnapshot])
+  // Dirty comparison ignores `mode` — picking AI/manual on steg 1 is ikke «data».
+  // `mode: undefined` → JSON.stringify dropper nøkkelen, så metodevalg teller ikke.
+  const dirtyString = useMemo(
+    () => JSON.stringify({ ...draftSnapshot, mode: undefined }),
+    [draftSnapshot]
+  )
+
+  // ── localStorage: save on every change ───────────────────────────────────
+
+  useEffect(() => {
+    if (redigerModus) return
+    localStorage.setItem('golftorget_listing_draft', draftString)
+  }, [redigerModus, draftString])
+
+  // ── Dirty-tracking: protect only after faktisk input denne økten ──────────
+
+  // Ta baseline på første render etter at gjenoppretting er ferdig (da ligger
+  // de gjenopprettede verdiene i dirtyString).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (restoreComplete && baseline === null) setBaseline(dirtyString)
+  }, [restoreComplete, baseline, dirtyString])
+
+  // valgtModell og bilder gjenopprettes aldri → ikke-tom verdi = input denne økten.
+  const hasInteractedThisSession =
+    baseline !== null && (dirtyString !== baseline || valgtModell !== null || bilder.length > 0)
+  const hasUnsavedProgress = !redigerModus && hasInteractedThisSession
 
   // ── Navigation guard effects ──────────────────────────────────────────────
 
