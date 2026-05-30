@@ -10,6 +10,23 @@ export function AuthModal() {
   const [epost, setEpost] = useState('')
   const [steg, setSteg] = useState<'epost' | 'detaljer'>('epost')
 
+  // Åpne/lukke-animasjon (transitions.dev): hold modalen montert mens den
+  // animerer ut. enter → mountet i basistilstand, open → skalert inn,
+  // closing → skalert ut, closed → avmontert.
+  const [fase, setFase] = useState<'closed' | 'enter' | 'open' | 'closing'>('closed')
+
+  useEffect(() => {
+    if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFase('enter')
+      const r = requestAnimationFrame(() => setFase('open'))
+      return () => cancelAnimationFrame(r)
+    }
+    setFase((f) => (f === 'closed' ? 'closed' : 'closing'))
+    const t = setTimeout(() => setFase('closed'), 150) // matcher --modal-close-dur
+    return () => clearTimeout(t)
+  }, [open])
+
   useEffect(() => {
     if (!open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -45,19 +62,23 @@ export function AuthModal() {
     }
   }, [open])
 
-  if (!open) return null
+  if (fase === 'closed') return null
 
   const erRegistrering = fane === 'registrer'
+  const animKlasse = fase === 'open' ? 'is-open' : fase === 'closing' ? 'is-closing' : ''
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal} />
+      <div
+        className={`t-modal-backdrop absolute inset-0 bg-black/50 backdrop-blur-sm ${animKlasse}`}
+        onClick={closeModal}
+      />
 
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        className="bg-card relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 shadow-2xl"
+        className={`t-modal bg-card relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 shadow-2xl ${animKlasse}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Lukk-knapp */}

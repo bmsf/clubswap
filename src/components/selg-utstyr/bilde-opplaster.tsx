@@ -98,7 +98,7 @@ export function BildeOpplaster({
           )}
           onClick={() => fileRef.current?.click()}
         >
-          <div className="bg-muted flex size-12 items-center justify-center rounded-full">
+          <div className="flex size-12 items-center justify-center rounded-full bg-neutral-100">
             <ArrowUpTrayIcon className="text-muted-foreground size-5" />
           </div>
           <div className="text-center">

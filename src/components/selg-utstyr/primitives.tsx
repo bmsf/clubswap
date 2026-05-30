@@ -41,7 +41,8 @@ export function Felt({
         {aiBadge && <AiBadge />}
       </Label>
       {error && <p className="mb-1.5 text-xs text-red-500">{error}</p>}
-      {children}
+      {/* Kun selve feltet rister (transitions.dev) — label/feilmelding står stille */}
+      <div data-feil={error ? 'true' : undefined}>{children}</div>
     </div>
   )
 }
@@ -88,7 +89,7 @@ export function SkaftSok({
         onBlur={() => setTimeout(() => setVis(false), 150)}
       />
       {vis && kandidater.length > 0 && (
-        <div className="bg-background absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 shadow-lg">
+        <div className="absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 bg-white shadow-lg">
           {kandidater.map((s, i) => (
             <button
               key={i}
@@ -97,7 +98,7 @@ export function SkaftSok({
                 onChange(s.navn)
                 setVis(false)
               }}
-              className="hover:bg-muted flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm transition-colors"
+              className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm transition-colors hover:bg-neutral-100"
             >
               <span className="text-foreground">{s.navn}</span>
               <span className="text-muted-foreground text-xs capitalize">

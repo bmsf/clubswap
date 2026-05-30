@@ -412,8 +412,9 @@ export function uiKategoriTilDb(ui: UiKategori, underkat: string | null): string
       if (underkat === 'enkelt_jern') return 'enkelt-jern'
       return 'jernsett'
     case 'trekker':
-      if (underkat === 'fairway_tre') return 'fairway_wood'
-      if (underkat === 'hybridtrekker') return 'hybrid'
+      // UI-skjema + flate manuell-verdier (fairway/hybrid)
+      if (underkat === 'fairway_tre' || underkat === 'fairway') return 'fairway_wood'
+      if (underkat === 'hybridtrekker' || underkat === 'hybrid') return 'hybrid'
       return 'driver'
     case 'wedge':
       return 'wedge'

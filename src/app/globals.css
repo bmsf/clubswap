@@ -125,83 +125,6 @@
   --sidebar-ring: 17 100% 61%;
 }
 
-.dark {
-  /* ── Background: #1c1c1c ── */
-  --background: 0 0% 11%;         /* #1c1c1c */
-  --bg-gradient-center: #1c1c1c;
-  --bg-gradient-edge: #1c1c1c;
-
-  /* ── Text: warm tan ── */
-  --foreground: 40 32% 73%;       /* #d1c2a5 */
-
-  /* ── Surface / Card: #262626 ── */
-  --card: 0 0% 15%;               /* #262626 */
-  --card-foreground: 40 32% 73%;
-  --surface: 0 0% 15%;
-  --surface-foreground: 40 32% 73%;
-  --surface-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 0.03),
-    inset 0 0 0 1px rgb(255 255 255 / 0.02),
-    0 2px 4px 0 rgb(0 0 0 / 0.35),
-    0 1px 2px 0 rgb(0 0 0 / 0.25);
-  --main-panel-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 0.11),
-    inset 0 0 0 1px rgb(255 255 255 / 0.06),
-    0 0 0 1px rgb(0 0 0 / 0.20),
-    0 1px 1px -0.5px rgb(0 0 0 / 0.18),
-    0 3px 3px -1.5px rgb(0 0 0 / 0.18),
-    0 6px 6px -3px rgb(0 0 0 / 0.18),
-    0 12px 12px -6px rgb(0 0 0 / 0.18),
-    0 24px 24px -12px rgb(0 0 0 / 0.18),
-    0 48px 48px -24px rgb(0 0 0 / 0.18);
-
-  /* ── Popover ── */
-  --popover: 0 0% 15%;
-  --popover-foreground: 40 32% 73%;
-
-  /* ── Primary: orange rgb(255,112,56) ── */
-  --primary: 17 100% 61%;
-  --primary-foreground: 0 0% 0%;
-
-  /* ── Secondary / Muted ── */
-  --secondary: 0 0% 18%;
-  --secondary-foreground: 40 32% 73%;
-  --muted: 0 0% 17%;
-  --muted-foreground: 40 32% 73%;  /* #d1c2a5 */
-
-  /* ── Accent ── */
-  --accent: 0 0% 18%;
-  --accent-foreground: 40 32% 73%;
-  --pill-border: 0 0% 24%;
-  --highlight: 36 42% 90%;         /* #f0e7da */
-  --highlight-btn: 36 24% 77%;     /* #d2c7b6 */
-
-  /* ── Primary button: warm tan matching screenshot ── */
-  --primary-btn: 36 24% 77%;       /* #d2c7b6 — matches screenshot */
-  --primary-btn-fg: 0 0% 11%;
-
-  /* ── Borders & inputs ── */
-  --border: 0 0% 21%;
-  --input: 0 0% 21%;
-
-  /* ── Destructive ── */
-  --destructive: 0 72% 55%;
-  --destructive-foreground: 0 0% 100%;
-
-  /* ── Ring ── */
-  --ring: 40 32% 73%;
-
-  /* ── Sidebar ── */
-  --sidebar: 0 0% 11%;
-  --sidebar-foreground: 40 32% 73%;
-  --sidebar-primary: 17 100% 61%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 18%;
-  --sidebar-accent-foreground: 40 32% 73%;
-  --sidebar-border: 0 0% 21%;
-  --sidebar-ring: 17 100% 61%;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -257,4 +180,137 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ── transitions.dev — semantic tokens (shared :root block) ──────────────────── */
+:root {
+  /* Error state shake (12-error-state-shake.md) */
+  --shake-distance: 6px;
+  --shake-overshoot: 4px;
+  --shake-dur-a: 80ms;
+  --shake-dur-b: 60ms;
+  --shake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Success check (10-success-check.md) */
+  --check-opacity-dur: 550ms;
+  --check-rotate-dur: 550ms;
+  --check-rotate-from: 80deg;
+  --check-bob-dur: 450ms;
+  --check-y-amount: 40px;
+  --check-blur-dur: 500ms;
+  --check-blur-from: 10px;
+  --check-path-dur: 550ms;
+  --check-path-delay: 80ms;
+  --check-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-opacity: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-rotate: cubic-bezier(0.22, 1, 0.36, 1);
+  --check-ease-bob: cubic-bezier(0.34, 1.35, 0.64, 1);
+  --check-ease-path: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Modal open / close (modal-open-close.md) */
+  --modal-open-dur: 250ms;
+  --modal-close-dur: 150ms;
+  --modal-scale: 0.96;
+  --modal-scale-close: 0.96;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Modal open / close — scale + fade. Base state is the off/entering
+   state; .is-open scales to 1, .is-closing reverses on a faster tween. */
+.t-modal {
+  transform-origin: center;
+  transform: scale(var(--modal-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--modal-open-dur) var(--modal-ease),
+    opacity var(--modal-open-dur) var(--modal-ease);
+  will-change: transform, opacity;
+}
+.t-modal.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-modal.is-closing {
+  transform: scale(var(--modal-scale-close));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--modal-close-dur) var(--modal-ease),
+    opacity var(--modal-close-dur) var(--modal-ease);
+}
+
+/* Backdrop fades alongside the modal. */
+.t-modal-backdrop {
+  opacity: 0;
+  transition: opacity var(--modal-open-dur) var(--modal-ease);
+}
+.t-modal-backdrop.is-open {
+  opacity: 1;
+}
+.t-modal-backdrop.is-closing {
+  opacity: 0;
+  transition: opacity var(--modal-close-dur) var(--modal-ease);
+}
+
+/* Error state shake — applied to a field wrapper to play a percussive
+   "this is wrong" jiggle (message + red text are owned by the component). */
+.t-felt-shake {
+  animation: t-input-shake calc(var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2) linear;
+  will-change: transform;
+}
+@keyframes t-input-shake {
+  0%      { transform: translateX(0);                                animation-timing-function: var(--shake-ease); }
+  28.57%  { transform: translateX(var(--shake-distance));            animation-timing-function: var(--shake-ease); }
+  57.14%  { transform: translateX(calc(var(--shake-distance) * -1)); animation-timing-function: var(--shake-ease); }
+  78.57%  { transform: translateX(var(--shake-overshoot));           animation-timing-function: var(--shake-ease); }
+  100%    { transform: translateX(0); }
+}
+
+/* Success check — appear transition (fade + rotate + blur + Y-bob + path draw). */
+.t-success-check {
+  display: inline-block;
+  transform-origin: center;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+}
+.t-success-check svg {
+  display: block;
+  overflow: visible;
+}
+.t-success-check[data-state='in'] {
+  animation:
+    t-check-fade var(--check-opacity-dur) var(--check-ease-opacity) forwards,
+    t-check-rotate var(--check-rotate-dur) var(--check-ease-rotate) forwards,
+    t-check-blur var(--check-blur-dur) var(--check-ease-out) forwards,
+    t-check-bob var(--check-bob-dur) var(--check-ease-bob) forwards;
+}
+.t-success-check[data-state='in'] svg path {
+  animation: t-check-draw var(--check-path-dur) var(--check-ease-path) var(--check-path-delay, 0ms)
+    forwards;
+}
+@keyframes t-check-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes t-check-rotate {
+  from { transform: rotate(var(--check-rotate-from)); }
+  to   { transform: rotate(0deg); }
+}
+@keyframes t-check-blur {
+  from { filter: blur(var(--check-blur-from)); }
+  to   { filter: blur(0); }
+}
+@keyframes t-check-bob {
+  from { translate: 0 var(--check-y-amount); }
+  to   { translate: 0 0; }
+}
+@keyframes t-check-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-felt-shake { animation: none !important; transform: none !important; }
+  .t-success-check { animation: none !important; opacity: 1; }
+  .t-success-check svg path { animation: none !important; stroke-dashoffset: 0 !important; }
+  .t-modal, .t-modal-backdrop { transition: none !important; }
 }

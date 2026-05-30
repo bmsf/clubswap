@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -118,6 +118,42 @@ type Props = {
 // Wizard nav-knapper: samme stil som root Button, men større padding
 const NAV_KNAPP_KLASSE = 'px-[calc(--spacing(5)-1px)] py-[calc(--spacing(2.5)-1px)]'
 
+// Suksess-overlegg ved publisering — success-check (transitions.dev)
+function PubliseringSuksess() {
+  const pathRef = useRef<SVGPathElement>(null)
+  const [state, setState] = useState<'out' | 'in'>('out')
+
+  useEffect(() => {
+    const path = pathRef.current
+    if (path) {
+      const len = Math.ceil(path.getTotalLength())
+      path.style.strokeDasharray = String(len)
+      path.style.strokeDashoffset = String(len)
+    }
+    // Neste frame: flip til «in» så strek-tegningen starter fra offset
+    const id = requestAnimationFrame(() => setState('in'))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  return (
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white/95 backdrop-blur-sm">
+      <span className="t-success-check" data-state={state} aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none" className="size-16">
+          <path
+            ref={pathRef}
+            d="M13 24.5 L21 32 L35 16"
+            stroke="#16a34a"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+      <p className="text-foreground text-base font-semibold">Annonsen er publisert!</p>
+    </div>
+  )
+}
+
 export function SelgUtstyrView({
   annonseId,
   initialData,
@@ -180,9 +216,13 @@ export function SelgUtstyrView({
   const [fraktPakke, setFraktPakke] = useState<'liten' | 'medium' | 'stor' | null>(null)
   const [kanMotes, setKanMotes] = useState(false)
   const [isSubmittingNy, setIsSubmittingNy] = useState(false)
+  const [publisert, setPublisert] = useState(false)
 
   // ── Navigation guard ──────────────────────────────────────────────────────
   const [pendingNavHref, setPendingNavHref] = useState<string | null>(null)
+
+  // Vis valideringsfeil etter første «Neste»-forsøk på et steg
+  const [visFeil, setVisFeil] = useState(false)
 
   // Condition: any category-step data has been filled in
   const hasUnsavedProgress = !redigerModus && (valgtModell !== null || uiKategori !== null)
@@ -399,10 +439,34 @@ export function SelgUtstyrView({
   function gaTil(i: number) {
     setDirection(i > currentStep ? 1 : -1)
     setCurrentStep(i)
+    setVisFeil(false)
     clearErrors()
   }
 
+  // Vis feil: rull til første feilfelt og spill av en «rystelse» (transitions.dev)
+  function visFeilOgRyst() {
+    setVisFeil(true)
+    requestAnimationFrame(() => {
+      const felt = document.querySelectorAll<HTMLElement>('[data-feil="true"]')
+      felt.forEach((el) => {
+        el.classList.remove('t-felt-shake')
+        void el.offsetWidth // tving reflow så animasjonen starter på nytt
+        el.classList.add('t-felt-shake')
+        setTimeout(() => el.classList.remove('t-felt-shake'), 320)
+      })
+      felt[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  }
+
   function nextStep() {
+    // Create-modus: valider gjeldende steg og vis inline-feil i stedet for å låse knappen
+    if (!redigerModus) {
+      const feil = validerSteg(steg[currentStep]?.id ?? '')
+      if (Object.keys(feil).length > 0) {
+        visFeilOgRyst()
+        return
+      }
+    }
     if (!redigerModus && steg[currentStep]?.id === 'metode' && mode === 'ai') {
       const detaljerIdx = steg.findIndex((s) => s.id === 'detaljer')
       gaTil(detaljerIdx >= 0 ? detaljerIdx : currentStep + 1)
@@ -470,6 +534,51 @@ export function SelgUtstyrView({
       default:
         return true
     }
+  }
+
+  // Create-modus: returnerer { feltnøkkel: melding } for manglende påkrevde felt
+  function validerSteg(stepId: string): Record<string, string> {
+    const f: Record<string, string> = {}
+    switch (stepId) {
+      case 'metode':
+        if (!mode) f.metode = 'Velg hvordan du vil opprette annonsen'
+        break
+      case 'kategori':
+        if (valgtModell) break
+        if (manuellModell) {
+          if (!uiKategori && !underkategori) f.kategori = 'Velg kategori'
+          if (tittel.trim().length < 3) f.tittel = 'Fyll inn tittel (minst 3 tegn)'
+          if (!merke.trim()) f.merke = 'Fyll inn merke'
+        } else {
+          f.modell = 'Søk og velg en modell, eller gå til manuell registrering'
+        }
+        break
+      case 'detaljer': {
+        if (tittel.trim().length < 3) f.tittel = 'Fyll inn tittel'
+        if (!merke.trim()) f.merke = 'Fyll inn merke'
+        const harSkaft =
+          uiKategori === 'jernshaft' || uiKategori === 'trekker' || uiKategori === 'wedge'
+        const harHand = harSkaft || uiKategori === 'putter'
+        const dbKat = uiKategori ? uiKategoriTilDb(uiKategori, underkategori) : null
+        const loftKreves = dbKat ? loftOptionerForDb(dbKat) !== null : false
+        if (harHand && !nyHaandighet) f.handighet = 'Velg håndighet'
+        if (loftKreves && !loft) f.loft = 'Velg loft / type'
+        if (harSkaft && skaftValg !== 'uten' && !nySkaftMateriale)
+          f.skaftmateriale = 'Velg skaftmateriale'
+        if (harSkaft && skaftValg !== 'uten' && !flex) f.flex = 'Velg flex'
+        if (!nyTilstand) f.tilstand = 'Velg tilstand'
+        break
+      }
+      case 'pris':
+        if (!pris || parseInt(pris) <= 0) f.pris = 'Fyll inn en gyldig pris'
+        break
+    }
+    return f
+  }
+
+  // Aktive feil for et steg (kun etter første «Neste»-forsøk)
+  function feilFor(stepId: string): Record<string, string> {
+    return visFeil ? validerSteg(stepId) : {}
   }
 
   // ── Image helpers ────────────────────────────────────────────────────────
@@ -608,6 +717,16 @@ export function SelgUtstyrView({
 
   // ── New create mode submit ────────────────────────────────────────────────
 
+  // Publiser-knapp: vis inline pris-feil i stedet for å låse knappen
+  function forsokPubliser() {
+    const feil = validerSteg('pris')
+    if (Object.keys(feil).length > 0) {
+      visFeilOgRyst()
+      return
+    }
+    void submitNy()
+  }
+
   async function submitNy() {
     if (!uiKategori) {
       toast.error('Velg kategori.')
@@ -681,9 +800,9 @@ export function SelgUtstyrView({
         toast.error(result.feil)
         return
       }
-      toast.success('Annonsen er publisert!')
       localStorage.removeItem('golftorget_listing_draft')
-      setTimeout(() => router.push('/annonser'), 1200)
+      setPublisert(true) // viser suksess-animasjon før omdirigering
+      setTimeout(() => router.push('/annonser'), 1700)
     } finally {
       setIsSubmittingNy(false)
     }
@@ -851,7 +970,7 @@ export function SelgUtstyrView({
     hybrid: 'trekker',
     jernsett: 'jernshaft',
     enkelt_jern: 'jernshaft',
-    wedge: 'jernshaft',
+    wedge: 'wedge',
     putter: 'putter',
     bag: 'bag',
     sko: 'sko',
@@ -860,6 +979,7 @@ export function SelgUtstyrView({
 
   function renderKategoriFase() {
     const selectedKat = KATEGORI_CREATE_OPTIONS.find((o) => o.value === underkategori)?.value ?? ''
+    const aktiveFeil = feilFor('kategori')
 
     const TITTEL_MAKS_KAT = 60
 
@@ -867,7 +987,9 @@ export function SelgUtstyrView({
       <>
         <CardHeader>
           <CardTitle>Hva selger du?</CardTitle>
-          <CardDescription>Søk etter modell og velg kategori</CardDescription>
+          <CardDescription>
+            Søk etter modell og velg kategori. <span className="text-red-500">*</span> = påkrevd
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <AnimatePresence mode="wait">
@@ -879,14 +1001,19 @@ export function SelgUtstyrView({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
               >
-                <ModellVelger
-                  value={valgtModell}
-                  onChange={velgModell}
-                  onManuell={() => {
-                    setValgtModell(null)
-                    setManuellModell(true)
-                  }}
-                />
+                <div data-feil={aktiveFeil.modell ? 'true' : undefined}>
+                  <ModellVelger
+                    value={valgtModell}
+                    onChange={velgModell}
+                    onManuell={() => {
+                      setValgtModell(null)
+                      setManuellModell(true)
+                    }}
+                  />
+                </div>
+                {aktiveFeil.modell && (
+                  <p className="mt-2 text-xs text-red-500">{aktiveFeil.modell}</p>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -908,16 +1035,28 @@ export function SelgUtstyrView({
                   </button>
                 </div>
 
-                <SimpleSelect
-                  value={selectedKat}
-                  onValueChange={(v) => {
-                    const kat = v as KategoriCreateValue
-                    setUiKategori(KATEGORI_CREATE_TO_UI[kat])
-                    setUnderkategori(kat)
-                  }}
-                  placeholder="Velg kategori"
-                  options={[...KATEGORI_CREATE_OPTIONS]}
-                />
+                <div>
+                  <Label className="mb-1.5 flex items-center gap-1.5">
+                    Kategori<span className="text-red-500">*</span>
+                  </Label>
+                  {(aktiveFeil.kategori || aktiveFeil.modell) && (
+                    <p className="mb-1.5 text-xs text-red-500">
+                      {aktiveFeil.kategori ?? aktiveFeil.modell}
+                    </p>
+                  )}
+                  <div data-feil={aktiveFeil.kategori || aktiveFeil.modell ? 'true' : undefined}>
+                    <SimpleSelect
+                      value={selectedKat}
+                      onValueChange={(v) => {
+                        const kat = v as KategoriCreateValue
+                        setUiKategori(KATEGORI_CREATE_TO_UI[kat])
+                        setUnderkategori(kat)
+                      }}
+                      placeholder="Velg kategori"
+                      options={[...KATEGORI_CREATE_OPTIONS]}
+                    />
+                  </div>
+                </div>
 
                 <AnimatePresence>
                   {uiKategori !== null && (
@@ -929,12 +1068,18 @@ export function SelgUtstyrView({
                       transition={{ duration: 0.2, ease: 'easeOut' }}
                       className="space-y-1"
                     >
-                      <Label>Tittel</Label>
+                      <Label className="flex items-center gap-1.5">
+                        Tittel<span className="text-red-500">*</span>
+                      </Label>
+                      {aktiveFeil.tittel && (
+                        <p className="text-xs text-red-500">{aktiveFeil.tittel}</p>
+                      )}
                       <Input
                         value={tittel}
                         onChange={(e) => setTittel(e.target.value.slice(0, TITTEL_MAKS_KAT))}
                         placeholder="f.eks. TaylorMade Stealth 2 Driver"
                         autoFocus
+                        data-feil={aktiveFeil.tittel ? 'true' : undefined}
                       />
                       <p className="text-muted-foreground text-xs">
                         {tittel.length}/{TITTEL_MAKS_KAT} tegn
@@ -953,8 +1098,13 @@ export function SelgUtstyrView({
                       transition={{ duration: 0.2, ease: 'easeOut' }}
                       className="space-y-1"
                     >
-                      <Label>Merke</Label>
-                      <div className="relative">
+                      <Label className="flex items-center gap-1.5">
+                        Merke<span className="text-red-500">*</span>
+                      </Label>
+                      {aktiveFeil.merke && (
+                        <p className="text-xs text-red-500">{aktiveFeil.merke}</p>
+                      )}
+                      <div className="relative" data-feil={aktiveFeil.merke ? 'true' : undefined}>
                         <Input
                           value={merke}
                           onChange={(e) => setMerke(e.target.value)}
@@ -1098,6 +1248,7 @@ export function SelgUtstyrView({
     // Loft-/type-valg basert på løst db-kategori (driver/fairway/hybrid/wedge)
     const dbKat = uiKategori ? uiKategoriTilDb(uiKategori, underkategori) : null
     const loftOpts = dbKat ? loftOptionerForDb(dbKat) : null
+    const aktiveFeil = feilFor('detaljer')
 
     const filteredMerker = GOLF_MERKER.filter(
       (m) => merke.trim() === '' || m.toLowerCase().includes(merke.toLowerCase())
@@ -1134,11 +1285,13 @@ export function SelgUtstyrView({
       <>
         <CardHeader>
           <CardTitle>Detaljer</CardTitle>
-          <CardDescription>Fyll inn informasjon om utstyret</CardDescription>
+          <CardDescription>
+            Fyll inn informasjon om utstyret. <span className="text-red-500">*</span> = påkrevd
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* 1. Tittel */}
-          <Felt label="Tittel" aiBadge={aiFields.has('tittel')}>
+          <Felt label="Tittel" required error={aktiveFeil.tittel} aiBadge={aiFields.has('tittel')}>
             <Input
               value={tittel}
               onChange={(e) => setTittel(e.target.value)}
@@ -1156,7 +1309,12 @@ export function SelgUtstyrView({
                 animate="visible"
                 exit="exit"
               >
-                <Felt label="Merke" aiBadge={aiFields.has('merke')}>
+                <Felt
+                  label="Merke"
+                  required
+                  error={aktiveFeil.merke}
+                  aiBadge={aiFields.has('merke')}
+                >
                   <div className="relative">
                     <Input
                       value={merke}
@@ -1219,7 +1377,7 @@ export function SelgUtstyrView({
                   </Felt>
                 )}
                 {harHaandighet && (
-                  <Felt label="Håndighet">
+                  <Felt label="Håndighet" required error={aktiveFeil.handighet}>
                     <PillToggle
                       options={HAND_OPTIONS}
                       value={nyHaandighet}
@@ -1243,7 +1401,12 @@ export function SelgUtstyrView({
                 className="space-y-4"
               >
                 {loftOpts && (
-                  <Felt label="Loft / type" aiBadge={aiFields.has('loft')}>
+                  <Felt
+                    label="Loft / type"
+                    required
+                    error={aktiveFeil.loft}
+                    aiBadge={aiFields.has('loft')}
+                  >
                     <SimpleSelect
                       value={loft}
                       onValueChange={setLoft}
@@ -1301,61 +1464,44 @@ export function SelgUtstyrView({
                   </Felt>
                 )}
 
-                {/* Shaft section */}
-                <div className="space-y-3 border-t border-neutral-950/10 pt-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Skaft</Label>
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSkaftValg('uten')
-                          setValgtSkaft(null)
-                          setFlex(null)
-                        }}
-                        className={cn(
-                          'cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                          skaftValg === 'uten'
-                            ? 'border-foreground bg-foreground text-background'
-                            : 'hover:border-foreground/40 border-neutral-950/10'
-                        )}
-                      >
-                        Uten skaft
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSkaftValg('ukjent')
-                          setValgtSkaft(null)
-                          setFlex(null)
-                        }}
-                        className={cn(
-                          'cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                          skaftValg === 'ukjent'
-                            ? 'border-foreground bg-foreground text-background'
-                            : 'hover:border-foreground/40 border-neutral-950/10'
-                        )}
-                      >
-                        Ukjent skaft
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSkaftValg('kjent')}
-                        className={cn(
-                          'cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-all',
-                          skaftValg === 'kjent'
-                            ? 'border-foreground bg-foreground text-background'
-                            : 'hover:border-foreground/40 border-neutral-950/10'
-                        )}
-                      >
-                        Legg til skaft
-                      </button>
+                {/* Skaft — gruppert delpanel */}
+                <div className="space-y-4 rounded-xl border border-neutral-950/10 p-4">
+                  <div>
+                    <Label className="mb-2 block">Skaft</Label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(
+                        [
+                          { v: 'uten', label: 'Uten skaft' },
+                          { v: 'ukjent', label: 'Ukjent modell' },
+                          { v: 'kjent', label: 'Velg skaftmodell' },
+                        ] as const
+                      ).map((o) => (
+                        <button
+                          key={o.v}
+                          type="button"
+                          onClick={() => {
+                            setSkaftValg(o.v)
+                            if (o.v !== 'kjent') setValgtSkaft(null)
+                          }}
+                          className={cn(
+                            'cursor-pointer rounded-lg border px-2 py-2 text-xs font-medium transition-all',
+                            skaftValg === o.v
+                              ? 'border-foreground bg-foreground text-background'
+                              : 'hover:border-foreground/40 border-neutral-950/10 bg-white'
+                          )}
+                        >
+                          {o.label}
+                        </button>
+                      ))}
                     </div>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      Velg «Uten skaft» hvis du selger kun hodet.
+                    </p>
                   </div>
 
                   {skaftValg !== 'uten' && (
                     <>
-                      <Felt label="Skaftmateriale">
+                      <Felt label="Skaftmateriale" required error={aktiveFeil.skaftmateriale}>
                         <PillToggle
                           options={SKAFT_MATERIALE_OPTIONS}
                           value={nySkaftMateriale}
@@ -1363,63 +1509,64 @@ export function SelgUtstyrView({
                         />
                       </Felt>
 
-                      <Felt label="Flex">
-                        <SimpleSelect
-                          value={flex ?? ''}
-                          onValueChange={setFlex}
-                          placeholder="Velg flex…"
-                          options={NY_FLEX_OPTIONS}
-                          className=""
-                        />
-                      </Felt>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Felt label="Flex" required error={aktiveFeil.flex}>
+                          <SimpleSelect
+                            value={flex ?? ''}
+                            onValueChange={setFlex}
+                            placeholder="Velg flex…"
+                            options={NY_FLEX_OPTIONS}
+                            className=""
+                          />
+                        </Felt>
 
-                      <Felt label="Skaftlengde">
-                        <div className="space-y-2">
+                        <Felt label="Skaftlengde">
                           <SimpleSelect
                             value={skaftLengde}
                             onValueChange={setSkaftLengde}
-                            placeholder="Velg lengde (valgfritt)…"
+                            placeholder="Valgfritt…"
                             options={SKAFT_LENGDE_OPTIONS}
                             className=""
                           />
-                          {skaftLengde === 'custom' && (
-                            <Input
-                              value={skaftLengdeCustom}
-                              onChange={(e) => setSkaftLengdeCustom(e.target.value)}
-                              placeholder={'f.eks. -2,5" eller 46"'}
+                        </Felt>
+                      </div>
+                      {skaftLengde === 'custom' && (
+                        <Input
+                          value={skaftLengdeCustom}
+                          onChange={(e) => setSkaftLengdeCustom(e.target.value)}
+                          placeholder={'Egendefinert lengde, f.eks. -2,5" eller 46"'}
+                        />
+                      )}
+
+                      <AnimatePresence>
+                        {skaftValg === 'kjent' && (
+                          <motion.div
+                            key="skaft-velger"
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.18 }}
+                            className="space-y-1.5"
+                          >
+                            <Label>Skaftmodell</Label>
+                            <SkaftVelger
+                              value={valgtSkaft}
+                              onChange={setValgtSkaft}
+                              shaftCategory={
+                                uiKategori === 'trekker'
+                                  ? 'driver_fairway'
+                                  : uiKategori === 'wedge'
+                                    ? 'wedge'
+                                    : uiKategori === 'jernshaft'
+                                      ? 'iron'
+                                      : undefined
+                              }
                             />
-                          )}
-                        </div>
-                      </Felt>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </>
                   )}
-
-                  <AnimatePresence>
-                    {skaftValg === 'kjent' && (
-                      <motion.div
-                        key="skaft-velger"
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.18 }}
-                        className="space-y-3"
-                      >
-                        <SkaftVelger
-                          value={valgtSkaft}
-                          onChange={setValgtSkaft}
-                          shaftCategory={
-                            uiKategori === 'trekker'
-                              ? 'driver_fairway'
-                              : uiKategori === 'wedge'
-                                ? 'wedge'
-                                : uiKategori === 'jernshaft'
-                                  ? 'iron'
-                                  : undefined
-                          }
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
               </motion.div>
             )}
@@ -1514,9 +1661,16 @@ export function SelgUtstyrView({
                 >
                   <div className="mb-1.5 flex items-center gap-1.5">
                     <Label>Tilstand</Label>
+                    <span className="text-red-500">*</span>
                     {aiFields.has('tilstand') && <AiBadge />}
                   </div>
-                  <div className="flex flex-col gap-2">
+                  {aktiveFeil.tilstand && (
+                    <p className="mb-1.5 text-xs text-red-500">{aktiveFeil.tilstand}</p>
+                  )}
+                  <div
+                    className="flex flex-col gap-2"
+                    data-feil={aktiveFeil.tilstand ? 'true' : undefined}
+                  >
                     {NY_TILSTANDER.map((t) => (
                       <button
                         key={t.value}
@@ -1605,6 +1759,7 @@ export function SelgUtstyrView({
   }
 
   function renderPrisFase() {
+    const aktiveFeil = feilFor('pris')
     return (
       <>
         <CardHeader>
@@ -1613,7 +1768,7 @@ export function SelgUtstyrView({
         </CardHeader>
         <CardContent>
           <div className="space-y-5">
-            <Felt label="Pris" required>
+            <Felt label="Pris" required error={aktiveFeil.pris}>
               <div className="relative">
                 <Input
                   type="number"
@@ -2099,7 +2254,8 @@ export function SelgUtstyrView({
       <Fremdrift steg={[...steg]} currentStep={currentStep} onGaTil={gaTil} />
 
       <form onSubmit={(e) => e.preventDefault()}>
-        <Card className="overflow-hidden border-neutral-950/10 bg-white">
+        <Card className="relative overflow-hidden border-neutral-950/10 bg-white">
+          {publisert && <PubliseringSuksess />}
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentStep}
@@ -2157,8 +2313,8 @@ export function SelgUtstyrView({
                   <Button
                     type="button"
                     variant="primary"
-                    onClick={() => void submitNy()}
-                    disabled={!pris || parseInt(pris) <= 0 || isSubmittingNy}
+                    onClick={forsokPubliser}
+                    disabled={isSubmittingNy}
                     className={NAV_KNAPP_KLASSE}
                   >
                     {isSubmittingNy ? (
@@ -2179,7 +2335,7 @@ export function SelgUtstyrView({
                   type="button"
                   variant="primary"
                   onClick={nextStep}
-                  disabled={!isStegGyldig()}
+                  disabled={redigerModus && !isStegGyldig()}
                   className={NAV_KNAPP_KLASSE}
                 >
                   Neste
