@@ -2,7 +2,16 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { ChevronRight, Heart, Share2, Send, ImageOff, MapPin, Truck, Tag } from 'lucide-react'
+import {
+  ChevronRight,
+  Heart,
+  Share2,
+  MessageSquare,
+  ImageOff,
+  MapPin,
+  Truck,
+  Tag,
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
@@ -311,15 +320,15 @@ export function ProductDetailPage({
             {tilbyrFrakt && (
               <span className="text-muted-foreground ml-2 inline-flex items-center gap-1 text-sm">
                 <Truck className="size-3.5" />
-                Frakt tilgjengelig
+                Kan sendes
               </span>
             )}
           </div>
 
           {/* CTA */}
           <div className="my-6 flex gap-2">
-            <Button size="lg" className="flex-1 gap-2">
-              <Send className="size-5" />
+            <Button variant="primary" size="lg" className="flex-1 gap-2">
+              <MessageSquare className="size-5" />
               Kontakt selger
             </Button>
           </div>

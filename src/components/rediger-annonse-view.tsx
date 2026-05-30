@@ -567,10 +567,8 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <span className="text-foreground text-sm font-medium">Tilbyr frakt</span>
-                      <p className="text-muted-foreground text-xs">
-                        Du og kjøper avtaler fraktpris direkte i meldinger.
-                      </p>
+                      <span className="text-foreground text-sm font-medium">Kan sendes</span>
+                      <p className="text-muted-foreground text-xs">Varen kan sendes til kjøper.</p>
                     </div>
                   </label>
                 )}

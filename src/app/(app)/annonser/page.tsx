@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { AnnonseKortHandlinger } from '@/components/annonse-kort-handlinger'
 import { Button } from '@/components/ui/button'
 import { ListingCard } from '@/components/ui/card-7'
+import { ListingGrid } from '@/components/listing-grid'
 
 export default async function AnnonserPage() {
   const supabase = await createClient()
@@ -41,7 +42,7 @@ export default async function AnnonserPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+        <ListingGrid>
           {annonser.map((annonse) => {
             const bilde =
               Array.isArray(annonse.bilder) && annonse.bilder.length > 0
@@ -51,6 +52,7 @@ export default async function AnnonserPage() {
             return (
               <ListingCard
                 key={annonse.id}
+                flat
                 name={annonse.modell}
                 brand={annonse.merke}
                 condition={annonse.tilstand ?? ''}
@@ -61,7 +63,7 @@ export default async function AnnonserPage() {
               />
             )
           })}
-        </div>
+        </ListingGrid>
       )}
     </section>
   )

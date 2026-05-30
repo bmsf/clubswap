@@ -213,7 +213,7 @@ export function SelgUtstyrView({
   const [beskrivelse, setBeskrivelse] = useState('')
   const [adresseCreate, setAdresseCreate] = useState<Adresse | null>(null)
   const [pris, setPris] = useState('')
-  const [fraktPakke, setFraktPakke] = useState<'liten' | 'medium' | 'stor' | null>(null)
+  const [kanSendes, setKanSendes] = useState(false)
   const [kanMotes, setKanMotes] = useState(false)
   const [isSubmittingNy, setIsSubmittingNy] = useState(false)
   const [publisert, setPublisert] = useState(false)
@@ -293,13 +293,7 @@ export function SelgUtstyrView({
       if (validTilstander.includes(d.nyTilstand as NyTilstand))
         setNyTilstand(d.nyTilstand as NyTilstand)
       if (typeof d.pris === 'string') setPris(d.pris)
-      if (
-        d.fraktPakke === 'liten' ||
-        d.fraktPakke === 'medium' ||
-        d.fraktPakke === 'stor' ||
-        d.fraktPakke === null
-      )
-        setFraktPakke(d.fraktPakke as 'liten' | 'medium' | 'stor' | null)
+      if (typeof d.kanSendes === 'boolean') setKanSendes(d.kanSendes)
       if (typeof d.kanMotes === 'boolean') setKanMotes(d.kanMotes)
       if (typeof d.beskrivelse === 'string') setBeskrivelse(d.beskrivelse)
       if (d.adresseCreate && typeof d.adresseCreate === 'object')
@@ -340,7 +334,7 @@ export function SelgUtstyrView({
       beskrivelse,
       adresseCreate,
       pris,
-      fraktPakke,
+      kanSendes,
       kanMotes,
     }),
     [
@@ -369,7 +363,7 @@ export function SelgUtstyrView({
       beskrivelse,
       adresseCreate,
       pris,
-      fraktPakke,
+      kanSendes,
       kanMotes,
     ]
   )
@@ -806,7 +800,7 @@ export function SelgUtstyrView({
       beskrivelse: beskrivelse.trim() || undefined,
       pris: parseInt(pris),
       selgesFra: adresseCreate?.poststed ?? '',
-      tilbyrFrakt: fraktPakke !== null,
+      tilbyrFrakt: kanSendes,
       bilder: nyeBildeUrls,
       ...(skaftValg !== 'uten' && flex ? { shaftFlex: flex } : {}),
       ...(skaftValg === 'kjent' && valgtSkaft
@@ -1825,65 +1819,28 @@ export function SelgUtstyrView({
               <AdresseVelger value={adresseCreate} onChange={setAdresseCreate} />
             </Felt>
 
-            <div className="space-y-2">
-              <Label>Frakt</Label>
-              <p className="text-muted-foreground text-xs">
-                Kjøper betaler frakt. Velg pakkestørrelse eller la være for frakt inkludert i pris.
-              </p>
-              <div className="divide-y divide-neutral-950/10 overflow-hidden rounded-xl border border-neutral-950/10">
-                {(
-                  [
-                    {
-                      value: 'liten',
-                      label: 'Liten pakke',
-                      desc: 'F.eks. golfballer, hansker, tilbehør',
-                    },
-                    { value: 'medium', label: 'Medium pakke', desc: 'F.eks. wedge, putter, jern' },
-                    { value: 'stor', label: 'Stor pakke', desc: 'F.eks. driver, jernset, golfbag' },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setFraktPakke(fraktPakke === opt.value ? null : opt.value)}
-                    className={cn(
-                      'flex w-full cursor-pointer items-center gap-3 px-4 py-3.5 text-left transition-colors',
-                      fraktPakke === opt.value ? 'bg-foreground text-background' : 'hover:bg-muted'
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'flex size-4 shrink-0 items-center justify-center rounded-full border-2',
-                        fraktPakke === opt.value
-                          ? 'border-background bg-background'
-                          : 'border-muted-foreground'
-                      )}
-                    >
-                      {fraktPakke === opt.value && (
-                        <span className="bg-foreground size-2 rounded-full" />
-                      )}
-                    </span>
-                    <div>
-                      <p
-                        className={cn(
-                          'text-sm font-medium',
-                          fraktPakke === opt.value ? 'text-background' : 'text-foreground'
-                        )}
-                      >
-                        {opt.label}
-                      </p>
-                      <p
-                        className={cn(
-                          'text-xs',
-                          fraktPakke === opt.value ? 'text-background/70' : 'text-muted-foreground'
-                        )}
-                      >
-                        {opt.desc}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+            <div className="flex items-center justify-between rounded-xl border border-neutral-950/10 px-4 py-3.5">
+              <div>
+                <p className="text-sm font-medium">Kan sendes</p>
+                <p className="text-muted-foreground text-xs">Varen kan sendes til kjøper</p>
               </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={kanSendes}
+                onClick={() => setKanSendes(!kanSendes)}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                  kanSendes ? 'bg-foreground' : 'bg-muted-foreground/30'
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg transition-transform',
+                    kanSendes ? 'translate-x-5' : 'translate-x-0'
+                  )}
+                />
+              </button>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-neutral-950/10 px-4 py-3.5">

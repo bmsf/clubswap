@@ -8,10 +8,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/supabase/client'
 import { loggUt } from '@/app/(auth)/actions'
 import { AuthModal } from '@/components/auth-modal'
+import { HeaderSearch } from '@/components/header-search'
 import { useAuthModal } from '@/store/auth-modal'
 import { BekreftSlettModal } from '@/components/annonse-kort-handlinger'
 import { Button } from '@/components/ui/button'
-import { Search, Heart, MessageSquare, Plus, User, Home, LogOut, LogIn } from 'lucide-react'
+import { Heart, MessageSquare, Plus, User, Home, LogOut, LogIn } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { cn } from '@/lib/utils'
 
@@ -55,7 +56,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [authLoaded, setAuthLoaded] = useState(false)
   const [profilMeny, setProfilMeny] = useState(false)
-  const [headerSearch, setHeaderSearch] = useState('')
   const profilRef = useRef<HTMLDivElement>(null)
 
   const { openModal } = useAuthModal()
@@ -92,14 +92,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handle)
   }, [profilMeny])
 
-  function handleHeaderSearch(e: React.SyntheticEvent) {
-    e.preventDefault()
-    const q = headerSearch.trim()
-    if (!q) return
-    router.push(`/search/${encodeURIComponent(q)}`)
-    setHeaderSearch('')
-  }
-
   function handleNavClick(href: string) {
     if (PROTECTED_ROUTES.includes(href) && !user) {
       openModal('logg-inn', href)
@@ -129,18 +121,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           {/* Search */}
-          <form onSubmit={handleHeaderSearch} className="flex-1">
-            <div className="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full bg-neutral-100 px-4 py-2.5">
-              <Search className="text-muted-foreground size-3.5 shrink-0" />
-              <input
-                type="text"
-                value={headerSearch}
-                onChange={(e) => setHeaderSearch(e.target.value)}
-                placeholder="Hva ser du etter?"
-                className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
-              />
-            </div>
-          </form>
+          <HeaderSearch />
 
           {/* Right: desktop only */}
           <div className="hidden shrink-0 items-center gap-1 md:flex">

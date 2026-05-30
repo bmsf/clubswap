@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ListingCard } from '@/components/ui/card-7'
+import { ListingGrid } from '@/components/listing-grid'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Check, ChevronDown, ChevronRight, Filter, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -541,6 +543,12 @@ export function UtforskClient({
   listings: Listing[]
   initialKategori?: string[]
 }) {
+  // Fritekstsøk er bare et filter, drevet av ?sok=-parameteren (navbar-søket).
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const sokTerm = (searchParams.get('sok') ?? '').trim()
+
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [openRows, setOpenRows] = useState<Set<string>>(new Set())
   const [valgtModellFilter, setValgtModellFilter] = useState<{
@@ -578,6 +586,8 @@ export function UtforskClient({
     setTilstand([])
     setPrisRange([])
     setSkaft([])
+    // Tøm også søkeordet (og evt. stale kategori-param) fra URL-en.
+    if (searchParams.toString()) router.push(pathname)
   }
 
   const availableModels = useMemo(() => {
@@ -596,6 +606,14 @@ export function UtforskClient({
 
   const filteredListings = useMemo(() => {
     let result = [...listings]
+
+    if (sokTerm) {
+      const tokens = sokTerm.toLowerCase().split(/\s+/)
+      result = result.filter((l) => {
+        const hay = `${l.merke} ${l.modell} ${l.tilstand ?? ''} ${l.kategori ?? ''}`.toLowerCase()
+        return tokens.every((t) => hay.includes(t))
+      })
+    }
 
     if (valgtModellFilter) {
       result = result.filter(
@@ -648,6 +666,7 @@ export function UtforskClient({
     return result
   }, [
     listings,
+    sokTerm,
     valgtModellFilter,
     kategorier,
     merke,
@@ -659,6 +678,7 @@ export function UtforskClient({
   ])
 
   const totalActiveFilters =
+    (sokTerm ? 1 : 0) +
     (valgtModellFilter ? 1 : 0) +
     kategorier.length +
     merke.length +
@@ -895,28 +915,27 @@ export function UtforskClient({
         {filteredListings.length === 0 ? (
           <p className="text-muted-foreground py-16 text-center text-sm">Ingen annonser funnet.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <ListingGrid>
             {filteredListings.map((listing) => (
-              <div key={listing.id} className="p-2">
-                <ListingCard
-                  flat
-                  name={listing.modell}
-                  brand={listing.merke}
-                  condition={listing.tilstand ?? ''}
-                  price={listing.pris}
-                  location={listing.selges_fra}
-                  posted={relativTid(listing.opprettet_at)}
-                  imageUrl={forsideBilde(listing.bilder)}
-                  href={`/annonser/${listing.id}`}
-                  clubsLabel={
-                    listing.kategori === 'jernsett' && listing.koller && listing.koller.length > 0
-                      ? formaterKoller(listing.koller)
-                      : undefined
-                  }
-                />
-              </div>
+              <ListingCard
+                key={listing.id}
+                flat
+                name={listing.modell}
+                brand={listing.merke}
+                condition={listing.tilstand ?? ''}
+                price={listing.pris}
+                location={listing.selges_fra}
+                posted={relativTid(listing.opprettet_at)}
+                imageUrl={forsideBilde(listing.bilder)}
+                href={`/annonser/${listing.id}`}
+                clubsLabel={
+                  listing.kategori === 'jernsett' && listing.koller && listing.koller.length > 0
+                    ? formaterKoller(listing.koller)
+                    : undefined
+                }
+              />
             ))}
-          </div>
+          </ListingGrid>
         )}
         <div className="pb-10" />
       </div>
