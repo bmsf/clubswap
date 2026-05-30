@@ -33,15 +33,15 @@ const CONDITION_LABELS: Record<string, string> = {
 }
 
 const CONDITION_CLASSES: Record<string, string> = {
-  ny: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  utmerket: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  ny: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
+  utmerket: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
   god: 'bg-primary/10 text-primary',
-  akseptabel: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  akseptabel: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
   // legacy
-  mint: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  very_good: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  mint: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
+  very_good: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
   good: 'bg-primary/10 text-primary',
-  fair: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  fair: 'bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground',
 }
 
 const CATEGORY_LABELS: Record<string, string> = {

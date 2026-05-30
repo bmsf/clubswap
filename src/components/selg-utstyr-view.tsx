@@ -136,7 +136,7 @@ function PubliseringSuksess() {
   }, [])
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white/95 backdrop-blur-sm">
+    <div className="bg-card/95 absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
       <span className="t-success-check" data-state={state} aria-hidden="true">
         <svg viewBox="0 0 48 48" fill="none" className="size-16">
           <path
@@ -928,12 +928,12 @@ export function SelgUtstyrView({
               'w-full cursor-pointer rounded-2xl border-2 p-5 text-left transition-all',
               mode === 'ai'
                 ? 'border-foreground bg-foreground/5'
-                : 'hover:border-foreground/40 border-neutral-950/10'
+                : 'hover:border-foreground/40 border-border'
             )}
           >
             <div className="flex items-start gap-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40">
-                <SparklesIcon className="size-5 text-amber-600 dark:text-amber-400" />
+              <div className="bg-muted dark:bg-muted flex size-10 shrink-0 items-center justify-center rounded-xl">
+                <SparklesIcon className="text-muted-foreground dark:text-muted-foreground size-5" />
               </div>
               <div>
                 <p className="font-semibold">Bruk AI</p>
@@ -952,7 +952,7 @@ export function SelgUtstyrView({
               'w-full cursor-pointer rounded-2xl border-2 p-5 text-left transition-all',
               mode === 'manual'
                 ? 'border-foreground bg-foreground/5'
-                : 'hover:border-foreground/40 border-neutral-950/10'
+                : 'hover:border-foreground/40 border-border'
             )}
           >
             <div className="flex items-start gap-4">
@@ -1014,7 +1014,7 @@ export function SelgUtstyrView({
         <CardHeader>
           <CardTitle>Hva selger du?</CardTitle>
           <CardDescription>
-            Søk etter modell og velg kategori. <span className="text-red-500">*</span> = påkrevd
+            Søk etter modell og velg kategori. <span className="text-destructive">*</span> = påkrevd
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -1038,7 +1038,7 @@ export function SelgUtstyrView({
                   />
                 </div>
                 {aktiveFeil.modell && (
-                  <p className="mt-2 text-xs text-red-500">{aktiveFeil.modell}</p>
+                  <p className="text-destructive mt-2 text-xs">{aktiveFeil.modell}</p>
                 )}
               </motion.div>
             ) : (
@@ -1063,10 +1063,10 @@ export function SelgUtstyrView({
 
                 <div>
                   <Label className="mb-1.5 flex items-center gap-1.5">
-                    Kategori<span className="text-red-500">*</span>
+                    Kategori<span className="text-destructive">*</span>
                   </Label>
                   {(aktiveFeil.kategori || aktiveFeil.modell) && (
-                    <p className="mb-1.5 text-xs text-red-500">
+                    <p className="text-destructive mb-1.5 text-xs">
                       {aktiveFeil.kategori ?? aktiveFeil.modell}
                     </p>
                   )}
@@ -1095,10 +1095,10 @@ export function SelgUtstyrView({
                       className="space-y-1"
                     >
                       <Label className="flex items-center gap-1.5">
-                        Tittel<span className="text-red-500">*</span>
+                        Tittel<span className="text-destructive">*</span>
                       </Label>
                       {aktiveFeil.tittel && (
-                        <p className="text-xs text-red-500">{aktiveFeil.tittel}</p>
+                        <p className="text-destructive text-xs">{aktiveFeil.tittel}</p>
                       )}
                       <Input
                         value={tittel}
@@ -1125,10 +1125,10 @@ export function SelgUtstyrView({
                       className="space-y-1"
                     >
                       <Label className="flex items-center gap-1.5">
-                        Merke<span className="text-red-500">*</span>
+                        Merke<span className="text-destructive">*</span>
                       </Label>
                       {aktiveFeil.merke && (
-                        <p className="text-xs text-red-500">{aktiveFeil.merke}</p>
+                        <p className="text-destructive text-xs">{aktiveFeil.merke}</p>
                       )}
                       <div className="relative" data-feil={aktiveFeil.merke ? 'true' : undefined}>
                         <Input
@@ -1149,7 +1149,7 @@ export function SelgUtstyrView({
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -4 }}
                                 transition={{ duration: 0.12 }}
-                                className="absolute top-full right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border border-neutral-950/10 bg-white shadow-lg"
+                                className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border shadow-lg"
                               >
                                 {GOLF_MERKER.filter(
                                   (m) =>
@@ -1191,7 +1191,7 @@ export function SelgUtstyrView({
         <CardHeader>
           <CardTitle>Hva skal du selge?</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-0 divide-y divide-neutral-950/10 px-6">
+        <CardContent className="divide-border space-y-0 divide-y px-6">
           {/* Tittel */}
           <div className="pb-6">
             <div className="bg-muted rounded-2xl px-4 py-3">
@@ -1290,8 +1290,8 @@ export function SelgUtstyrView({
           <CardContent>
             <div className="space-y-5">
               <div className="flex items-center gap-2">
-                <SparklesIcon className="size-4 animate-pulse text-amber-500" />
-                <span className="animate-pulse text-sm font-medium text-amber-700 dark:text-amber-300">
+                <SparklesIcon className="text-muted-foreground size-4 animate-pulse" />
+                <span className="text-muted-foreground dark:text-muted-foreground animate-pulse text-sm font-medium">
                   AI analyserer bildet…
                 </span>
               </div>
@@ -1312,7 +1312,7 @@ export function SelgUtstyrView({
         <CardHeader>
           <CardTitle>Detaljer</CardTitle>
           <CardDescription>
-            Fyll inn informasjon om utstyret. <span className="text-red-500">*</span> = påkrevd
+            Fyll inn informasjon om utstyret. <span className="text-destructive">*</span> = påkrevd
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -1356,7 +1356,7 @@ export function SelgUtstyrView({
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -4 }}
                           transition={{ duration: 0.12 }}
-                          className="absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 bg-white shadow-lg"
+                          className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border shadow-lg"
                         >
                           {filteredMerker.map((m) => (
                             <button
@@ -1474,7 +1474,7 @@ export function SelgUtstyrView({
                               'flex size-9 cursor-pointer items-center justify-center rounded-full border text-sm font-medium transition-all',
                               valgt
                                 ? 'border-foreground bg-foreground text-background'
-                                : 'hover:border-foreground/40 border-neutral-950/10'
+                                : 'hover:border-foreground/40 border-border'
                             )}
                           >
                             {k.label}
@@ -1491,7 +1491,7 @@ export function SelgUtstyrView({
                 )}
 
                 {/* Skaft — gruppert delpanel */}
-                <div className="space-y-4 rounded-xl border border-neutral-950/10 p-4">
+                <div className="border-border space-y-4 rounded-xl border p-4">
                   <div>
                     <Label className="mb-2 block">Skaft</Label>
                     <div className="grid grid-cols-3 gap-1.5">
@@ -1513,7 +1513,7 @@ export function SelgUtstyrView({
                             'cursor-pointer rounded-lg border px-2 py-2 text-xs font-medium transition-all',
                             skaftValg === o.v
                               ? 'border-foreground bg-foreground text-background'
-                              : 'hover:border-foreground/40 border-neutral-950/10 bg-white'
+                              : 'hover:border-foreground/40 border-border bg-card'
                           )}
                         >
                           {o.label}
@@ -1682,16 +1682,16 @@ export function SelgUtstyrView({
                 <div
                   className={cn(
                     'space-y-2',
-                    aiFields.has('tilstand') && 'border-l-2 border-amber-400 pl-3'
+                    aiFields.has('tilstand') && 'border-border border-l-2 pl-3'
                   )}
                 >
                   <div className="mb-1.5 flex items-center gap-1.5">
                     <Label>Tilstand</Label>
-                    <span className="text-red-500">*</span>
+                    <span className="text-destructive">*</span>
                     {aiFields.has('tilstand') && <AiBadge />}
                   </div>
                   {aktiveFeil.tilstand && (
-                    <p className="mb-1.5 text-xs text-red-500">{aktiveFeil.tilstand}</p>
+                    <p className="text-destructive mb-1.5 text-xs">{aktiveFeil.tilstand}</p>
                   )}
                   <div
                     className="flex flex-col gap-2"
@@ -1706,7 +1706,7 @@ export function SelgUtstyrView({
                           'flex w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all',
                           nyTilstand === t.value
                             ? `${t.klasse} ring-2 ring-current ring-offset-1`
-                            : 'hover:border-foreground/40 border-neutral-950/10'
+                            : 'hover:border-foreground/40 border-border'
                         )}
                       >
                         <span className={cn('size-2.5 shrink-0 rounded-full', t.dotKlasse)} />
@@ -1739,7 +1739,7 @@ export function SelgUtstyrView({
                 animate="visible"
                 exit="exit"
               >
-                <div className="border-t border-neutral-950/10 pt-5">
+                <div className="border-border border-t pt-5">
                   <p className="text-foreground mb-3 text-sm font-medium">Bilder</p>
                   <BildeOpplaster {...bildeOpplasterProps} />
                   <p className="text-muted-foreground mt-2 text-xs">
@@ -1760,7 +1760,7 @@ export function SelgUtstyrView({
                 animate="visible"
                 exit="exit"
               >
-                <div className="space-y-1 border-t border-neutral-950/10 pt-5">
+                <div className="border-border space-y-1 border-t pt-5">
                   <div className="flex items-center justify-between">
                     <Label>Beskrivelse</Label>
                     <span className="text-muted-foreground text-xs">Valgfritt</span>
@@ -1819,7 +1819,7 @@ export function SelgUtstyrView({
               <AdresseVelger value={adresseCreate} onChange={setAdresseCreate} />
             </Felt>
 
-            <div className="flex items-center justify-between rounded-xl border border-neutral-950/10 px-4 py-3.5">
+            <div className="border-border flex items-center justify-between rounded-xl border px-4 py-3.5">
               <div>
                 <p className="text-sm font-medium">Kan sendes</p>
                 <p className="text-muted-foreground text-xs">Varen kan sendes til kjøper</p>
@@ -1836,14 +1836,14 @@ export function SelgUtstyrView({
               >
                 <span
                   className={cn(
-                    'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg transition-transform',
+                    'bg-card pointer-events-none inline-block size-5 transform rounded-full shadow-lg transition-transform',
                     kanSendes ? 'translate-x-5' : 'translate-x-0'
                   )}
                 />
               </button>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-neutral-950/10 px-4 py-3.5">
+            <div className="border-border flex items-center justify-between rounded-xl border px-4 py-3.5">
               <div>
                 <p className="text-sm font-medium">Kan møtes</p>
                 <p className="text-muted-foreground text-xs">Møt kjøper for overlevering</p>
@@ -1860,7 +1860,7 @@ export function SelgUtstyrView({
               >
                 <span
                   className={cn(
-                    'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg transition-transform',
+                    'bg-card pointer-events-none inline-block size-5 transform rounded-full shadow-lg transition-transform',
                     kanMotes ? 'translate-x-5' : 'translate-x-0'
                   )}
                 />
@@ -2092,7 +2092,7 @@ export function SelgUtstyrView({
           <div>
             <Label className="mb-2 flex items-center gap-1.5">
               Tilstandsgrad
-              <span className="text-red-500">*</span>
+              <span className="text-destructive">*</span>
               {aiFields.has('tilstand') && <AiBadge />}
             </Label>
             <div className="grid grid-cols-2 gap-2">
@@ -2113,7 +2113,7 @@ export function SelgUtstyrView({
                     'flex cursor-pointer flex-col items-start rounded-xl border px-4 py-3 text-left transition-all',
                     tilstand === t.value
                       ? `${t.klasse} ring-foreground ring-2 ring-offset-1`
-                      : 'hover:border-foreground/40 border-neutral-950/10'
+                      : 'hover:border-foreground/40 border-border'
                   )}
                 >
                   <span
@@ -2243,7 +2243,7 @@ export function SelgUtstyrView({
       <Fremdrift steg={[...steg]} currentStep={currentStep} onGaTil={gaTil} />
 
       <form onSubmit={(e) => e.preventDefault()}>
-        <Card className="relative overflow-hidden border-neutral-950/10 bg-white">
+        <Card className="border-border bg-card relative overflow-hidden">
           {publisert && <PubliseringSuksess />}
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
@@ -2258,7 +2258,7 @@ export function SelgUtstyrView({
             </motion.div>
           </AnimatePresence>
 
-          <CardFooter className="justify-between gap-3 border-t border-neutral-950/10 pt-5 pb-5">
+          <CardFooter className="border-border justify-between gap-3 border-t pt-5 pb-5">
             <div>
               <Button
                 type="button"
@@ -2368,7 +2368,7 @@ export function SelgUtstyrView({
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setPendingNavHref(null)}
           />
-          <div className="relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 bg-white shadow-2xl">
+          <div className="border-border bg-card relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border shadow-2xl">
             <button
               type="button"
               onClick={() => setPendingNavHref(null)}
@@ -2399,12 +2399,12 @@ export function SelgUtstyrView({
               <Button
                 variant="outline"
                 onClick={confirmLeave}
-                className="bg-background text-foreground hover:bg-muted h-10 w-full rounded-xl border border-neutral-950/10"
+                className="bg-background text-foreground hover:bg-muted border-border h-10 w-full rounded-xl border"
               >
                 Forlat uten å lagre
               </Button>
             </div>
-            <div className="border-t border-neutral-950/10 px-7 py-4 text-center">
+            <div className="border-border border-t px-7 py-4 text-center">
               <button
                 type="button"
                 onClick={() => setPendingNavHref(null)}

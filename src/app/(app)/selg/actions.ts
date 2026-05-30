@@ -75,6 +75,7 @@ export async function publiserAnnonse(
       selges_fra: input.selgesFra ?? '',
       tilbyr_frakt: input.tilbyrFrakt,
       bilder: input.bilder,
+      status: 'aktiv',
     })
     .select('id')
     .single()
@@ -139,6 +140,52 @@ export async function oppdaterAnnonse(
   }
 
   return { id }
+}
+
+export async function markerSomSolgt(id: string): Promise<{ feil: string } | { ok: true }> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { feil: 'Du må være innlogget.' }
+
+  const { error } = await supabase
+    .from('annonser')
+    .update({ status: 'solgt' })
+    .eq('id', id)
+    .eq('bruker_id', user.id)
+
+  if (error) {
+    console.error('Supabase update error:', error)
+    return { feil: `Kunne ikke markere annonsen som solgt: ${error.message}` }
+  }
+
+  return { ok: true }
+}
+
+export async function markerSomAktiv(id: string): Promise<{ feil: string } | { ok: true }> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { feil: 'Du må være innlogget.' }
+
+  const { error } = await supabase
+    .from('annonser')
+    .update({ status: 'aktiv' })
+    .eq('id', id)
+    .eq('bruker_id', user.id)
+
+  if (error) {
+    console.error('Supabase update error:', error)
+    return { feil: `Kunne ikke aktivere annonsen: ${error.message}` }
+  }
+
+  return { ok: true }
 }
 
 export async function slettAnnonse(id: string): Promise<{ feil: string } | { ok: true }> {

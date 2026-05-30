@@ -131,11 +131,11 @@ export function RedigerAnnonseModal() {
       <div
         role="dialog"
         aria-modal="true"
-        className="bg-card relative z-10 my-auto w-[min(95vw,700px)] overflow-hidden rounded-2xl border border-neutral-950/10 shadow-2xl"
+        className="bg-card border-border relative z-10 my-auto w-[min(95vw,700px)] overflow-hidden rounded-2xl border shadow-2xl"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-950/10 px-6 py-4">
+        <div className="border-border flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-foreground text-base font-semibold">Rediger annonse</h2>
           <button
             type="button"

@@ -145,13 +145,13 @@ export function SkaftVelger({ value, onChange, shaftCategory }: Props) {
             className="space-y-1"
           >
             {resultater.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-neutral-950/10 px-4 py-5 text-center">
+              <div className="border-border rounded-xl border border-dashed px-4 py-5 text-center">
                 <p className="text-muted-foreground text-sm">
                   Ingen skaft funnet for &ldquo;{query}&rdquo;
                 </p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-neutral-950/10">
+              <div className="border-border overflow-hidden rounded-xl border">
                 {resultater.map((r) => (
                   <button
                     key={r.id}

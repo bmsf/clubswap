@@ -184,8 +184,8 @@ export function HeaderSearch() {
         >
           <div
             className={cn(
-              'flex w-full items-center gap-2 rounded-full bg-neutral-100 px-4 py-2.5 transition-shadow',
-              open && 'ring-2 ring-neutral-950/10'
+              'bg-muted flex w-full items-center gap-2 rounded-full px-4 py-2.5 transition-shadow',
+              open && 'ring-border ring-2'
             )}
           >
             <Search className="text-muted-foreground size-3.5 shrink-0" />
@@ -224,7 +224,7 @@ export function HeaderSearch() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.14 }}
-              className="absolute top-full right-0 left-0 z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-neutral-950/10 bg-white py-2 shadow-xl"
+              className="border-border bg-card absolute top-full right-0 left-0 z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border py-2 shadow-xl"
             >
               {items.map((item, i) => {
                 const Icon = item.icon
@@ -246,7 +246,7 @@ export function HeaderSearch() {
                                 'rounded-full px-3 py-1 text-xs font-medium transition-colors',
                                 browseTab === t
                                   ? 'bg-foreground text-background'
-                                  : 'text-muted-foreground hover:bg-neutral-100'
+                                  : 'text-muted-foreground hover:bg-muted'
                               )}
                             >
                               {t === 'kategorier' ? 'Kategorier' : 'Merker'}
@@ -275,7 +275,7 @@ export function HeaderSearch() {
                       onClick={item.onSelect}
                       className={cn(
                         'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors',
-                        i === activeIndex ? 'bg-neutral-100' : 'hover:bg-neutral-100'
+                        i === activeIndex ? 'bg-muted' : 'hover:bg-muted'
                       )}
                     >
                       <Icon className="text-muted-foreground size-4 shrink-0" />

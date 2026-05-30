@@ -2,32 +2,69 @@
 
 import { useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { PencilIcon, TrashIcon } from '@heroicons/react/16/solid'
+import {
+  ArrowUturnLeftIcon,
+  CheckBadgeIcon,
+  PencilIcon,
+  TrashIcon,
+} from '@heroicons/react/16/solid'
 import { toast } from 'sonner'
-import { slettAnnonse } from '@/app/(app)/selg/actions'
+import { markerSomAktiv, markerSomSolgt, slettAnnonse } from '@/app/(app)/selg/actions'
 import { Button } from '@/components/ui/button'
 import { useBekreftSlettModal } from '@/store/bekreft-slett-modal'
 
-export function AnnonseKortHandlinger({ id }: { id: string }) {
+export function AnnonseRadHandlinger({ id, status }: { id: string; status: string }) {
   const { openModal: openSlett } = useBekreftSlettModal()
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  function toggleStatus() {
+    startTransition(async () => {
+      const result = status === 'solgt' ? await markerSomAktiv(id) : await markerSomSolgt(id)
+      if ('feil' in result) {
+        toast.error(result.feil)
+      } else {
+        toast.success(
+          status === 'solgt' ? 'Annonsen er aktiv igjen.' : 'Annonsen er markert som solgt.'
+        )
+        router.refresh()
+      }
+    })
+  }
 
   return (
-    <div className="flex items-center gap-1.5 border-t border-neutral-950/10 px-4 py-3">
-      <Button asChild variant="outline" size="sm" className="flex-1">
+    <div className="flex items-center gap-1.5">
+      {status !== 'paabegynt' && (
+        <Button variant="outline" size="default" onClick={toggleStatus} disabled={isPending}>
+          {status === 'solgt' ? (
+            <>
+              <ArrowUturnLeftIcon className="size-4" />
+              <span className="hidden sm:inline">Aktiver</span>
+            </>
+          ) : (
+            <>
+              <CheckBadgeIcon className="size-4" />
+              <span className="hidden sm:inline">Marker som solgt</span>
+            </>
+          )}
+        </Button>
+      )}
+
+      <Button asChild variant="outline" size="default">
         <a href={`/annonser/${id}/rediger`}>
-          <PencilIcon className="size-3.5" />
-          Rediger
+          <PencilIcon className="size-4" />
+          <span className="hidden sm:inline">Rediger</span>
         </a>
       </Button>
 
       <Button
         variant="outline"
-        size="sm"
-        className="flex-1 text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
+        size="default"
+        className="text-destructive hover:border-destructive/30 hover:bg-destructive/10 dark:hover:bg-destructive/20"
         onClick={() => openSlett(id)}
       >
-        <TrashIcon className="size-3.5" />
-        Slett
+        <TrashIcon className="size-4" />
+        <span className="hidden sm:inline">Slett</span>
       </Button>
     </div>
   )
@@ -78,7 +115,7 @@ export function BekreftSlettModal() {
       <div
         role="dialog"
         aria-modal="true"
-        className="bg-card relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 shadow-2xl"
+        className="bg-card border-border relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border shadow-2xl"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Lukk-knapp */}
@@ -104,8 +141,8 @@ export function BekreftSlettModal() {
 
         {/* Innhold */}
         <div className="flex flex-col items-center px-7 pt-8 pb-6">
-          <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-red-100 shadow-md dark:bg-red-950/40">
-            <TrashIcon className="size-6 text-red-500" />
+          <div className="bg-destructive/10 dark:bg-destructive/20 mb-4 flex size-12 items-center justify-center rounded-xl shadow-md">
+            <TrashIcon className="text-destructive size-6" />
           </div>
 
           <h1 className="text-foreground mb-1 text-[1.1rem] font-bold">Slett annonse</h1>
@@ -118,7 +155,7 @@ export function BekreftSlettModal() {
               type="button"
               onClick={closeModal}
               disabled={isPending}
-              className="text-foreground hover:bg-muted flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl border border-neutral-950/10 text-sm font-medium transition-colors disabled:opacity-60"
+              className="text-foreground hover:bg-muted border-border flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl border text-sm font-medium transition-colors disabled:opacity-60"
             >
               Avbryt
             </button>
@@ -126,7 +163,7 @@ export function BekreftSlettModal() {
               type="button"
               onClick={handleSlett}
               disabled={isPending}
-              className="flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl bg-red-500 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-60"
+              className="bg-destructive text-primary-foreground hover:bg-destructive/90 flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
             >
               {isPending ? 'Sletter…' : 'Ja, slett'}
             </button>

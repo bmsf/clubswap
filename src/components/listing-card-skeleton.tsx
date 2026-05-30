@@ -6,7 +6,6 @@ import { ListingCard } from '@/components/ui/card-7'
 const FIXTURE_PROPS = {
   name: 'TaylorMade Stealth 2 Driver',
   brand: 'TaylorMade',
-  condition: 'Meget god',
   price: 2490,
   location: 'Oslo',
   posted: '2t siden',

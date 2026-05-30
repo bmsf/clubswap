@@ -10,7 +10,6 @@ interface ListingCardProps extends React.HTMLAttributes<HTMLDivElement> {
   imageUrl?: string
   name: string
   brand: string
-  condition: string
   price: number
   location?: string | null
   posted?: string
@@ -25,7 +24,6 @@ export function ListingCard({
   imageUrl,
   name,
   brand,
-  condition,
   price,
   location,
   posted,
@@ -70,15 +68,8 @@ export function ListingCard({
 
         {/* Content */}
         <div className="flex flex-1 flex-col gap-1.5 px-3.5 py-3">
-          {/* Title row */}
-          <div className="flex items-start justify-between gap-2">
-            <p className="truncate text-sm leading-snug font-medium">{name}</p>
-            {condition && (
-              <span className="text-muted-foreground bg-muted shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium">
-                {condition}
-              </span>
-            )}
-          </div>
+          {/* Title */}
+          <p className="truncate text-sm leading-snug font-medium">{name}</p>
 
           {/* Subtitle */}
           <p className="text-muted-foreground text-[10px] leading-snug">

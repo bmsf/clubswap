@@ -38,7 +38,7 @@ export function Fremdrift({
                 )}
                 whileTap={i < currentStep ? { scale: 0.9 } : {}}
               >
-                {i < currentStep && <CheckIcon className="size-2.5 text-white" />}
+                {i < currentStep && <CheckIcon className="text-primary-foreground size-2.5" />}
               </motion.button>
             </div>
             <span

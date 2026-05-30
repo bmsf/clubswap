@@ -43,6 +43,7 @@ export default async function LandingPage() {
   const { data } = await supabase
     .from('annonser')
     .select('kategori, bilder')
+    .eq('status', 'aktiv')
     .not('bilder', 'is', null)
     .order('opprettet_at', { ascending: false })
     .limit(100)
@@ -97,7 +98,7 @@ export default async function LandingPage() {
                 <div className="from-muted to-muted/60 absolute inset-0 bg-linear-to-br" />
               )}
               <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
-              <span className="absolute right-0 bottom-4 left-0 text-center text-lg font-bold text-white drop-shadow">
+              <span className="text-primary-foreground absolute right-0 bottom-4 left-0 text-center text-lg font-bold drop-shadow">
                 {label}
               </span>
             </Link>

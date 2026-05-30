@@ -141,14 +141,14 @@ export const TILSTANDER: {
     label: 'Ny',
     beskrivelse: 'Aldri brukt, original emballasje',
     klasse:
-      'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950',
+      'text-muted-foreground dark:text-muted-foreground border-border dark:border-border bg-muted dark:bg-muted',
   },
   {
     value: 'meget_god',
     label: 'Meget god',
     beskrivelse: 'Minimal bruk, nesten ingen slitasje',
     klasse:
-      'text-sky-700 dark:text-sky-400 border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-950',
+      'text-muted-foreground dark:text-muted-foreground border-border dark:border-border bg-muted dark:bg-muted',
   },
   {
     value: 'god',
@@ -161,7 +161,7 @@ export const TILSTANDER: {
     label: 'Akseptabel',
     beskrivelse: 'Synlig slitasje, funksjonell',
     klasse:
-      'text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950',
+      'text-muted-foreground dark:text-muted-foreground border-border dark:border-border bg-muted dark:bg-muted',
   },
 ]
 
@@ -472,16 +472,16 @@ export const NY_TILSTANDER: {
     label: 'Ny',
     beskrivelse: 'Ubrukt, i eller uten innpakning',
     klasse:
-      'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
-    dotKlasse: 'bg-emerald-500',
+      'border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground',
+    dotKlasse: 'bg-muted-foreground',
   },
   {
     value: 'utmerket',
     label: 'Utmerket',
     beskrivelse: 'Brukt, maks 2-3 runder',
     klasse:
-      'border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-950 dark:text-green-300',
-    dotKlasse: 'bg-green-400',
+      'border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground',
+    dotKlasse: 'bg-muted-foreground',
   },
   {
     value: 'god',
@@ -495,8 +495,8 @@ export const NY_TILSTANDER: {
     label: 'Akseptabel',
     beskrivelse: 'Brukt, men noe kosmetisk slitasje',
     klasse:
-      'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300',
-    dotKlasse: 'bg-amber-500',
+      'border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground',
+    dotKlasse: 'bg-muted-foreground',
   },
 ]
 

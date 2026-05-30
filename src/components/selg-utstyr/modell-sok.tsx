@@ -68,7 +68,7 @@ export function ModellSok({
         placeholder={placeholder ?? 'Søk etter modell, f.eks. TaylorMade Stealth 2 Driver'}
       />
       {vis && (
-        <div className="bg-background absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 shadow-lg">
+        <div className="bg-background border-border absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border shadow-lg">
           {resultater.length > 0 ? (
             <>
               {resultater.map((r, i) => (
@@ -102,7 +102,7 @@ export function ModellSok({
                     setVis(false)
                   }
                 }}
-                className="hover:bg-muted w-full cursor-pointer border-t border-neutral-950/10 px-4 py-2.5 text-left text-sm text-violet-600 transition-colors dark:text-violet-400"
+                className="hover:bg-muted border-border w-full cursor-pointer border-t px-4 py-2.5 text-left text-sm text-violet-600 transition-colors dark:text-violet-400"
               >
                 Modellen finnes ikke i listen – legg til manuelt
               </button>

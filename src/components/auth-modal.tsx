@@ -78,7 +78,7 @@ export function AuthModal() {
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        className={`t-modal bg-card relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-neutral-950/10 shadow-2xl ${animKlasse}`}
+        className={`t-modal bg-card border-border relative z-10 w-[min(92vw,420px)] overflow-hidden rounded-2xl border shadow-2xl ${animKlasse}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Lukk-knapp */}
@@ -137,7 +137,7 @@ export function AuthModal() {
         </div>
 
         {/* Bunn-seksjon */}
-        <div className="border-t border-neutral-950/10 px-7 py-4 text-center text-sm">
+        <div className="border-border border-t px-7 py-4 text-center text-sm">
           {erRegistrering ? (
             <p className="text-muted-foreground text-xs">
               Har du allerede konto?{' '}
@@ -191,7 +191,7 @@ function Steg1({
           type="submit"
           formAction={loggInnMedGoogle}
           formNoValidate
-          className="bg-background text-foreground hover:bg-muted flex h-10 w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-neutral-950/10 text-sm font-medium transition-colors"
+          className="bg-background text-foreground hover:bg-muted border-border flex h-10 w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border text-sm font-medium transition-colors"
         >
           <GoogleIcon />
           Google
@@ -200,9 +200,9 @@ function Steg1({
 
       {/* Skillelinje */}
       <div className="relative flex w-full items-center gap-3">
-        <div className="h-px flex-1 border-t border-neutral-950/10" />
+        <div className="border-border h-px flex-1 border-t" />
         <span className="text-muted-foreground text-[11px]">eller</span>
-        <div className="h-px flex-1 border-t border-neutral-950/10" />
+        <div className="border-border h-px flex-1 border-t" />
       </div>
 
       {/* E-post + Fortsett */}

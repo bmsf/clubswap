@@ -111,9 +111,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     '?'
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-neutral-950 antialiased">
+    <div className="bg-card text-foreground flex min-h-screen flex-col antialiased">
       {/* ── Top navbar ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 h-16 border-b border-neutral-950/10 bg-white text-neutral-950">
+      <header className="border-border bg-card text-foreground sticky top-0 z-40 h-16 border-b">
         <div className="mx-auto flex h-full w-full max-w-7xl items-center gap-3 px-4 md:gap-4 md:px-6">
           {/* Brand */}
           <Link href="/" className="text-foreground shrink-0 text-sm font-semibold tracking-tight">
@@ -153,12 +153,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Button>
 
             {!authLoaded ? (
-              <div className="ml-1 size-9 animate-pulse rounded-full bg-neutral-100" />
+              <div className="bg-muted ml-1 size-9 animate-pulse rounded-full" />
             ) : user ? (
               <div className="relative ml-1" ref={profilRef}>
                 <button
                   onClick={() => setProfilMeny(!profilMeny)}
-                  className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-950 transition-colors hover:bg-neutral-200"
+                  className="bg-muted text-foreground hover:bg-muted flex size-9 cursor-pointer items-center justify-center rounded-full text-xs font-semibold transition-colors"
                   aria-label="Profilmeny"
                 >
                   {initials}
@@ -166,7 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <AnimatePresence>
                   {profilMeny && (
                     <motion.div
-                      className="absolute top-full right-0 mt-1.5 min-w-37 rounded-xl border border-neutral-950/10 bg-white p-1 shadow-lg"
+                      className="border-border bg-card absolute top-full right-0 mt-1.5 min-w-37 rounded-xl border p-1 shadow-lg"
                       initial={{ opacity: 0, y: -4, scale: 0.97 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.97 }}
@@ -208,7 +208,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Page content ───────────────────────────────────────────────────── */}
       <main className="flex-1 pb-16 md:pb-0">
-        <div className="mx-auto min-h-screen max-w-7xl border-x border-neutral-950/10">
+        <div className="border-border mx-auto min-h-screen max-w-7xl border-x">
           <motion.div
             key={pathname}
             initial={{ opacity: 0, y: 8 }}
@@ -221,7 +221,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ── Bottom nav (mobile only) ────────────────────────────────────────── */}
-      <nav className="fixed right-0 bottom-0 left-0 z-40 flex bg-white text-neutral-950 md:hidden">
+      <nav className="bg-card text-foreground fixed right-0 bottom-0 left-0 z-40 flex md:hidden">
         {BOTTOM_NAV_ITEMS.map((item) => {
           // Profil-fanen blir «Logg inn» for uinnloggede brukere
           const loggInnFane = item.href === '/profil' && authLoaded && !user
@@ -239,8 +239,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="flex flex-1 flex-col items-center justify-center py-2 transition-colors"
             >
               {isCenter ? (
-                <div className="bg-primary-btn flex size-11 items-center justify-center rounded-full">
-                  <Icon className="text-primary-btn-fg size-5" />
+                <div className="bg-primary flex size-11 items-center justify-center rounded-full">
+                  <Icon className="text-primary-foreground size-5" />
                 </div>
               ) : (
                 <>

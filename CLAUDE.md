@@ -16,7 +16,7 @@
 - **React Hook Form + Zod v4** — skjemaer og validering
 - **UploadThing** — bildeopplasting
 - **Framer Motion** — animasjoner
-- **Geist** — typografi (sans + mono)
+- **Mona Sans** — sans-serif for all UI-tekst · **Geist Mono** — monospace for data (tidsstempler, stier, metrikkverdier, akse-labels)
 - **Sonner** — toasts
 - **next-themes** — dark mode
 
@@ -34,14 +34,14 @@ src/
 ```
 
 ## Design-system
-- **Fargepalett:** varm pergament/krem bakgrunn (`#f0eadb`), mørk tekst (`#1d1d1d`), oransje primary (`rgb(255,112,56)`)
-- **Dark mode:** mørk bakgrunn (`#1c1c1c`), varm tan tekst (`#d1c2a5`)
+- **Fargepalett:** standard **shadcn neutral**, helt monokromt — hvit bakgrunn (`oklch(1 0 0)`), near-black tekst/primary, grå `muted`/`border`. Eneste aksentfarge er `destructive` (rød) for sletting. Ingen oransje/pergament/fargede badges (utgått fra gammelt design).
+- **Farge-tokens:** definert som **oklch** CSS-variabler i `globals.css` (`:root` + `.dark`), mappet i `@theme inline` via `var(--x)` (ikke `hsl()`-wrappet).
+- **Bruk semantiske tokens i komponenter** — `bg-card`, `text-foreground`, `border-border`, `bg-muted`, `bg-primary`/`text-primary-foreground`, `bg-destructive`. Ikke bruk rå palett-utilities (`neutral-*`, `bg-white`, `text-amber-*` osv.). Unntak: `bg-black/NN`-scrims over bilder.
+- **Dark mode:** tokens finnes (`.dark`-blokk), men er **inaktiv** (ingen `next-themes`/provider).
 - **Radius:** `--radius: 0.625rem` (skaler med sm/md/lg/xl/2xl/3xl/4xl)
-- **Font:** Geist Sans / Geist Mono
-- **CSS-variabler:** alle farger via HSL CSS-variabler i `globals.css`
-- **Helpers:** `.surface` (hvitt kort med border+skygge), `.pill` (avrundet badge)
-- **Kondisjonsbadges:** Ny (grønn), Meget god (blå), God (primary/oransje), Akseptabel (gul)
-- Bakgrunn: radial gradient fra `--bg-gradient-center` til `--bg-gradient-edge`
+- **Font:** Mona Sans (default sans, all UI-tekst) / Geist Mono for data-verdier — tidsstempler, endepunkt-stier, metrikkverdier, akse-labels, priser, tellere. Bruk `font-mono`, `tabular-nums` eller `.font-data`-klassen; `time`/`code`/`kbd`/`samp` får Geist Mono automatisk
+- **Helpers:** `.surface` (kort med border+skygge), `.pill` (avrundet badge)
+- **Kondisjonsbadges:** monokrome — alle nøytrale grå pills (`bg-muted text-muted-foreground`)
 
 ## Kommandoer
 ```bash

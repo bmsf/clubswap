@@ -1,12 +1,30 @@
 import { createClient } from '@/supabase/server'
 import { TagIcon } from '@heroicons/react/16/solid'
 import Link from 'next/link'
-import { AnnonseKortHandlinger } from '@/components/annonse-kort-handlinger'
 import { Button } from '@/components/ui/button'
-import { ListingCard } from '@/components/ui/card-7'
-import { ListingGrid } from '@/components/listing-grid'
+import { AnnonseRad, type AnnonseRadData } from '@/components/annonse-rad'
+import { AnnonseStatusFilter, type AnnonseTab } from '@/components/annonse-status-filter'
 
-export default async function AnnonserPage() {
+const TAB_TO_STATUS: Record<AnnonseTab, string> = {
+  aktiv: 'aktiv',
+  paabegynt: 'paabegynt',
+  ferdig: 'solgt',
+}
+
+const TOM_TEKST: Record<AnnonseTab, string> = {
+  aktiv: 'Annonser du legger ut vil dukke opp her.',
+  paabegynt: 'Du har ingen påbegynte annonser ennå.',
+  ferdig: 'Annonser du markerer som solgt havner her.',
+}
+
+interface Props {
+  searchParams: Promise<{ status?: string }>
+}
+
+export default async function AnnonserPage({ searchParams }: Props) {
+  const { status } = await searchParams
+  const activeTab: AnnonseTab = status === 'paabegynt' || status === 'ferdig' ? status : 'aktiv'
+
   const supabase = await createClient()
 
   const {
@@ -16,22 +34,32 @@ export default async function AnnonserPage() {
   const { data: annonser } = user
     ? await supabase
         .from('annonser')
-        .select('id, merke, modell, tilstand, pris, selges_fra, bilder, opprettet_at')
+        .select('id, merke, modell, tilstand, pris, selges_fra, bilder, opprettet_at, status')
         .eq('bruker_id', user.id)
         .order('opprettet_at', { ascending: false })
     : { data: [] }
 
+  const alle = (annonser ?? []) as AnnonseRadData[]
+
+  const counts = {
+    aktiv: alle.filter((a) => a.status === 'aktiv').length,
+    paabegynt: alle.filter((a) => a.status === 'paabegynt').length,
+    ferdig: alle.filter((a) => a.status === 'solgt').length,
+  }
+
+  const synlige = alle.filter((a) => a.status === TAB_TO_STATUS[activeTab])
+
   return (
     <section className="px-4 py-12 md:px-12 lg:px-20">
-      <div className="mb-10">
+      <div className="mb-8">
         <h1 className="text-foreground text-3xl font-semibold tracking-tight">Mine annonser</h1>
         <p className="text-muted-foreground mt-2 text-sm">
           Her finner du alle annonser du har lagt ut.
         </p>
       </div>
 
-      {!annonser || annonser.length === 0 ? (
-        <div className="flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed border-neutral-950/10 px-12 py-16 text-center">
+      {alle.length === 0 ? (
+        <div className="border-border flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed px-12 py-16 text-center">
           <div className="bg-muted flex size-12 items-center justify-center rounded-full">
             <TagIcon className="text-muted-foreground size-5" />
           </div>
@@ -42,28 +70,23 @@ export default async function AnnonserPage() {
           </Button>
         </div>
       ) : (
-        <ListingGrid>
-          {annonser.map((annonse) => {
-            const bilde =
-              Array.isArray(annonse.bilder) && annonse.bilder.length > 0
-                ? (annonse.bilder[0] as string)
-                : undefined
+        <>
+          <div className="mb-2">
+            <AnnonseStatusFilter active={activeTab} counts={counts} />
+          </div>
 
-            return (
-              <ListingCard
-                key={annonse.id}
-                flat
-                name={annonse.modell}
-                brand={annonse.merke}
-                condition={annonse.tilstand ?? ''}
-                price={annonse.pris}
-                location={annonse.selges_fra}
-                imageUrl={bilde}
-                actions={<AnnonseKortHandlinger id={annonse.id} />}
-              />
-            )
-          })}
-        </ListingGrid>
+          {synlige.length === 0 ? (
+            <div className="text-muted-foreground py-16 text-center text-sm">
+              {TOM_TEKST[activeTab]}
+            </div>
+          ) : (
+            <div className="border-border border-t">
+              {synlige.map((annonse) => (
+                <AnnonseRad key={annonse.id} annonse={annonse} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </section>
   )

@@ -13,9 +13,7 @@ export function ListingGrid({ children }: { children: ReactNode }) {
     <div className="overflow-hidden">
       <div className="-mr-px -mb-px grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {Children.map(children, (child) =>
-          child == null ? null : (
-            <div className="border-r border-b border-neutral-950/10 p-3">{child}</div>
-          )
+          child == null ? null : <div className="border-border border-r border-b p-3">{child}</div>
         )}
       </div>
     </div>

@@ -94,7 +94,7 @@ export function SkaftSokDb({ category, placeholder, value, onChange }: Props) {
         className={cn(isPending && 'opacity-60')}
       />
       {open && (
-        <div className="absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 bg-white shadow-lg dark:bg-zinc-900">
+        <div className="border-border bg-card dark:bg-card absolute top-full right-0 left-0 z-20 mt-1 overflow-hidden rounded-xl border shadow-lg">
           {results.length > 0 ? (
             results.map((r) => (
               <button

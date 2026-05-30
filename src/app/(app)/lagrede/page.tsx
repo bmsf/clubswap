@@ -10,7 +10,7 @@ export default function LagredeePage() {
         </p>
       </div>
 
-      <div className="flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed border-neutral-950/10 px-12 py-16 text-center">
+      <div className="border-border flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed px-12 py-16 text-center">
         <div className="bg-muted flex size-12 items-center justify-center rounded-full">
           <HeartIcon className="text-muted-foreground size-5" />
         </div>

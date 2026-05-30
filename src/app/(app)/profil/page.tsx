@@ -15,6 +15,7 @@ export default async function ProfilPage() {
         .from('annonser')
         .select('id', { count: 'exact', head: true })
         .eq('bruker_id', user.id)
+        .eq('status', 'aktiv')
     : { count: null }
 
   const fulltNavn = user?.user_metadata?.full_name as string | undefined
@@ -39,7 +40,7 @@ export default async function ProfilPage() {
     <section className="mx-auto max-w-2xl px-4 py-12 md:px-6">
       {/* Identitet */}
       <div className="mb-8 flex items-center gap-4">
-        <div className="flex size-14 items-center justify-center rounded-full bg-neutral-100 text-lg font-semibold text-neutral-950">
+        <div className="bg-muted text-foreground flex size-14 items-center justify-center rounded-full text-lg font-semibold">
           {initialer}
         </div>
         <div className="min-w-0">
@@ -49,12 +50,12 @@ export default async function ProfilPage() {
       </div>
 
       {/* Konto-rader */}
-      <div className="overflow-hidden rounded-2xl border border-neutral-950/10">
+      <div className="border-border overflow-hidden rounded-2xl border">
         {rader.map(({ href, label, icon: Icon, badge }) => (
           <Link
             key={href}
             href={href}
-            className="hover:bg-muted flex items-center justify-between gap-3 border-b border-neutral-950/10 px-4 py-3.5 transition-colors last:border-0"
+            className="hover:bg-muted border-border flex items-center justify-between gap-3 border-b px-4 py-3.5 transition-colors last:border-0"
           >
             <span className="flex items-center gap-3">
               <Icon className="text-muted-foreground size-4 shrink-0" />
@@ -74,7 +75,7 @@ export default async function ProfilPage() {
       <form action={loggUt} className="mt-4">
         <button
           type="submit"
-          className="hover:bg-muted flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-neutral-950/10 px-4 py-3.5 text-sm transition-colors"
+          className="hover:bg-muted border-border flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm transition-colors"
         >
           <LogOut className="text-muted-foreground size-4 shrink-0" />
           <span className="text-foreground">Logg ut</span>

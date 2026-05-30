@@ -75,12 +75,12 @@ const KJENTE_MERKER = [
 ]
 
 const TILSTAND_KLASSE: Record<string, string> = {
-  Ny: 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950',
+  Ny: 'text-muted-foreground dark:text-muted-foreground border-border dark:border-border bg-muted dark:bg-muted',
   'Meget god':
-    'text-sky-700 dark:text-sky-400 border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-950',
+    'text-muted-foreground dark:text-muted-foreground border-border dark:border-border bg-muted dark:bg-muted',
   God: 'text-primary border-primary/30 bg-primary/8',
   Akseptabel:
-    'text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950',
+    'text-muted-foreground dark:text-muted-foreground border-border dark:border-border bg-muted dark:bg-muted',
 }
 
 function mapAnnonseToForm(a: Annonse): {
@@ -121,8 +121,8 @@ function mapAnnonseToForm(a: Annonse): {
 
 function Seksjon({ tittel, children }: { tittel: string; children: React.ReactNode }) {
   return (
-    <div className="bg-card overflow-hidden rounded-2xl border border-neutral-950/10">
-      <div className="border-b border-neutral-950/10 px-6 py-4">
+    <div className="bg-card border-border overflow-hidden rounded-2xl border">
+      <div className="border-border border-b px-6 py-4">
         <h2 className="text-foreground text-sm font-semibold">{tittel}</h2>
       </div>
       <div className="p-6">{children}</div>
@@ -152,7 +152,7 @@ function Forhandsvisning({
   const prisFormatert = prisNum > 0 ? prisNum.toLocaleString('nb-NO') + ' kr' : '–'
 
   return (
-    <div className="bg-card overflow-hidden rounded-2xl border border-neutral-950/10 shadow-sm">
+    <div className="bg-card border-border overflow-hidden rounded-2xl border shadow-sm">
       {/* Image */}
       <div className="bg-muted relative aspect-4/3 overflow-hidden">
         {forsideBilde ? (
@@ -491,7 +491,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
           <div className="space-y-4">
             <div>
               <p className="text-foreground mb-3 text-sm font-medium">
-                Tilstandsgrad <span className="text-red-500">*</span>
+                Tilstandsgrad <span className="text-destructive">*</span>
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {TILSTANDER.map((t) => (
@@ -503,7 +503,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
                       'flex cursor-pointer flex-col items-start rounded-xl border px-4 py-3 text-left transition-all',
                       tilstand === t.value
                         ? `${t.klasse} ring-primary ring-2 ring-offset-1`
-                        : 'hover:border-primary/40 border-neutral-950/10'
+                        : 'hover:border-primary/40 border-border'
                     )}
                   >
                     <span
@@ -604,8 +604,8 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
 
       {/* ── Right: sticky preview ────────────────────────────────────────────── */}
       <div className="sticky top-8 flex flex-col gap-4 self-start">
-        <div className="bg-card overflow-hidden rounded-2xl border border-neutral-950/10">
-          <div className="border-b border-neutral-950/10 px-5 py-4">
+        <div className="bg-card border-border overflow-hidden rounded-2xl border">
+          <div className="border-border border-b px-5 py-4">
             <h2 className="text-foreground text-sm font-semibold">Forhåndsvisning</h2>
             <p className="text-muted-foreground mt-0.5 text-xs">Slik ser annonsen ut for kjøpere</p>
           </div>
@@ -621,7 +621,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
           </div>
         </div>
 
-        <div className="bg-card rounded-2xl border border-neutral-950/10 px-5 py-4">
+        <div className="bg-card border-border rounded-2xl border px-5 py-4">
           <p className="text-foreground mb-3 text-sm font-semibold">Tips for god annonse</p>
           <ul className="text-muted-foreground space-y-2 text-xs">
             {[

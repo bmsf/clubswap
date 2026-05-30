@@ -202,9 +202,7 @@ function CheckOption({
         <div
           className={cn(
             'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
-            checked
-              ? 'border-foreground bg-foreground'
-              : 'hover:border-foreground/50 border-neutral-950/10'
+            checked ? 'border-foreground bg-foreground' : 'hover:border-foreground/50 border-border'
           )}
         >
           {checked && <Check className="text-background size-2.5" />}
@@ -272,7 +270,7 @@ function CategoryTree({
         ).length
 
         return (
-          <div key={k.value} className="border-b border-neutral-950/10 last:border-0">
+          <div key={k.value} className="border-border border-b last:border-0">
             <button
               onClick={() => toggleGroup(k.value)}
               className="flex w-full items-center justify-between py-3 text-left select-none"
@@ -427,7 +425,7 @@ function FilterRow({
   children: React.ReactNode
 }) {
   return (
-    <div className="border-b border-neutral-950/10 last:border-0">
+    <div className="border-border border-b last:border-0">
       <button
         onClick={onToggle}
         className="flex w-full items-center justify-between px-5 py-4 text-left select-none"
@@ -507,7 +505,7 @@ function SortDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.12 }}
-            className="bg-background absolute top-full left-0 z-50 mt-1 w-44 rounded-xl border border-neutral-950/10 p-2 shadow-lg"
+            className="bg-background border-border absolute top-full left-0 z-50 mt-1 w-44 rounded-xl border p-2 shadow-lg"
           >
             {SORT_OPTIONS.map((opt) => (
               <button
@@ -692,7 +690,7 @@ export function UtforskClient({
   return (
     <>
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
-      <div className="border-b border-neutral-950/10">
+      <div className="border-border border-b">
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex items-center justify-between">
             {/* Left: Filtre + Nullstill */}
@@ -706,7 +704,7 @@ export function UtforskClient({
               </button>
               {totalActiveFilters > 0 && (
                 <>
-                  <span className="h-4 w-px bg-neutral-950/10" />
+                  <span className="bg-border h-4 w-px" />
                   <button
                     onClick={resetAllFilters}
                     className="text-muted-foreground hover:text-foreground text-sm transition-colors select-none"
@@ -726,7 +724,7 @@ export function UtforskClient({
       {/* ── Filter drawer ─────────────────────────────────────────────────── */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent side="left" className="flex w-full flex-col p-0 sm:max-w-sm">
-          <SheetHeader className="border-b border-neutral-950/10 px-5 py-4">
+          <SheetHeader className="border-border border-b px-5 py-4">
             <SheetTitle className="text-base font-semibold">Filtre</SheetTitle>
           </SheetHeader>
 
@@ -884,7 +882,7 @@ export function UtforskClient({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-neutral-950/10 px-5 py-4">
+          <div className="border-border border-t px-5 py-4">
             <div className="flex items-center justify-between gap-3">
               <button
                 onClick={resetAllFilters}
@@ -922,7 +920,6 @@ export function UtforskClient({
                 flat
                 name={listing.modell}
                 brand={listing.merke}
-                condition={listing.tilstand ?? ''}
                 price={listing.pris}
                 location={listing.selges_fra}
                 posted={relativTid(listing.opprettet_at)}

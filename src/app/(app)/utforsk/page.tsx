@@ -14,6 +14,7 @@ export default async function UtforskPage({ searchParams }: Props) {
     .select(
       'id, merke, modell, tilstand, pris, selges_fra, bilder, opprettet_at, kategori, skaft_materiale, haandighet, loft, koller'
     )
+    .eq('status', 'aktiv')
     .order('opprettet_at', { ascending: false })
     .limit(48)
 

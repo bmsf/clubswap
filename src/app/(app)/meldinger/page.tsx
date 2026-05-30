@@ -8,7 +8,7 @@ export default function MeldingerPage() {
         <p className="text-muted-foreground mt-2 text-sm">Samtaler med kjøpere og selgere.</p>
       </div>
 
-      <div className="flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed border-neutral-950/10 px-12 py-16 text-center">
+      <div className="border-border flex max-w-md flex-col items-center gap-4 rounded-2xl border border-dashed px-12 py-16 text-center">
         <div className="bg-muted flex size-12 items-center justify-center rounded-full">
           <EnvelopeIcon className="text-muted-foreground size-5" />
         </div>

@@ -4,7 +4,7 @@ export default function Loading() {
   return (
     <>
       {/* Hero placeholder */}
-      <section className="grid grid-cols-1 gap-8 border-b border-neutral-950/10 px-6 py-16 lg:grid-cols-2 lg:items-start lg:px-20 lg:py-24">
+      <section className="border-border grid grid-cols-1 gap-8 border-b px-6 py-16 lg:grid-cols-2 lg:items-start lg:px-20 lg:py-24">
         <div className="animate-pulse space-y-3 text-center lg:text-left">
           <div className="bg-muted mx-auto h-10 w-3/4 max-w-sm rounded-full lg:mx-0" />
           <div className="bg-muted mx-auto h-10 w-1/2 max-w-xs rounded-full lg:mx-0" />

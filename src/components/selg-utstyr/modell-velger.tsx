@@ -200,7 +200,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
             className="space-y-4"
           >
             {resultater.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-neutral-950/10 px-4 py-6 text-center">
+              <div className="border-border rounded-xl border border-dashed px-4 py-6 text-center">
                 <p className="text-muted-foreground text-sm">
                   Ingen modeller funnet for &ldquo;{query}&rdquo;
                 </p>
@@ -238,7 +238,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
               </Accordion>
             )}
 
-            <div className="border-t border-neutral-950/10 pt-3">
+            <div className="border-border border-t pt-3">
               <button
                 type="button"
                 onClick={onManuell}

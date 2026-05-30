@@ -11,7 +11,7 @@ import { KJENTE_SKAFT } from './constants'
 
 export function AiBadge() {
   return (
-    <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+    <span className="bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium">
       <SparklesIcon className="size-2.5" />
       Foreslått av AI
     </span>
@@ -34,13 +34,13 @@ export function Felt({
   children: React.ReactNode
 }) {
   return (
-    <div className={cn(aiBadge && 'border-l-2 border-amber-400 pl-3')}>
+    <div className={cn(aiBadge && 'border-border border-l-2 pl-3')}>
       <Label className="mb-1.5 flex items-center gap-1.5">
         {label}
-        {required && <span className="text-red-500">*</span>}
+        {required && <span className="text-destructive">*</span>}
         {aiBadge && <AiBadge />}
       </Label>
-      {error && <p className="mb-1.5 text-xs text-red-500">{error}</p>}
+      {error && <p className="text-destructive mb-1.5 text-xs">{error}</p>}
       {/* Kun selve feltet rister (transitions.dev) — label/feilmelding står stille */}
       <div data-feil={error ? 'true' : undefined}>{children}</div>
     </div>
@@ -89,7 +89,7 @@ export function SkaftSok({
         onBlur={() => setTimeout(() => setVis(false), 150)}
       />
       {vis && kandidater.length > 0 && (
-        <div className="absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border border-neutral-950/10 bg-white shadow-lg">
+        <div className="border-border bg-card absolute top-full right-0 left-0 z-10 mt-1 overflow-hidden rounded-xl border shadow-lg">
           {kandidater.map((s, i) => (
             <button
               key={i}
@@ -98,7 +98,7 @@ export function SkaftSok({
                 onChange(s.navn)
                 setVis(false)
               }}
-              className="flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm transition-colors hover:bg-neutral-100"
+              className="hover:bg-muted flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm transition-colors"
             >
               <span className="text-foreground">{s.navn}</span>
               <span className="text-muted-foreground text-xs capitalize">
@@ -131,7 +131,7 @@ export function PillToggle<T extends string>({
           type="button"
           onClick={() => onChange(opt.value)}
           className={cn(
-            'focus:border-foreground/50 h-11 cursor-pointer rounded-xl border border-neutral-950/10 px-4 text-sm transition-colors outline-none',
+            'focus:border-foreground/50 border-border h-11 cursor-pointer rounded-xl border px-4 text-sm transition-colors outline-none',
             value === opt.value
               ? 'border-foreground bg-foreground/8 text-foreground font-medium'
               : 'hover:border-foreground/40'

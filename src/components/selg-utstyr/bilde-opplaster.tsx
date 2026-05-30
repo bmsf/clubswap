@@ -46,12 +46,12 @@ function BildeThumbnail({
       <button
         type="button"
         onClick={onFjern}
-        className="absolute top-1.5 right-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+        className="text-primary-foreground absolute top-1.5 right-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
       >
         <XMarkIcon className="size-3.5" />
       </button>
       {erForside && (
-        <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white">
+        <span className="text-primary-foreground absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium">
           Forside
         </span>
       )}
@@ -93,12 +93,12 @@ export function BildeOpplaster({
             onLeggTil(e.dataTransfer.files)
           }}
           className={cn(
-            'mb-4 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-neutral-950/10 px-6 py-10 transition-colors',
+            'border-border mb-4 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 transition-colors',
             dragOver ? 'border-primary bg-primary/5' : 'hover:border-primary/50 cursor-pointer'
           )}
           onClick={() => fileRef.current?.click()}
         >
-          <div className="flex size-12 items-center justify-center rounded-full bg-neutral-100">
+          <div className="bg-muted flex size-12 items-center justify-center rounded-full">
             <ArrowUpTrayIcon className="text-muted-foreground size-5" />
           </div>
           <div className="text-center">
@@ -142,7 +142,7 @@ export function BildeOpplaster({
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="hover:border-primary/50 flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-neutral-950/10 transition-colors"
+              className="hover:border-primary/50 border-border flex aspect-square cursor-pointer items-center justify-center rounded-xl border-2 border-dashed transition-colors"
             >
               <PhotoIcon className="text-muted-foreground size-5" />
             </button>

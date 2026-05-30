@@ -69,7 +69,7 @@ export function AdresseVelger({ value, onChange }: Props) {
         type="button"
         onClick={apneSheet}
         className={cn(
-          'hover:border-foreground/40 flex w-full items-center gap-3 rounded-xl border border-neutral-950/10 px-4 py-3.5 text-left transition-colors',
+          'hover:border-foreground/40 border-border flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors',
           value ? 'bg-muted' : 'hover:bg-muted/50'
         )}
       >
@@ -103,7 +103,7 @@ export function AdresseVelger({ value, onChange }: Props) {
             ) : adresser.length === 0 && !visNyForm ? (
               <p className="text-muted-foreground py-2 text-sm">Ingen lagrede adresser.</p>
             ) : (
-              <div className="divide-y divide-neutral-950/10 overflow-hidden rounded-xl border border-neutral-950/10">
+              <div className="divide-border border-border divide-y overflow-hidden rounded-xl border">
                 {adresser.map((a) => (
                   <div
                     key={a.id}
