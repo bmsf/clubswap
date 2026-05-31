@@ -9,7 +9,7 @@ export default async function AnnonseDetailPage({ params }: { params: Promise<{ 
   const { data: annonse } = await supabase
     .from('annonser')
     .select(
-      'id, bruker_id, kategori, merke, modell, aarsmodell, skaft_modell, shaft_flex, haandighet, loft, skaft_materiale, skaft_lengde, koller, putter_lengde, hosel_type, sko_storrelse, pigg_type, tilstand, beskrivelse, skadebeskrivelse, pris, selges_fra, tilbyr_frakt, bilder'
+      'id, bruker_id, kategori, merke, modell, aarsmodell, skaft_modell, shaft_flex, haandighet, loft, skaft_materiale, skaft_lengde, koller, putter_lengde, hosel_type, sko_storrelse, storrelse, pigg_type, tilstand, beskrivelse, skadebeskrivelse, pris, selges_fra, tilbyr_frakt, bilder'
     )
     .eq('id', id)
     .single()
@@ -59,6 +59,7 @@ export default async function AnnonseDetailPage({ params }: { params: Promise<{ 
       putterLengde={annonse.putter_lengde}
       hoselType={annonse.hosel_type}
       skoStorrelse={annonse.sko_storrelse}
+      storrelse={annonse.storrelse}
       piggType={annonse.pigg_type}
       seller={seller}
       currentUserId={user?.id ?? null}

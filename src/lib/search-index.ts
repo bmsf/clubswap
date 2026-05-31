@@ -1,4 +1,5 @@
 import { GOLF_MERKER } from '@/components/selg-utstyr/constants'
+import { ALLE_LEAVES } from '@/lib/categories'
 
 /** Søkbare merker (uten «Annet»-sekken). */
 export const SEARCH_BRANDS = GOLF_MERKER.filter((m) => m !== 'Annet')
@@ -6,25 +7,15 @@ export const SEARCH_BRANDS = GOLF_MERKER.filter((m) => m !== 'Annet')
 export type SearchCategory = { label: string; parent: string; kategori: string }
 
 /**
- * Flat, søkbar kategoriliste (underkategori + overkategori) for navbar-søket.
- * `kategori` peker til /utforsk?kategori=<verdi> og matcher taksonomien i
- * utforsk-client (KATEGORI_DB_VALUES + underkategori-verdier).
+ * Flat, søkbar kategoriliste (leaf + hovedkategori) for navbar-søket, generert
+ * fra den delte taksonomien. `kategori` peker til /utforsk?kategori=<leaf-slug>.
+ * Facet-leaves (Skaft etter flex) utelates — de filtrerer på en annen kolonne.
  */
-export const SEARCH_CATEGORIES: SearchCategory[] = [
-  { label: 'Drivere', parent: 'Golfkøller', kategori: 'driver' },
-  { label: 'Wooder', parent: 'Golfkøller', kategori: 'fairway_wood' },
-  { label: 'Hybrider', parent: 'Golfkøller', kategori: 'hybrid' },
-  { label: 'Jernsett', parent: 'Golfkøller', kategori: 'jernsett' },
-  { label: 'Wedger', parent: 'Golfkøller', kategori: 'wedge' },
-  { label: 'Puttere', parent: 'Golfkøller', kategori: 'putter' },
-  { label: 'Sko', parent: 'Klær & Sko', kategori: 'sko' },
-  { label: 'Klær', parent: 'Klær & Sko', kategori: 'klaer' },
-  { label: 'Hansker', parent: 'Klær & Sko', kategori: 'hansker' },
-  { label: 'Baller', parent: 'Baller', kategori: 'baller' },
-  { label: 'Golfbagger', parent: 'Bagger', kategori: 'bagger' },
-  { label: 'Avstandsmålere', parent: 'Annet', kategori: 'rangefinder' },
-  { label: 'GPS-klokker', parent: 'Annet', kategori: 'gps' },
-]
+export const SEARCH_CATEGORIES: SearchCategory[] = ALLE_LEAVES.filter((l) => !l.facet).map((l) => ({
+  label: l.label,
+  parent: l.hovedLabel,
+  kategori: l.slug,
+}))
 
 // ── Nylige søk (localStorage) ──────────────────────────────────────────────────
 

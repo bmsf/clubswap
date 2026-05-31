@@ -6,8 +6,8 @@ import { ArrowPathIcon } from '@heroicons/react/16/solid'
 import { createClient } from '@/supabase/client'
 import { useRedigerAnnonseModal } from '@/store/rediger-annonse-modal'
 import { SelgUtstyrView } from '@/components/selg-utstyr-view'
-import { CATEGORY_TO_DB, TILSTANDER } from '@/components/selg-utstyr/constants'
-import type { Category, Condition } from '@/components/selg-utstyr/constants'
+import { TILSTANDER } from '@/components/selg-utstyr/constants'
+import type { Condition } from '@/components/selg-utstyr/constants'
 
 type Annonse = {
   id: string
@@ -43,17 +43,14 @@ const KJENTE_MERKER = [
   'Honma',
 ]
 
-const DB_TO_CATEGORY = Object.fromEntries(
-  Object.entries(CATEGORY_TO_DB).map(([k, v]) => [v, k])
-) as Record<string, Category>
-
 function dbTilstandToCondition(tilstand: string): Condition | undefined {
   return TILSTANDER.find((t) => t.label === tilstand)?.value
 }
 
 function mapAnnonse(a: Annonse) {
   const merkeErKjent = KJENTE_MERKER.includes(a.merke)
-  const kategori = DB_TO_CATEGORY[a.kategori] ?? null
+  // kategori er nå lagret som leaf-slug i taksonomien — send rett gjennom.
+  const kategori = a.kategori || null
   const initialTilstand = dbTilstandToCondition(a.tilstand)
 
   const initialData = {

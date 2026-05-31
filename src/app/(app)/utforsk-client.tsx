@@ -10,6 +10,13 @@ import { Check, ChevronDown, ChevronRight, Filter, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { searchModeller, type ModellGruppe } from '@/app/actions/searchModeller'
 import { formaterKoller } from '@/components/selg-utstyr/constants'
+import {
+  TAKSONOMI,
+  leafSlugsForSlug,
+  facetForSlug,
+  kategoriLabel,
+  detaljProfil,
+} from '@/lib/categories'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -24,6 +31,7 @@ export type Listing = {
   opprettet_at: string
   kategori?: string | null
   skaft_materiale?: string | null
+  shaft_flex?: string | null
   haandighet?: string | null
   loft?: string | null
   koller?: string[] | null
@@ -38,64 +46,6 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'pris-lav', label: 'Laveste pris' },
   { value: 'pris-høy', label: 'Høyeste pris' },
 ]
-
-const KATEGORI_OPTIONS = [
-  { value: 'golfkoller', label: 'Golfkøller' },
-  { value: 'klaer_sko', label: 'Klær & Sko' },
-  { value: 'baller', label: 'Baller' },
-  { value: 'bagger', label: 'Bagger' },
-  { value: 'annet', label: 'Annet' },
-]
-
-const UNDERKATEGORI_MAP: Record<string, { value: string; label: string }[]> = {
-  golfkoller: [
-    { value: 'driver', label: 'Drivere' },
-    { value: 'mini_driver', label: 'Mini Drivere' },
-    { value: 'fairway_wood', label: 'Wooder' },
-    { value: 'hybrid', label: 'Hybrider' },
-    { value: 'utility_iron', label: 'Utilityjern' },
-    { value: 'jernsett', label: 'Jernsett' },
-    { value: 'enkelt-jern', label: 'Løse jern' },
-    { value: 'wedge', label: 'Wedger' },
-    { value: 'putter', label: 'Puttere' },
-  ],
-  klaer_sko: [
-    { value: 'sko', label: 'Sko' },
-    { value: 'klaer', label: 'Klær' },
-    { value: 'hansker', label: 'Hansker' },
-  ],
-  baller: [{ value: 'baller', label: 'Baller' }],
-  bagger: [
-    { value: 'bag', label: 'Golfbag' },
-    { value: 'stand_bag', label: 'Stand bag' },
-    { value: 'cart_bag', label: 'Cart bag' },
-    { value: 'tour_bag', label: 'Tour bag' },
-  ],
-  annet: [
-    { value: 'rangefinder', label: 'Avstandsmåler' },
-    { value: 'gps', label: 'GPS-klokke' },
-    { value: 'elektronikk', label: 'Elektronikk' },
-    { value: 'annet', label: 'Diverse' },
-  ],
-}
-
-const KATEGORI_DB_VALUES: Record<string, string[]> = {
-  golfkoller: [
-    'driver',
-    'mini_driver',
-    'fairway_wood',
-    'hybrid',
-    'utility_iron',
-    'jernsett',
-    'enkelt-jern',
-    'wedge',
-    'putter',
-  ],
-  klaer_sko: ['sko', 'klaer', 'hansker'],
-  baller: ['baller'],
-  bagger: ['bag', 'stand_bag', 'cart_bag', 'tour_bag'],
-  annet: ['annet', 'rangefinder', 'elektronikk', 'gps'],
-}
 
 const PRIS_RANGES = [
   { label: 'Under 500 kr', min: 0, max: 500 },
@@ -216,9 +166,18 @@ function CheckOption({
   )
 }
 
-// ── CategoryTree ─────────────────────────────────────────────────────────────
+// ── CategoryTree (3 nivåer: hoved → gruppe → leaf) ───────────────────────────
 
-const ALL_SUBKATEGORI = Object.values(UNDERKATEGORI_MAP).flat()
+// Alle slugs (hoved + grupper + leaves) som hører til en hovedkategori — for telling.
+function slugsForHoved(hovedSlug: string): Set<string> {
+  const set = new Set<string>([hovedSlug])
+  const hoved = TAKSONOMI.find((h) => h.slug === hovedSlug)
+  for (const g of hoved?.grupper ?? []) {
+    set.add(g.slug)
+    for (const l of g.leaves) set.add(l.slug)
+  }
+  return set
+}
 
 function CategoryTree({
   selected,
@@ -227,55 +186,43 @@ function CategoryTree({
   selected: string[]
   onChange: (v: string[]) => void
 }) {
-  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+  const [openHoved, setOpenHoved] = useState<Set<string>>(() => {
     const open = new Set<string>()
-    for (const k of KATEGORI_OPTIONS) {
-      if (
-        selected.includes(k.value) ||
-        (UNDERKATEGORI_MAP[k.value] ?? []).some((u) => selected.includes(u.value))
-      ) {
-        open.add(k.value)
-      }
+    for (const h of TAKSONOMI) {
+      if ([...slugsForHoved(h.slug)].some((s) => selected.includes(s))) open.add(h.slug)
     }
     return open
   })
+  const [openGruppe, setOpenGruppe] = useState<Set<string>>(new Set())
 
-  function toggleGroup(key: string) {
-    setOpenGroups((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
+  function toggle(set: Set<string>, key: string, setter: (s: Set<string>) => void) {
+    const next = new Set(set)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    setter(next)
   }
 
-  function handleBroadSelect(key: string) {
-    const childValues = (UNDERKATEGORI_MAP[key] ?? []).map((u) => u.value)
-    const without = selected.filter((v) => !childValues.includes(v) && v !== key)
-    onChange(selected.includes(key) ? without : [...without, key])
-  }
-
-  function handleSubSelect(parentKey: string, subValue: string) {
-    const without = selected.filter((v) => v !== parentKey && v !== subValue)
-    onChange(selected.includes(subValue) ? without : [...without, subValue])
+  // Velg en slug eksklusivt: fjern foreldre og barn-slugs så vi ikke dobbeltteller.
+  function selectSlug(slug: string, relatert: string[]) {
+    const without = selected.filter((v) => v !== slug && !relatert.includes(v))
+    onChange(selected.includes(slug) ? without : [...without, slug])
   }
 
   return (
     <div className="px-5 pb-2">
-      {KATEGORI_OPTIONS.map((k) => {
-        const subs = UNDERKATEGORI_MAP[k.value] ?? []
-        const isOpen = openGroups.has(k.value)
-        const selectedCount = [k.value, ...subs.map((s) => s.value)].filter((v) =>
-          selected.includes(v)
-        ).length
+      {TAKSONOMI.map((hoved) => {
+        const alleSlugs = slugsForHoved(hoved.slug)
+        const selectedCount = [...alleSlugs].filter((s) => selected.includes(s)).length
+        const isOpen = openHoved.has(hoved.slug)
+        const hovedRelatert = [...alleSlugs].filter((s) => s !== hoved.slug)
 
         return (
-          <div key={k.value} className="border-border border-b last:border-0">
+          <div key={hoved.slug} className="border-border border-b last:border-0">
             <button
-              onClick={() => toggleGroup(k.value)}
+              onClick={() => toggle(openHoved, hoved.slug, setOpenHoved)}
               className="flex w-full items-center justify-between py-3 text-left select-none"
             >
-              <span className="text-sm font-medium">{k.label}</span>
+              <span className="text-sm font-medium">{hoved.label}</span>
               <div className="flex items-center gap-2">
                 {selectedCount > 0 && (
                   <span className="bg-foreground text-background flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums">
@@ -300,18 +247,70 @@ function CategoryTree({
                   className="overflow-hidden pl-2"
                 >
                   <CheckOption
-                    label={`Alle ${k.label.toLowerCase()}`}
-                    checked={selected.includes(k.value)}
-                    onChange={() => handleBroadSelect(k.value)}
+                    label={`Alle ${hoved.label.toLowerCase()}`}
+                    checked={selected.includes(hoved.slug)}
+                    onChange={() => selectSlug(hoved.slug, hovedRelatert)}
                   />
-                  {subs.map((u) => (
-                    <CheckOption
-                      key={u.value}
-                      label={u.label}
-                      checked={selected.includes(u.value)}
-                      onChange={() => handleSubSelect(k.value, u.value)}
-                    />
-                  ))}
+                  {hoved.grupper.map((gruppe) => {
+                    const leafSlugs = gruppe.leaves.map((l) => l.slug)
+                    const gruppeRelatert = [hoved.slug, ...leafSlugs]
+                    const gOpen = openGruppe.has(gruppe.slug)
+                    const gCount = [gruppe.slug, ...leafSlugs].filter((s) =>
+                      selected.includes(s)
+                    ).length
+                    return (
+                      <div key={gruppe.slug} className="border-border/60 border-t first:border-0">
+                        <button
+                          onClick={() => toggle(openGruppe, gruppe.slug, setOpenGruppe)}
+                          className="flex w-full items-center justify-between py-2 pl-2 text-left select-none"
+                        >
+                          <span className="text-muted-foreground text-xs font-medium">
+                            {gruppe.label}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {gCount > 0 && (
+                              <span className="bg-foreground/80 text-background flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-semibold tabular-nums">
+                                {gCount}
+                              </span>
+                            )}
+                            <ChevronDown
+                              className={cn(
+                                'text-muted-foreground size-3.5 transition-transform duration-150',
+                                gOpen && 'rotate-180'
+                              )}
+                            />
+                          </div>
+                        </button>
+                        <AnimatePresence>
+                          {gOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.15 }}
+                              className="overflow-hidden pl-4"
+                            >
+                              {!gruppe.facet && (
+                                <CheckOption
+                                  label={`Alle ${gruppe.label.toLowerCase()}`}
+                                  checked={selected.includes(gruppe.slug)}
+                                  onChange={() => selectSlug(gruppe.slug, gruppeRelatert)}
+                                />
+                              )}
+                              {gruppe.leaves.map((leaf) => (
+                                <CheckOption
+                                  key={leaf.slug}
+                                  label={leaf.label}
+                                  checked={selected.includes(leaf.slug)}
+                                  onChange={() => selectSlug(leaf.slug, [hoved.slug, gruppe.slug])}
+                                />
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )
+                  })}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -620,8 +619,23 @@ export function UtforskClient({
     }
 
     if (kategorier.length > 0) {
-      const dbValues = kategorier.flatMap((v) => KATEGORI_DB_VALUES[v] ?? [v])
-      result = result.filter((l) => l.kategori != null && dbValues.includes(l.kategori))
+      // Ekspander valgte slugs (hoved/gruppe/leaf) til leaf-slugs + flex-facetverdier.
+      const katLeafs = new Set<string>()
+      const flexValues = new Set<string>()
+      for (const slug of kategorier) {
+        const facet = facetForSlug(slug)
+        if (facet) {
+          flexValues.add(facet.value)
+          continue
+        }
+        for (const s of leafSlugsForSlug(slug)) katLeafs.add(s)
+      }
+      result = result.filter((l) => {
+        const katOk = katLeafs.size === 0 || (l.kategori != null && katLeafs.has(l.kategori))
+        const flexOk =
+          flexValues.size === 0 || (l.shaft_flex != null && flexValues.has(l.shaft_flex))
+        return katOk && flexOk
+      })
     }
     if (merke.length > 0) {
       result = result.filter((l) => merke.includes(l.merke))
@@ -753,14 +767,7 @@ export function UtforskClient({
               onToggle={() => toggleRow('kategori')}
               summary={
                 kategorier.length > 0
-                  ? kategorier
-                      .map(
-                        (v) =>
-                          KATEGORI_OPTIONS.find((k) => k.value === v)?.label ??
-                          ALL_SUBKATEGORI.find((u) => u.value === v)?.label ??
-                          v
-                      )
-                      .join(', ')
+                  ? kategorier.map((v) => kategoriLabel(v) ?? v).join(', ')
                   : undefined
               }
             >
@@ -920,7 +927,9 @@ export function UtforskClient({
                 imageUrl={forsideBilde(listing.bilder)}
                 href={`/annonser/${listing.id}`}
                 clubsLabel={
-                  listing.kategori === 'jernsett' && listing.koller && listing.koller.length > 0
+                  detaljProfil(listing.kategori) === 'iron_set' &&
+                  listing.koller &&
+                  listing.koller.length > 0
                     ? formaterKoller(listing.koller)
                     : undefined
                 }

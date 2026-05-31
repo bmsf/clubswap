@@ -17,21 +17,17 @@ import { cn } from '@/lib/utils'
 import {
   schema,
   type FormData,
-  type Category,
   type Condition,
   TILSTANDER,
-  KATEGORI_OPTIONS,
   AARSMODELL_VALG,
   DRIVER_LOFT_OPTIONS,
   SHAFT_FLEX_OPTIONS,
   SKAFT_TYPE_OPTIONS,
-  HAR_SKAFT,
-  HAR_HEADCOVER,
-  HAR_LOFT_DRIVER,
   MAKS_ANTALL_BILDER,
-  CATEGORY_TO_DB,
 } from '@/components/selg-utstyr/constants'
 import { Felt, PillToggle } from '@/components/selg-utstyr/primitives'
+import { KategoriVelger } from '@/components/selg-utstyr/kategori-velger'
+import { detaljProfil, type DetaljProfil } from '@/lib/categories'
 import {
   BildeOpplaster,
   validerFiler,
@@ -85,12 +81,12 @@ const TILSTAND_KLASSE: Record<string, string> = {
 
 function mapAnnonseToForm(a: Annonse): {
   defaultValues: Partial<FormData>
-  kategori: Category | null
+  kategoriSlug: string | null
   tilstand: Condition | null
 } {
   const merkeErKjent = KJENTE_MERKER.includes(a.merke)
-  const kategori =
-    (Object.entries(CATEGORY_TO_DB).find(([, v]) => v === a.kategori)?.[0] as Category) ?? null
+  // kategori er lagret som leaf-slug i taksonomien.
+  const kategoriSlug = a.kategori || null
   const tilstand = TILSTANDER.find((t) => t.label === a.tilstand)?.value ?? null
 
   return {
@@ -112,7 +108,7 @@ function mapAnnonseToForm(a: Annonse): {
       selgesFra: a.selges_fra,
       tilbyrFrakt: a.tilbyr_frakt,
     },
-    kategori,
+    kategoriSlug,
     tilstand,
   }
 }
@@ -211,11 +207,11 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
 
   const {
     defaultValues,
-    kategori: initKategori,
+    kategoriSlug: initKategori,
     tilstand: initTilstand,
   } = mapAnnonseToForm(annonse)
 
-  const [kategori, setKategori] = useState<Category | null>(initKategori)
+  const [kategoriSlug, setKategoriSlug] = useState<string | null>(initKategori)
   const [tilstand, setTilstand] = useState<Condition | null>(initTilstand)
   const [bilder, setBilder] = useState<BildeEntry[]>([])
   const [eksisterendeBilder, setEksisterendeBilder] = useState<string[]>(annonse.bilder ?? [])
@@ -269,7 +265,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
       toast.error('Velg tilstandsgrad.')
       return
     }
-    if (!kategori) {
+    if (!kategoriSlug) {
       toast.error('Velg kategori.')
       return
     }
@@ -294,7 +290,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
 
       const tilstandLabel = TILSTANDER.find((t) => t.value === tilstand)?.label ?? tilstand
       const payload = {
-        kategori: CATEGORY_TO_DB[kategori],
+        kategori: kategoriSlug,
         merke: data.merke,
         modell: data.modell,
         aarsmodell: data.aarsmodell,
@@ -328,9 +324,18 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
     })
   }
 
-  const harSkaft = kategori ? HAR_SKAFT.has(kategori) : false
-  const harHeadcover = kategori ? HAR_HEADCOVER.has(kategori) : false
-  const harLoft = kategori ? HAR_LOFT_DRIVER.has(kategori) : false
+  const profil = detaljProfil(kategoriSlug)
+  const KLUBB_MED_SKAFT: DetaljProfil[] = [
+    'driver',
+    'wood',
+    'hybrid',
+    'iron_set',
+    'single_iron',
+    'wedge',
+  ]
+  const harSkaft = KLUBB_MED_SKAFT.includes(profil)
+  const harHeadcover = harSkaft || profil === 'putter'
+  const harLoft = profil === 'driver'
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -354,12 +359,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <Felt label="Kategori" required>
-                <SimpleSelect
-                  value={kategori ?? ''}
-                  onValueChange={(v) => setKategori(v as Category)}
-                  placeholder="Velg kategori…"
-                  options={KATEGORI_OPTIONS}
-                />
+                <KategoriVelger value={kategoriSlug} onChange={setKategoriSlug} />
               </Felt>
             </div>
 

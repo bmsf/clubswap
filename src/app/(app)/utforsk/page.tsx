@@ -12,7 +12,7 @@ export default async function UtforskPage({ searchParams }: Props) {
   const { data: listings } = await supabase
     .from('annonser')
     .select(
-      'id, merke, modell, tilstand, pris, selges_fra, bilder, opprettet_at, kategori, skaft_materiale, haandighet, loft, koller'
+      'id, merke, modell, tilstand, pris, selges_fra, bilder, opprettet_at, kategori, skaft_materiale, shaft_flex, haandighet, loft, koller'
     )
     .eq('status', 'aktiv')
     .order('opprettet_at', { ascending: false })

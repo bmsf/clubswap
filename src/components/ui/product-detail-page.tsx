@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { formaterKoller } from '@/components/selg-utstyr/constants'
+import { kategoriLabel, hovedForSlug } from '@/lib/categories'
 import { useAuthModal } from '@/store/auth-modal'
 
 const CONDITION_LABELS: Record<string, string> = {
@@ -147,6 +148,7 @@ export interface ListingDetailProps {
   putterLengde?: string | null
   hoselType?: string | null
   skoStorrelse?: string | null
+  storrelse?: string | null
   piggType?: string | null
   seller: Seller
   currentUserId?: string | null
@@ -175,6 +177,7 @@ export function ProductDetailPage({
   putterLengde,
   hoselType,
   skoStorrelse,
+  storrelse,
   piggType,
   seller,
   currentUserId,
@@ -194,8 +197,11 @@ export function ProductDetailPage({
     router.push(kontaktUrl)
   }
 
+  const kategoriLabelTekst = kategoriLabel(kategori) ?? CATEGORY_LABELS[kategori] ?? kategori
+  const hovedSlugForKat = hovedForSlug(kategori)
+
   const specBadges: SpecBadge[] = [
-    { label: CATEGORY_LABELS[kategori] ?? kategori },
+    { label: kategoriLabelTekst },
     ...(koller && koller.length > 0 ? [{ label: `Jern: ${formaterKoller(koller)}` }] : []),
     ...(aarsmodell ? [{ label: aarsmodell }] : []),
     ...(shaftFlex ? [{ label: SHAFT_FLEX_LABELS[shaftFlex] ?? shaftFlex }] : []),
@@ -208,6 +214,7 @@ export function ProductDetailPage({
     ...(putterLengde ? [{ label: `Lengde ${putterLengde} cm` }] : []),
     ...(hoselType ? [{ label: HOSEL_LABELS[hoselType] ?? hoselType }] : []),
     ...(skoStorrelse ? [{ label: `Størrelse EU ${skoStorrelse}` }] : []),
+    ...(storrelse ? [{ label: `Størrelse ${storrelse}` }] : []),
     ...(piggType ? [{ label: PIGG_LABELS[piggType] ?? piggType }] : []),
     ...(skaftModell ? [{ label: skaftModell }] : []),
   ]
@@ -217,7 +224,10 @@ export function ProductDetailPage({
 
   const breadcrumbs = [
     { label: 'Markedet', href: '/utforsk' },
-    { label: CATEGORY_LABELS[kategori] ?? kategori, href: `/utforsk` },
+    {
+      label: kategoriLabelTekst,
+      href: hovedSlugForKat ? `/utforsk?kategori=${hovedSlugForKat}` : '/utforsk',
+    },
     { label: `${merke} ${modell}`, href: '#' },
   ]
 

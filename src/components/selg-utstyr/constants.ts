@@ -1,10 +1,11 @@
 import { z } from 'zod'
+import type { DetaljProfil } from '@/lib/categories'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface KolleItem {
   id: string
-  kategori: Category
+  kategori: string
   merke: string
   modell: string
   aarsmodell?: string
@@ -19,23 +20,10 @@ export interface KolleItem {
   manuell?: boolean
 }
 
-export type Category =
-  | 'driver'
-  | 'fairway_wood'
-  | 'hybrid'
-  | 'iron_set'
-  | 'single_iron'
-  | 'wedge'
-  | 'putter'
-  | 'golf_bag'
-  | 'golf_shoes'
-  | 'rangefinder'
-  | 'other'
-
 export type Condition = 'ny' | 'meget_god' | 'god' | 'akseptabel'
 
 export interface EquipmentAnalysis {
-  category: Category | null
+  category: string | null
   brand: string | null
   model: string | null
   year: number | null
@@ -72,61 +60,6 @@ export const createModeSchema = schema.extend({
   merke: z.string().default(''),
   modell: z.string().default(''),
 })
-
-// ── Category ──────────────────────────────────────────────────────────────────
-
-export const CATEGORY_TO_DB: Record<Category, string> = {
-  driver: 'driver',
-  fairway_wood: 'fairway_wood',
-  hybrid: 'hybrid',
-  iron_set: 'jernsett',
-  single_iron: 'enkelt-jern',
-  wedge: 'wedge',
-  putter: 'putter',
-  golf_bag: 'bag',
-  golf_shoes: 'sko',
-  rangefinder: 'rangefinder',
-  other: 'annet',
-}
-
-export const KATEGORI_OPTIONS = [
-  { value: 'driver', label: 'Driver' },
-  { value: 'fairway_wood', label: 'Fairway wood' },
-  { value: 'hybrid', label: 'Hybrid' },
-  { value: 'iron_set', label: 'Jernsett' },
-  { value: 'single_iron', label: 'Enkeltjern' },
-  { value: 'wedge', label: 'Wedge' },
-  { value: 'putter', label: 'Putter' },
-  { value: 'golf_bag', label: 'Golfbag' },
-  { value: 'golf_shoes', label: 'Golfsko' },
-  { value: 'rangefinder', label: 'Avstandsmåler' },
-  { value: 'other', label: 'Annet' },
-]
-
-// Maps equipment category to shaft DB category
-export const SHAFT_KATEGORI_MAP: Partial<Record<Category, string>> = {
-  driver: 'driver_fairway',
-  fairway_wood: 'driver_fairway',
-  hybrid: 'driver_fairway',
-  iron_set: 'iron',
-  single_iron: 'iron',
-  wedge: 'wedge',
-  putter: 'putter',
-}
-
-// Categories with shaft specifications
-export const HAR_SKAFT = new Set<Category>([
-  'driver',
-  'fairway_wood',
-  'hybrid',
-  'iron_set',
-  'single_iron',
-  'wedge',
-  'putter',
-])
-
-export const HAR_HEADCOVER = new Set<Category>(['driver', 'fairway_wood', 'hybrid', 'putter'])
-export const HAR_LOFT_DRIVER = new Set<Category>(['driver'])
 
 // ── Condition ─────────────────────────────────────────────────────────────────
 
@@ -203,12 +136,14 @@ export const WEDGE_LOFT_OPTIONS: { value: string; label: string }[] = [
   { value: '60°', label: '60°' },
 ]
 
-/** Loft-/type-valg for en løst db-kategori, eller null hvis kategorien ikke har loft. */
-export function loftOptionerForDb(dbKat: string): { value: string; label: string }[] | null {
-  switch (dbKat) {
+/** Loft-/type-valg for en detaljprofil, eller null hvis profilen ikke har loft. */
+export function loftOptionerForProfil(
+  profil: DetaljProfil
+): { value: string; label: string }[] | null {
+  switch (profil) {
     case 'driver':
       return DRIVER_LOFT_OPTIONS.map((l) => ({ value: l, label: l }))
-    case 'fairway_wood':
+    case 'wood':
       return FAIRWAY_LOFT_OPTIONS
     case 'hybrid':
       return HYBRID_LOFT_OPTIONS
@@ -282,7 +217,7 @@ export const AARSMODELL_VALG = Array.from({ length: GJELDENDE_AAR - 1989 }, (_, 
 export const KJENTE_MODELLER: {
   brand: string
   model: string
-  category: Category
+  category: string
   year?: number
 }[] = [
   { brand: 'TaylorMade', model: 'Stealth 2', category: 'driver', year: 2023 },
@@ -344,121 +279,9 @@ export const TILLATTE_BILDE_TYPER = ['image/jpeg', 'image/png', 'image/webp']
 export const MAKS_BILDESTORRELSE_BYTES = 5 * 1024 * 1024
 export const MAKS_ANTALL_BILDER = 8
 
-// ── New 4-phase flow types ─────────────────────────────────────────────────────
-
-export type UiKategori =
-  | 'jernshaft'
-  | 'trekker'
-  | 'wedge'
-  | 'putter'
-  | 'baller'
-  | 'bag'
-  | 'sko'
-  | 'tilbehor'
-  | 'annet'
+// ── New flow: tilstand ──────────────────────────────────────────────────────────
 
 export type NyTilstand = 'ny' | 'utmerket' | 'god' | 'akseptabel'
-
-export const UI_KATEGORI_OPTIONS: { value: UiKategori; label: string }[] = [
-  { value: 'jernshaft', label: 'Jernkøller' },
-  { value: 'trekker', label: 'Trekker' },
-  { value: 'wedge', label: 'Wedge' },
-  { value: 'putter', label: 'Putter' },
-  { value: 'baller', label: 'Baller' },
-  { value: 'bag', label: 'Bag' },
-  { value: 'sko', label: 'Sko' },
-  { value: 'tilbehor', label: 'Tilbehør' },
-  { value: 'annet', label: 'Annet' },
-]
-
-export const UNDERKATEGORI_OPTIONS: Record<UiKategori, { value: string; label: string }[]> = {
-  jernshaft: [
-    { value: 'jernsett', label: 'Jern (3-PW)' },
-    { value: 'hybrid', label: 'Hybridkøller' },
-    { value: 'trerekke', label: 'Trerekke' },
-    { value: 'enkelt_jern', label: 'Enkelt jern' },
-  ],
-  trekker: [
-    { value: 'driver', label: 'Driver' },
-    { value: 'fairway_tre', label: 'Fairway tre' },
-    { value: 'hybridtrekker', label: 'Hybridtrekker' },
-  ],
-  wedge: [],
-  putter: [
-    { value: 'bladputter', label: 'Bladputter' },
-    { value: 'malteputter', label: 'Malteputter' },
-    { value: 'hoy_moi', label: 'Høy-MOI' },
-  ],
-  baller: [],
-  bag: [
-    { value: 'standbag', label: 'Standbag' },
-    { value: 'cartbag', label: 'Cartbag' },
-    { value: 'tourbag', label: 'Tourbag' },
-  ],
-  sko: [
-    { value: 'piggsko', label: 'Piggsko' },
-    { value: 'piggfri', label: 'Piggfri' },
-    { value: 'casual', label: 'Casual' },
-  ],
-  tilbehor: [],
-  annet: [],
-}
-
-export function uiKategoriTilDb(ui: UiKategori, underkat: string | null): string {
-  switch (ui) {
-    case 'jernshaft':
-      if (underkat === 'hybrid') return 'hybrid'
-      if (underkat === 'trerekke') return 'fairway_wood'
-      if (underkat === 'enkelt_jern') return 'enkelt-jern'
-      return 'jernsett'
-    case 'trekker':
-      // UI-skjema + flate manuell-verdier (fairway/hybrid)
-      if (underkat === 'fairway_tre' || underkat === 'fairway') return 'fairway_wood'
-      if (underkat === 'hybridtrekker' || underkat === 'hybrid') return 'hybrid'
-      return 'driver'
-    case 'wedge':
-      return 'wedge'
-    case 'putter':
-      return 'putter'
-    case 'baller':
-      return 'baller'
-    case 'bag':
-      return 'bag'
-    case 'sko':
-      return 'sko'
-    case 'tilbehor':
-      return 'annet'
-    case 'annet':
-      return 'annet'
-  }
-}
-
-export function kategoriTilUiKategori(kat: Category): { ui: UiKategori; underkat: string | null } {
-  switch (kat) {
-    case 'driver':
-      return { ui: 'trekker', underkat: 'driver' }
-    case 'fairway_wood':
-      return { ui: 'trekker', underkat: 'fairway_tre' }
-    case 'hybrid':
-      return { ui: 'trekker', underkat: 'hybridtrekker' }
-    case 'iron_set':
-      return { ui: 'jernshaft', underkat: 'jernsett' }
-    case 'single_iron':
-      return { ui: 'jernshaft', underkat: 'enkelt_jern' }
-    case 'wedge':
-      return { ui: 'wedge', underkat: null }
-    case 'putter':
-      return { ui: 'putter', underkat: 'bladputter' }
-    case 'golf_bag':
-      return { ui: 'bag', underkat: null }
-    case 'golf_shoes':
-      return { ui: 'sko', underkat: null }
-    case 'rangefinder':
-      return { ui: 'tilbehor', underkat: null }
-    case 'other':
-      return { ui: 'annet', underkat: null }
-  }
-}
 
 export const NY_TILSTANDER: {
   value: NyTilstand
@@ -505,18 +328,6 @@ export const NY_TILSTAND_LABEL: Record<NyTilstand, string> = {
   utmerket: 'Utmerket',
   god: 'God',
   akseptabel: 'Akseptabel',
-}
-
-export const PRIS_ANBEFALINGER: Record<UiKategori, string> = {
-  jernshaft: '500–4 000 kr',
-  trekker: '300–3 500 kr',
-  wedge: '300–2 000 kr',
-  putter: '300–2 500 kr',
-  baller: '50–500 kr',
-  bag: '200–2 000 kr',
-  sko: '100–1 200 kr',
-  tilbehor: '50–1 000 kr',
-  annet: '50–1 000 kr',
 }
 
 export const GOLF_MERKER = [

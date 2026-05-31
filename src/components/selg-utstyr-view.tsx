@@ -35,29 +35,17 @@ import { publiserAnnonse, oppdaterAnnonse } from '@/app/(app)/selg/actions'
 import {
   schema,
   type FormData,
-  type Category,
   type Condition,
   ALLE_STEG_CREATE,
   ALLE_STEG_REDIGER,
-  CATEGORY_TO_DB,
   TILSTANDER,
-  KATEGORI_OPTIONS,
   AARSMODELL_VALG,
   DRIVER_LOFT_OPTIONS,
   SHAFT_FLEX_OPTIONS,
   SKAFT_TYPE_OPTIONS,
-  HAR_SKAFT,
-  HAR_HEADCOVER,
-  HAR_LOFT_DRIVER,
   MAKS_ANTALL_BILDER,
-  type UiKategori,
   type NyTilstand,
-  UI_KATEGORI_OPTIONS,
-  UNDERKATEGORI_OPTIONS,
-  uiKategoriTilDb,
-  kategoriTilUiKategori,
   NY_TILSTANDER,
-  PRIS_ANBEFALINGER,
   GOLF_MERKER,
   NY_FLEX_OPTIONS,
   HOSEL_OPTIONS,
@@ -65,9 +53,18 @@ import {
   SKAFT_MATERIALE_OPTIONS,
   SKAFT_LENGDE_OPTIONS,
   HAND_OPTIONS,
-  loftOptionerForDb,
+  loftOptionerForProfil,
   formaterKoller,
 } from './selg-utstyr/constants'
+import {
+  finnLeaf,
+  detaljProfil,
+  shaftKategoriForProfil,
+  legacyKategoriTilLeaf,
+  PRIS_ANBEFALING,
+  type DetaljProfil,
+} from '@/lib/categories'
+import { KategoriVelger } from './selg-utstyr/kategori-velger'
 import {
   BildeOpplaster,
   type BildeEntry,
@@ -108,7 +105,7 @@ const fieldVariants = {
 type Props = {
   annonseId?: string
   initialData?: Partial<FormData>
-  initialKategori?: Category
+  initialKategori?: string
   initialTilstand?: Condition
   eksisterendeBilder?: string[]
   modalModus?: boolean
@@ -181,14 +178,17 @@ export function SelgUtstyrView({
 
   // ── Edit mode state ───────────────────────────────────────────────────────
 
-  const [kategori, setKategori] = useState<Category | null>(initialKategori ?? null)
   const [tilstand, setTilstand] = useState<Condition | null>(initialTilstand ?? null)
+
+  // ── Kategori (delt: create + edit) — leaf-slug fra taksonomien ─────────────
+
+  const [kategoriSlug, setKategoriSlug] = useState<string | null>(initialKategori ?? null)
+  const profil = detaljProfil(kategoriSlug)
+  const hovedSlug = finnLeaf(kategoriSlug)?.hoved.slug ?? null
 
   // ── New create mode state ─────────────────────────────────────────────────
 
   const [listemetode, setListemetode] = useState<'selg' | 'bytt'>('selg')
-  const [uiKategori, setUiKategori] = useState<UiKategori | null>(null)
-  const [underkategori, setUnderkategori] = useState<string | null>(null)
   const [tittel, setTittel] = useState('')
   const [merke, setMerke] = useState('')
   const [merkeOpen, setMerkeOpen] = useState(false)
@@ -208,6 +208,7 @@ export function SelgUtstyrView({
   const [putterLengde, setPutterLengde] = useState('')
   const [hoselType, setHoselType] = useState<string | null>(null)
   const [skoStorrelse, setSkoStorrelse] = useState('')
+  const [storrelse, setStorrelse] = useState('')
   const [piggType, setPiggType] = useState<'soft' | 'fast' | null>(null)
   const [nyTilstand, setNyTilstand] = useState<NyTilstand | null>(null)
   const [beskrivelse, setBeskrivelse] = useState('')
@@ -258,9 +259,11 @@ export function SelgUtstyrView({
       const d = JSON.parse(saved) as Record<string, unknown>
       if (d.mode === 'manual' || d.mode === 'ai') setMode(d.mode)
       if (d.listemetode === 'selg' || d.listemetode === 'bytt') setListemetode(d.listemetode)
-      if (typeof d.uiKategori === 'string') setUiKategori(d.uiKategori as UiKategori)
-      if (d.underkategori === null || typeof d.underkategori === 'string')
-        setUnderkategori(d.underkategori as string | null)
+      if (typeof d.kategoriSlug === 'string') {
+        setKategoriSlug(d.kategoriSlug)
+        // Modellvalg lagres ikke i utkast → vis manuell kategori-velger ved gjenoppretting.
+        setManuellModell(true)
+      }
       if (typeof d.tittel === 'string') setTittel(d.tittel)
       if (typeof d.merke === 'string') setMerke(d.merke)
       if (d.flex === null || typeof d.flex === 'string') setFlex(d.flex as string | null)
@@ -287,6 +290,7 @@ export function SelgUtstyrView({
       if (d.hoselType === null || typeof d.hoselType === 'string')
         setHoselType(d.hoselType as string | null)
       if (typeof d.skoStorrelse === 'string') setSkoStorrelse(d.skoStorrelse)
+      if (typeof d.storrelse === 'string') setStorrelse(d.storrelse)
       if (d.piggType === 'soft' || d.piggType === 'fast' || d.piggType === null)
         setPiggType(d.piggType as 'soft' | 'fast' | null)
       const validTilstander: NyTilstand[] = ['ny', 'utmerket', 'god', 'akseptabel']
@@ -311,8 +315,7 @@ export function SelgUtstyrView({
     () => ({
       mode,
       listemetode,
-      uiKategori,
-      underkategori,
+      kategoriSlug,
       tittel,
       merke,
       flex,
@@ -329,6 +332,7 @@ export function SelgUtstyrView({
       putterLengde,
       hoselType,
       skoStorrelse,
+      storrelse,
       piggType,
       nyTilstand,
       beskrivelse,
@@ -340,8 +344,7 @@ export function SelgUtstyrView({
     [
       mode,
       listemetode,
-      uiKategori,
-      underkategori,
+      kategoriSlug,
       tittel,
       merke,
       flex,
@@ -358,6 +361,7 @@ export function SelgUtstyrView({
       putterLengde,
       hoselType,
       skoStorrelse,
+      storrelse,
       piggType,
       nyTilstand,
       beskrivelse,
@@ -497,8 +501,7 @@ export function SelgUtstyrView({
       const detaljerIdx = steg.findIndex((s) => s.id === 'detaljer')
       gaTil(detaljerIdx >= 0 ? detaljerIdx : currentStep + 1)
     } else if (!redigerModus && steg[currentStep]?.id === 'metode' && mode === 'manual') {
-      setUiKategori(null)
-      setUnderkategori(null)
+      setKategoriSlug(null)
       setTittel('')
       gaTil(currentStep + 1)
     } else if (currentStep < steg.length - 1) {
@@ -517,11 +520,23 @@ export function SelgUtstyrView({
 
   // ── Step validation ──────────────────────────────────────────────────────
 
+  // Profiler med fysisk skaft (skaft-delpanel + håndighet)
+  const KLUBB_MED_SKAFT: DetaljProfil[] = [
+    'driver',
+    'wood',
+    'hybrid',
+    'iron_set',
+    'single_iron',
+    'wedge',
+  ]
+  const harSkaftFor = (p: DetaljProfil) => KLUBB_MED_SKAFT.includes(p)
+  const harHaandighetFor = (p: DetaljProfil) => harSkaftFor(p) || p === 'putter' || p === 'set'
+
   function isStegGyldig(): boolean {
     if (redigerModus) {
       switch (steg[currentStep]?.id) {
         case 'kategori':
-          return kategori !== null
+          return kategoriSlug !== null
         case 'utstyr': {
           const { merke: m, modell } = getValues()
           return (m?.trim() ?? '') !== '' && (modell?.trim() ?? '') !== ''
@@ -540,18 +555,15 @@ export function SelgUtstyrView({
       case 'metode':
         return mode !== null
       case 'kategori':
-        return valgtModell !== null || (uiKategori !== null && tittel.trim().length >= 3)
-      case 'intro':
-        return tittel.trim().length >= 3 && uiKategori !== null
+        return valgtModell !== null || kategoriSlug !== null
       case 'detaljer': {
+        if (!kategoriSlug) return false
+        if (tittel.trim().length < 3 || !merke.trim()) return false
         if (!nyTilstand) return false
-        const harSkaft =
-          uiKategori === 'jernshaft' || uiKategori === 'trekker' || uiKategori === 'wedge'
-        const harHand = harSkaft || uiKategori === 'putter'
-        const dbKat = uiKategori ? uiKategoriTilDb(uiKategori, underkategori) : null
-        const loftKreves = dbKat ? loftOptionerForDb(dbKat) !== null : false
+        const harSkaft = harSkaftFor(profil)
+        const loftKreves = loftOptionerForProfil(profil) !== null
         if (harSkaft && skaftValg !== 'uten' && (!nySkaftMateriale || !flex)) return false
-        if (harHand && !nyHaandighet) return false
+        if (harHaandighetFor(profil) && !nyHaandighet) return false
         if (loftKreves && !loft) return false
         return true
       }
@@ -571,23 +583,15 @@ export function SelgUtstyrView({
         break
       case 'kategori':
         if (valgtModell) break
-        if (manuellModell) {
-          if (!uiKategori && !underkategori) f.kategori = 'Velg kategori'
-          if (tittel.trim().length < 3) f.tittel = 'Fyll inn tittel (minst 3 tegn)'
-          if (!merke.trim()) f.merke = 'Fyll inn merke'
-        } else {
-          f.modell = 'Søk og velg en modell, eller gå til manuell registrering'
-        }
+        if (!kategoriSlug) f.kategori = 'Velg kategori'
         break
       case 'detaljer': {
+        if (!kategoriSlug) f.kategori = 'Velg kategori'
         if (tittel.trim().length < 3) f.tittel = 'Fyll inn tittel'
         if (!merke.trim()) f.merke = 'Fyll inn merke'
-        const harSkaft =
-          uiKategori === 'jernshaft' || uiKategori === 'trekker' || uiKategori === 'wedge'
-        const harHand = harSkaft || uiKategori === 'putter'
-        const dbKat = uiKategori ? uiKategoriTilDb(uiKategori, underkategori) : null
-        const loftKreves = dbKat ? loftOptionerForDb(dbKat) !== null : false
-        if (harHand && !nyHaandighet) f.handighet = 'Velg håndighet'
+        const harSkaft = harSkaftFor(profil)
+        const loftKreves = loftOptionerForProfil(profil) !== null
+        if (harHaandighetFor(profil) && !nyHaandighet) f.handighet = 'Velg håndighet'
         if (loftKreves && !loft) f.loft = 'Velg loft / type'
         if (harSkaft && skaftValg !== 'uten' && !nySkaftMateriale)
           f.skaftmateriale = 'Velg skaftmateriale'
@@ -637,42 +641,11 @@ export function SelgUtstyrView({
 
   // ── Model selection (model-database-driven flow) ─────────────────────────
 
-  // DB categories that map directly to UiKategori (no Category type equivalent)
-  const DIRECT_UI_MAP: Partial<Record<string, { ui: UiKategori; underkat: string | null }>> = {
-    baller: { ui: 'baller', underkat: null },
-  }
-
-  // Normalise DB category strings from golf_equipment to the canonical Category type
-  function normaliserKategori(cat: string): Parameters<typeof kategoriTilUiKategori>[0] {
-    const map: Record<string, Parameters<typeof kategoriTilUiKategori>[0]> = {
-      iron: 'iron_set',
-      irons: 'iron_set',
-      jernsett: 'iron_set',
-      fairway: 'fairway_wood',
-      bag: 'golf_bag',
-      stand_bag: 'golf_bag',
-      cart_bag: 'golf_bag',
-      shoes: 'golf_shoes',
-      sko: 'golf_shoes',
-      annet: 'other',
-    }
-    return (map[cat] ?? cat) as Parameters<typeof kategoriTilUiKategori>[0]
-  }
-
   function velgModell(modell: ValgtModell | null) {
     setValgtModell(modell)
     if (!modell) return
-    const direct = DIRECT_UI_MAP[modell.category]
-    if (direct) {
-      setUiKategori(direct.ui)
-      setUnderkategori(direct.underkat)
-    } else {
-      const mapped = kategoriTilUiKategori(normaliserKategori(modell.category))
-      if (mapped) {
-        setUiKategori(mapped.ui)
-        setUnderkategori(mapped.underkat)
-      }
-    }
+    const leaf = legacyKategoriTilLeaf(modell.category)
+    if (leaf) setKategoriSlug(leaf)
     setMerke(modell.brand)
     setTittel(`${modell.brand} ${modell.model}`)
   }
@@ -691,10 +664,11 @@ export function SelgUtstyrView({
       const filled = new Set<string>()
 
       if (data.category) {
-        const { ui, underkat } = kategoriTilUiKategori(data.category as Category)
-        setUiKategori(ui)
-        setUnderkategori(underkat)
-        filled.add('kategori')
+        const leaf = legacyKategoriTilLeaf(data.category as string)
+        if (leaf) {
+          setKategoriSlug(leaf)
+          filled.add('kategori')
+        }
       }
       if (data.brand) {
         setMerke(data.brand as string)
@@ -754,7 +728,7 @@ export function SelgUtstyrView({
   }
 
   async function submitNy() {
-    if (!uiKategori) {
+    if (!kategoriSlug) {
       toast.error('Velg kategori.')
       return
     }
@@ -793,7 +767,7 @@ export function SelgUtstyrView({
         : undefined
 
     const payload = {
-      kategori: uiKategoriTilDb(uiKategori, underkategori),
+      kategori: kategoriSlug,
       merke: valgtModell ? valgtModell.brand : merke || 'Ukjent',
       modell: valgtModell ? valgtModell.model : tittel || merke || 'Ukjent',
       tilstand: nyTilstand,
@@ -812,10 +786,11 @@ export function SelgUtstyrView({
       ...(valgteKoller.length > 0 ? { koller: valgteKoller } : {}),
       ...(nyHaandighet ? { haandighet: nyHaandighet } : {}),
       ...(nySkaftMateriale ? { skaftMateriale: nySkaftMateriale } : {}),
-      ...(uiKategori === 'baller' && nyAarsmodell ? { aarsmodell: nyAarsmodell } : {}),
+      ...(nyAarsmodell ? { aarsmodell: nyAarsmodell } : {}),
       ...(putterLengde ? { putterLengde } : {}),
       ...(hoselType ? { hoselType } : {}),
       ...(skoStorrelse ? { skoStorrelse } : {}),
+      ...(storrelse ? { storrelse } : {}),
       ...(piggType ? { piggType } : {}),
       kanMotes,
     }
@@ -862,13 +837,13 @@ export function SelgUtstyrView({
     // Lagre tilstand som kode (konsistent med ny-flyten): meget_god → utmerket
     const tilstandKode = tilstand === 'meget_god' ? 'utmerket' : (tilstand ?? undefined)
 
-    if (!kategori) {
+    if (!kategoriSlug) {
       toast.error('Velg en kategori.')
       return
     }
 
     const payload = {
-      kategori: CATEGORY_TO_DB[kategori],
+      kategori: kategoriSlug,
       merke: data.merke,
       modell: data.modell,
       aarsmodell: data.aarsmodell,
@@ -910,8 +885,6 @@ export function SelgUtstyrView({
     onFjern: fjernBilde,
     onFjernEksisterende: fjernEksisterende,
   }
-
-  const TITTEL_MAKS = 60
 
   function renderMetodeFase() {
     return (
@@ -975,282 +948,81 @@ export function SelgUtstyrView({
     )
   }
 
-  const KATEGORI_CREATE_OPTIONS = [
-    { value: 'driver', label: 'Driver' },
-    { value: 'fairway', label: 'Fairway wood' },
-    { value: 'hybrid', label: 'Hybrid' },
-    { value: 'jernsett', label: 'Jernsett' },
-    { value: 'enkelt_jern', label: 'Enkelt jern' },
-    { value: 'wedge', label: 'Wedge' },
-    { value: 'putter', label: 'Putter' },
-    { value: 'bag', label: 'Bag' },
-    { value: 'sko', label: 'Sko' },
-    { value: 'annet', label: 'Annet' },
-  ] as const
-
-  type KategoriCreateValue = (typeof KATEGORI_CREATE_OPTIONS)[number]['value']
-
-  const KATEGORI_CREATE_TO_UI: Record<KategoriCreateValue, UiKategori> = {
-    driver: 'trekker',
-    fairway: 'trekker',
-    hybrid: 'trekker',
-    jernsett: 'jernshaft',
-    enkelt_jern: 'jernshaft',
-    wedge: 'wedge',
-    putter: 'putter',
-    bag: 'bag',
-    sko: 'sko',
-    annet: 'annet',
-  }
-
   function renderKategoriFase() {
-    const selectedKat = KATEGORI_CREATE_OPTIONS.find((o) => o.value === underkategori)?.value ?? ''
     const aktiveFeil = feilFor('kategori')
-
-    const TITTEL_MAKS_KAT = 60
+    const leaf = finnLeaf(kategoriSlug)
+    const kategoriSti = leaf
+      ? `${leaf.hoved.label} › ${leaf.gruppe.label} › ${leaf.leaf.label}`
+      : ''
 
     return (
       <>
         <CardHeader>
           <CardTitle>Hva selger du?</CardTitle>
           <CardDescription>
-            Søk etter modell og velg kategori. <span className="text-destructive">*</span> = påkrevd
+            {manuellModell
+              ? 'Velg kategori for det du selger.'
+              : 'Søk opp en kjent modell, eller registrer manuelt.'}{' '}
+            <span className="text-destructive">*</span> = påkrevd
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <AnimatePresence mode="wait">
-            {!manuellModell ? (
-              <motion.div
-                key="modell-sok"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                <div data-feil={aktiveFeil.modell ? 'true' : undefined}>
-                  <ModellVelger
-                    value={valgtModell}
-                    onChange={velgModell}
-                    onManuell={() => {
-                      setValgtModell(null)
-                      setManuellModell(true)
-                    }}
-                  />
-                </div>
-                {aktiveFeil.modell && (
-                  <p className="text-destructive mt-2 text-xs">{aktiveFeil.modell}</p>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="manuell"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="space-y-4"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">Manuell registrering</p>
-                  <button
-                    type="button"
-                    onClick={() => setManuellModell(false)}
-                    className="text-muted-foreground hover:text-foreground cursor-pointer text-xs underline underline-offset-2 transition-colors"
-                  >
-                    Søk i modellbase
-                  </button>
-                </div>
-
-                <div>
-                  <Label className="mb-1.5 flex items-center gap-1.5">
-                    Kategori<span className="text-destructive">*</span>
-                  </Label>
-                  {(aktiveFeil.kategori || aktiveFeil.modell) && (
-                    <p className="text-destructive mb-1.5 text-xs">
-                      {aktiveFeil.kategori ?? aktiveFeil.modell}
-                    </p>
-                  )}
-                  <div data-feil={aktiveFeil.kategori || aktiveFeil.modell ? 'true' : undefined}>
-                    <SimpleSelect
-                      value={selectedKat}
-                      onValueChange={(v) => {
-                        const kat = v as KategoriCreateValue
-                        setUiKategori(KATEGORI_CREATE_TO_UI[kat])
-                        setUnderkategori(kat)
-                      }}
-                      placeholder="Velg kategori"
-                      options={[...KATEGORI_CREATE_OPTIONS]}
-                    />
-                  </div>
-                </div>
-
-                <AnimatePresence>
-                  {uiKategori !== null && (
-                    <motion.div
-                      key="tittel"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="space-y-1"
-                    >
-                      <Label className="flex items-center gap-1.5">
-                        Tittel<span className="text-destructive">*</span>
-                      </Label>
-                      {aktiveFeil.tittel && (
-                        <p className="text-destructive text-xs">{aktiveFeil.tittel}</p>
-                      )}
-                      <Input
-                        value={tittel}
-                        onChange={(e) => setTittel(e.target.value.slice(0, TITTEL_MAKS_KAT))}
-                        placeholder="f.eks. TaylorMade Stealth 2 Driver"
-                        autoFocus
-                        data-feil={aktiveFeil.tittel ? 'true' : undefined}
-                      />
-                      <p className="text-muted-foreground text-xs">
-                        {tittel.length}/{TITTEL_MAKS_KAT} tegn
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                  {tittel.trim().length >= 3 && (
-                    <motion.div
-                      key="merke"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="space-y-1"
-                    >
-                      <Label className="flex items-center gap-1.5">
-                        Merke<span className="text-destructive">*</span>
-                      </Label>
-                      {aktiveFeil.merke && (
-                        <p className="text-destructive text-xs">{aktiveFeil.merke}</p>
-                      )}
-                      <div className="relative" data-feil={aktiveFeil.merke ? 'true' : undefined}>
-                        <Input
-                          value={merke}
-                          onChange={(e) => setMerke(e.target.value)}
-                          onFocus={() => setMerkeOpen(true)}
-                          onBlur={() => setTimeout(() => setMerkeOpen(false), 150)}
-                          placeholder="Søk etter merke…"
-                        />
-                        <AnimatePresence>
-                          {merkeOpen &&
-                            GOLF_MERKER.filter(
-                              (m) =>
-                                merke.trim() === '' || m.toLowerCase().includes(merke.toLowerCase())
-                            ).length > 0 && (
-                              <motion.div
-                                initial={{ opacity: 0, y: -4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -4 }}
-                                transition={{ duration: 0.12 }}
-                                className="border-border bg-card absolute top-full right-0 left-0 z-20 mt-1 max-h-48 overflow-y-auto rounded-xl border shadow-lg"
-                              >
-                                {GOLF_MERKER.filter(
-                                  (m) =>
-                                    merke.trim() === '' ||
-                                    m.toLowerCase().includes(merke.toLowerCase())
-                                ).map((m) => (
-                                  <button
-                                    key={m}
-                                    type="button"
-                                    onMouseDown={() => {
-                                      setMerke(m)
-                                      setMerkeOpen(false)
-                                    }}
-                                    className="hover:bg-muted flex w-full cursor-pointer items-center px-4 py-2.5 text-left text-sm transition-colors"
-                                  >
-                                    {m}
-                                  </button>
-                                ))}
-                              </motion.div>
-                            )}
-                        </AnimatePresence>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </CardContent>
-      </>
-    )
-  }
-
-  function renderIntroFase() {
-    const harUnderkat = uiKategori !== null && (UNDERKATEGORI_OPTIONS[uiKategori]?.length ?? 0) > 0
-
-    return (
-      <>
-        <CardHeader>
-          <CardTitle>Hva skal du selge?</CardTitle>
-        </CardHeader>
-        <CardContent className="divide-border space-y-0 divide-y px-6">
-          {/* Tittel */}
-          <div className="pb-6">
-            <div className="bg-muted rounded-2xl px-4 py-3">
-              <p className="text-muted-foreground mb-1 text-xs">Tittel</p>
-              <input
-                value={tittel}
-                onChange={(e) => setTittel(e.target.value.slice(0, TITTEL_MAKS))}
-                placeholder="f.eks. TaylorMade Stealth 2 Driver"
-                className="text-foreground placeholder:text-muted-foreground/60 w-full bg-transparent text-base outline-none"
-                autoFocus
+        <CardContent className="space-y-5">
+          {!manuellModell ? (
+            <>
+              {/* Hurtigsøk i modellbasen — fyller kategori + merke + tittel automatisk */}
+              <ModellVelger
+                value={valgtModell}
+                onChange={velgModell}
+                onManuell={() => {
+                  setValgtModell(null)
+                  setKategoriSlug(null)
+                  setManuellModell(true)
+                }}
               />
-            </div>
-            <p className="text-muted-foreground mt-2 text-xs">
-              {tittel.length}/{TITTEL_MAKS} tegn
-            </p>
-          </div>
 
-          {/* Kategori */}
-          <div className="space-y-4 pt-6">
-            <h2 className="text-xl font-semibold">Kategori</h2>
-            <SimpleSelect
-              value={uiKategori ?? ''}
-              onValueChange={(v) => {
-                setUiKategori(v as UiKategori)
-                setUnderkategori(null)
-              }}
-              placeholder="Hovedkategori"
-              options={UI_KATEGORI_OPTIONS}
-            />
-
-            <AnimatePresence>
-              {harUnderkat && (
-                <motion.div
-                  key={uiKategori}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                >
-                  <SimpleSelect
-                    value={underkategori ?? ''}
-                    onValueChange={setUnderkategori}
-                    placeholder="Underkategori"
-                    options={UNDERKATEGORI_OPTIONS[uiKategori!]}
-                  />
-                </motion.div>
+              {/* Når en modell er valgt: vis ferdig utfylt kategori (ikke velgeren) */}
+              {valgtModell && kategoriSti && (
+                <div className="bg-muted/60 rounded-xl px-4 py-3">
+                  <p className="text-muted-foreground mb-0.5 text-xs">Kategori</p>
+                  <p className="text-foreground text-sm font-medium">{kategoriSti}</p>
+                </div>
               )}
-            </AnimatePresence>
-          </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5">
+                  Kategori<span className="text-destructive">*</span>
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManuellModell(false)
+                    setKategoriSlug(null)
+                  }}
+                  className="text-muted-foreground hover:text-foreground cursor-pointer text-xs underline underline-offset-2 transition-colors"
+                >
+                  Søk i modellbase
+                </button>
+              </div>
+              {aktiveFeil.kategori && (
+                <p className="text-destructive text-xs">{aktiveFeil.kategori}</p>
+              )}
+              <div data-feil={aktiveFeil.kategori ? 'true' : undefined}>
+                <KategoriVelger value={kategoriSlug} onChange={setKategoriSlug} />
+              </div>
+            </div>
+          )}
         </CardContent>
       </>
     )
   }
 
   function tittelPlaceholder(): string {
-    if (!uiKategori) return 'f.eks. Titleist T200 Jern'
-    const katLabel = UI_KATEGORI_OPTIONS.find((o) => o.value === uiKategori)?.label ?? ''
-    if (merke) return `${merke} ${katLabel}`
-    return `f.eks. ${katLabel}`
+    const leaf = finnLeaf(kategoriSlug)
+    if (!leaf) return 'f.eks. Titleist T200 Jern'
+    if (merke) return `${merke} ${leaf.leaf.label}`
+    return `f.eks. ${leaf.leaf.label}`
   }
 
   function renderDetaljerFase() {
@@ -1260,20 +1032,18 @@ export function SelgUtstyrView({
     const showBilder = merke.trim().length > 0
     const showBeskrivelse = nyTilstand !== null
 
-    // Skaftfelt (materiale, flex, lengde) for køller med skaft
-    const harSkaftFields =
-      uiKategori === 'jernshaft' || uiKategori === 'trekker' || uiKategori === 'wedge'
-    const erPutter = uiKategori === 'putter'
-    const erSko = uiKategori === 'sko'
-    const erPiggsko = underkategori === 'piggsko'
-    // Kun ekte jernsett (ikke hybrid/enkeltjern) skal velge hvilke køller som inngår
-    const erJernsett =
-      uiKategori === 'jernshaft' && (underkategori === 'jernsett' || underkategori === null)
-    // Håndighet er relevant for alle køller
-    const harHaandighet = harSkaftFields || uiKategori === 'putter'
-    // Loft-/type-valg basert på løst db-kategori (driver/fairway/hybrid/wedge)
-    const dbKat = uiKategori ? uiKategoriTilDb(uiKategori, underkategori) : null
-    const loftOpts = dbKat ? loftOptionerForDb(dbKat) : null
+    // Detaljfelt drives av leaf-profilen (sentralisert i taksonomien)
+    const harSkaftFields = harSkaftFor(profil)
+    const erShaft = profil === 'shaft'
+    const erPutter = profil === 'putter'
+    const erSko = profil === 'sko'
+    const erKlaer = profil === 'klaer'
+    const erJernsett = profil === 'iron_set'
+    const harHaandighet = harHaandighetFor(profil)
+    const loftOpts = loftOptionerForProfil(profil)
+    // Årsmodell vises for generiske varer (baller, tilbehør, elektronikk osv.)
+    const visAarsmodell = profil === 'generic'
+    const visHeadcover = profil === 'driver' || profil === 'wood' || profil === 'hybrid'
     const aktiveFeil = feilFor('detaljer')
 
     const filteredMerker = GOLF_MERKER.filter(
@@ -1316,6 +1086,18 @@ export function SelgUtstyrView({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
+          {/* Kategori — vises i AI-flyten (kategori-steget hoppes over) */}
+          {mode === 'ai' && (
+            <Felt
+              label="Kategori"
+              required
+              error={aktiveFeil.kategori}
+              aiBadge={aiFields.has('kategori')}
+            >
+              <KategoriVelger value={kategoriSlug} onChange={setKategoriSlug} />
+            </Felt>
+          )}
+
           {/* 1. Tittel */}
           <Felt label="Tittel" required error={aktiveFeil.tittel} aiBadge={aiFields.has('tittel')}>
             <Input
@@ -1391,7 +1173,7 @@ export function SelgUtstyrView({
                 exit="exit"
                 className="space-y-4"
               >
-                {uiKategori === 'baller' && (
+                {visAarsmodell && (
                   <Felt label="Årsmodell" aiBadge={aiFields.has('aarsmodell')}>
                     <SimpleSelect
                       value={nyAarsmodell}
@@ -1442,7 +1224,7 @@ export function SelgUtstyrView({
                     />
                   </Felt>
                 )}
-                {(dbKat === 'driver' || dbKat === 'fairway_wood' || dbKat === 'hybrid') && (
+                {visHeadcover && (
                   <Felt label="Original headcover">
                     <PillToggle
                       options={[
@@ -1578,15 +1360,7 @@ export function SelgUtstyrView({
                             <SkaftVelger
                               value={valgtSkaft}
                               onChange={setValgtSkaft}
-                              shaftCategory={
-                                uiKategori === 'trekker'
-                                  ? 'driver_fairway'
-                                  : uiKategori === 'wedge'
-                                    ? 'wedge'
-                                    : uiKategori === 'jernshaft'
-                                      ? 'iron'
-                                      : undefined
-                              }
+                              shaftCategory={shaftKategoriForProfil(profil)}
                             />
                           </motion.div>
                         )}
@@ -1628,6 +1402,16 @@ export function SelgUtstyrView({
                     className=""
                   />
                 </Felt>
+                <Felt label="Original headcover">
+                  <PillToggle
+                    options={[
+                      { value: 'true', label: 'Ja' },
+                      { value: 'false', label: 'Nei' },
+                    ]}
+                    value={headcover === true ? 'true' : headcover === false ? 'false' : null}
+                    onChange={(v) => setHeadcover(v === null ? null : v === 'true')}
+                  />
+                </Felt>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1653,18 +1437,81 @@ export function SelgUtstyrView({
                     className="max-w-25"
                   />
                 </Felt>
-                {erPiggsko && (
-                  <Felt label="Piggtype">
-                    <PillToggle
-                      options={[
-                        { value: 'soft', label: 'Soft' },
-                        { value: 'fast', label: 'Fast' },
-                      ]}
-                      value={piggType}
-                      onChange={setPiggType}
+                <Felt label="Piggtype">
+                  <PillToggle
+                    options={[
+                      { value: 'soft', label: 'Soft' },
+                      { value: 'fast', label: 'Fast' },
+                    ]}
+                    value={piggType}
+                    onChange={setPiggType}
+                  />
+                </Felt>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Klær: størrelse */}
+          <AnimatePresence>
+            {showCatFields && erKlaer && (
+              <motion.div
+                key="klaer-fields"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-4"
+              >
+                <Felt label="Størrelse">
+                  <Input
+                    value={storrelse}
+                    onChange={(e) => setStorrelse(e.target.value)}
+                    placeholder="f.eks. M, L, XL eller 50"
+                    className="max-w-40"
+                  />
+                </Felt>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Shafts: skaftmateriale, flex, lengde (uten skaft-delpanel) */}
+          <AnimatePresence>
+            {showCatFields && erShaft && (
+              <motion.div
+                key="shaft-fields"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="space-y-4"
+              >
+                <Felt label="Skaftmateriale">
+                  <PillToggle
+                    options={SKAFT_MATERIALE_OPTIONS}
+                    value={nySkaftMateriale}
+                    onChange={(v) => setNySkaftMateriale(v as 'graphite' | 'steel' | null)}
+                  />
+                </Felt>
+                <div className="grid grid-cols-2 gap-3">
+                  <Felt label="Flex">
+                    <SimpleSelect
+                      value={flex ?? ''}
+                      onValueChange={setFlex}
+                      placeholder="Velg flex…"
+                      options={SHAFT_FLEX_OPTIONS}
+                      className=""
                     />
                   </Felt>
-                )}
+                  <Felt label="Skaftlengde">
+                    <SimpleSelect
+                      value={skaftLengde}
+                      onValueChange={setSkaftLengde}
+                      placeholder="Valgfritt…"
+                      options={SKAFT_LENGDE_OPTIONS}
+                      className=""
+                    />
+                  </Felt>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -1797,20 +1644,20 @@ export function SelgUtstyrView({
             <Felt label="Pris" required error={aktiveFeil.pris}>
               <div className="relative">
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={pris}
-                  onChange={(e) => setPris(e.target.value)}
+                  onChange={(e) => setPris(e.target.value.replace(/\D/g, ''))}
                   placeholder="Pris"
                   className="pr-14"
-                  min={0}
                 />
                 <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm">
                   NOK
                 </span>
               </div>
-              {uiKategori && (
+              {hovedSlug && PRIS_ANBEFALING[hovedSlug] && (
                 <p className="text-muted-foreground mt-1.5 text-xs">
-                  Typisk: {PRIS_ANBEFALINGER[uiKategori]}
+                  Typisk: {PRIS_ANBEFALING[hovedSlug]}
                 </p>
               )}
             </Felt>
@@ -1883,13 +1730,7 @@ export function SelgUtstyrView({
         </CardHeader>
         <CardContent className="space-y-4">
           <Felt label="Kategori" required>
-            <SimpleSelect
-              value={kategori ?? ''}
-              onValueChange={(v) => setKategori(v as Category)}
-              placeholder="Velg kategori…"
-              options={KATEGORI_OPTIONS}
-              className=""
-            />
+            <KategoriVelger value={kategoriSlug} onChange={setKategoriSlug} />
           </Felt>
         </CardContent>
       </>
@@ -1944,7 +1785,7 @@ export function SelgUtstyrView({
               </Felt>
             </div>
 
-            {kategori && HAR_SKAFT.has(kategori) && (
+            {harSkaftFor(profil) && (
               <>
                 <div className="col-span-2">
                   <Felt
@@ -1970,7 +1811,7 @@ export function SelgUtstyrView({
                   </Felt>
                 </div>
 
-                {kategori && HAR_LOFT_DRIVER.has(kategori) && (
+                {profil === 'driver' && (
                   <div className="col-span-2">
                     <Felt
                       label="Loft"
@@ -2035,7 +1876,10 @@ export function SelgUtstyrView({
               </>
             )}
 
-            {kategori && HAR_HEADCOVER.has(kategori) && (
+            {(profil === 'driver' ||
+              profil === 'wood' ||
+              profil === 'hybrid' ||
+              profil === 'putter') && (
               <div className="col-span-2">
                 <Felt
                   label="Original headcover"
@@ -2223,8 +2067,6 @@ export function SelgUtstyrView({
         return renderMetodeFase()
       case 'kategori':
         return renderKategoriFase()
-      case 'intro':
-        return renderIntroFase()
       case 'detaljer':
         return renderDetaljerFase()
       case 'pris':

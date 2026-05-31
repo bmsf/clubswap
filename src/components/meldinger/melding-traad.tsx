@@ -51,6 +51,7 @@ export function MeldingTraad({
   annonseId,
   currentUserId,
   initialMeldinger,
+  tilbakeUrl = '/meldinger',
 }: {
   listingId: string
   motpartId: string
@@ -60,6 +61,7 @@ export function MeldingTraad({
   annonseId: string
   currentUserId: string
   initialMeldinger: Melding[]
+  tilbakeUrl?: string
 }) {
   const router = useRouter()
   const [meldinger, setMeldinger] = useState<Melding[]>(initialMeldinger)
@@ -148,7 +150,7 @@ export function MeldingTraad({
       {/* Handlingslinje */}
       <div className="border-border flex h-12 items-center justify-between gap-2 border-b px-2 md:px-3">
         <Link
-          href="/meldinger"
+          href={tilbakeUrl}
           className="text-muted-foreground hover:text-foreground hover:bg-muted flex size-9 items-center justify-center rounded-md transition-colors md:hidden"
           aria-label="Tilbake"
         >

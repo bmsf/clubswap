@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
-import { type Category, KJENTE_MODELLER } from './constants'
+import { KJENTE_MODELLER } from './constants'
 
 export function ModellSok({
   kategori,
@@ -10,8 +10,8 @@ export function ModellSok({
   onManuell,
   placeholder,
 }: {
-  kategori?: Category
-  onVelg: (brand: string, model: string, year?: number, category?: Category) => void
+  kategori?: string
+  onVelg: (brand: string, model: string, year?: number, category?: string) => void
   onManuell?: () => void
   placeholder?: string
 }) {

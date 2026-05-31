@@ -20,6 +20,7 @@ export type AnnonseInput = {
   putterLengde?: string
   hoselType?: string
   skoStorrelse?: string
+  storrelse?: string
   piggType?: string
   kanMotes?: boolean
   tilstand: string
@@ -66,6 +67,7 @@ export async function publiserAnnonse(
       putter_lengde: input.putterLengde ?? null,
       hosel_type: input.hoselType ?? null,
       sko_storrelse: input.skoStorrelse ?? null,
+      storrelse: input.storrelse ?? null,
       pigg_type: input.piggType ?? null,
       kan_motes: input.kanMotes ?? null,
       tilstand: input.tilstand,
@@ -121,6 +123,7 @@ export async function oppdaterAnnonse(
       putter_lengde: input.putterLengde ?? null,
       hosel_type: input.hoselType ?? null,
       sko_storrelse: input.skoStorrelse ?? null,
+      storrelse: input.storrelse ?? null,
       pigg_type: input.piggType ?? null,
       kan_motes: input.kanMotes ?? null,
       tilstand: input.tilstand,

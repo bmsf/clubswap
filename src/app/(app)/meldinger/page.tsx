@@ -1,6 +1,7 @@
 import { EnvelopeIcon } from '@heroicons/react/16/solid'
 import { createClient } from '@/supabase/server'
 import { SamtaleListe, type SamtaleListeItem } from '@/components/meldinger/samtale-liste'
+import { InnboksListe, type InnboksItem } from '@/components/meldinger/innboks-liste'
 import { MeldingTraad } from '@/components/meldinger/melding-traad'
 import type { Melding } from '@/app/(app)/meldinger/actions'
 import { cn } from '@/lib/utils'
@@ -17,6 +18,7 @@ type Annonse = {
   modell: string
   bilder: unknown
   status?: string | null
+  bruker_id: string
 }
 
 function visningsnavn(p: Profil | null | undefined): string {
@@ -67,7 +69,10 @@ export default async function MeldingerPage({ searchParams }: Props) {
 
   const [{ data: annonser }, { data: profiler }] = await Promise.all([
     listingIds.length
-      ? supabase.from('annonser').select('id, merke, modell, bilder, status').in('id', listingIds)
+      ? supabase
+          .from('annonser')
+          .select('id, merke, modell, bilder, status, bruker_id')
+          .in('id', listingIds)
       : Promise.resolve({ data: [] as Annonse[] }),
     motpartIds.length
       ? supabase.from('profiles').select('id, full_name, username, avatar_url').in('id', motpartIds)
@@ -77,8 +82,9 @@ export default async function MeldingerPage({ searchParams }: Props) {
   const annonseMap = new Map((annonser ?? []).map((a) => [a.id, a as Annonse]))
   const profilMap = new Map((profiler ?? []).map((p) => [p.id, p as Profil]))
 
-  // Grupper til samtaler (annonse + motpart). `alle` er nyeste først → første treff = siste melding.
-  const samtaleMap = new Map<string, SamtaleListeItem & { _sisteAt: number }>()
+  // Samtaler (annonse + motpart). `alle` er nyeste først → første treff = siste melding.
+  type Samtale = SamtaleListeItem & { _sisteAt: number; rolle: 'salg' | 'kjop' }
+  const samtaleMap = new Map<string, Samtale>()
   for (const m of alle) {
     const mp = motpartIdAv(m)
     const key = `${m.listing_id}:${mp}`
@@ -98,6 +104,7 @@ export default async function MeldingerPage({ searchParams }: Props) {
         sistAktiv: m.created_at,
         ulest: 0,
         _sisteAt: new Date(m.created_at).getTime(),
+        rolle: a?.bruker_id === user.id ? 'salg' : 'kjop',
       }
       samtaleMap.set(key, s)
     }
@@ -106,8 +113,64 @@ export default async function MeldingerPage({ searchParams }: Props) {
 
   const samtaler = [...samtaleMap.values()].sort((a, b) => b._sisteAt - a._sisteAt)
 
-  // Valgt samtale (fra URL). Kan være ny (ingen meldinger ennå) via «Kontakt selger».
-  let valgtKey: string | null = null
+  // Innboks-elementer: salg = annonser (gruppert, drill-down), kjøp = flate samtaler.
+  type SalgItem = Extract<InnboksItem, { type: 'salg' }> & { _sisteAt: number }
+  type KjopItem = Extract<InnboksItem, { type: 'kjop' }> & { _sisteAt: number }
+  const salgMap = new Map<string, SalgItem>()
+  const kjopItems: KjopItem[] = []
+  for (const s of samtaler) {
+    if (s.rolle === 'salg') {
+      let it = salgMap.get(s.listingId)
+      if (!it) {
+        it = {
+          type: 'salg',
+          listingId: s.listingId,
+          tittel: s.annonseTittel,
+          bilde: s.annonseBilde,
+          solgt: s.solgt,
+          antallSamtaler: 0,
+          ulest: 0,
+          sistAktiv: s.sistAktiv,
+          _sisteAt: 0,
+        }
+        salgMap.set(s.listingId, it)
+      }
+      it.antallSamtaler += 1
+      it.ulest += s.ulest
+      const at = new Date(s.sistAktiv).getTime()
+      if (at > it._sisteAt) {
+        it._sisteAt = at
+        it.sistAktiv = s.sistAktiv
+      }
+    } else {
+      kjopItems.push({
+        type: 'kjop',
+        listingId: s.listingId,
+        motpartId: s.motpartId,
+        motpartNavn: s.motpartNavn,
+        tittel: s.annonseTittel,
+        bilde: s.annonseBilde,
+        solgt: s.solgt,
+        sisteTekst: s.sisteTekst,
+        ulest: s.ulest,
+        sistAktiv: s.sistAktiv,
+        _sisteAt: new Date(s.sistAktiv).getTime(),
+      })
+    }
+  }
+  const innboksItems: InnboksItem[] = [...salgMap.values(), ...kjopItems].sort(
+    (a, b) => b._sisteAt - a._sisteAt
+  )
+
+  // Drill-down kun når du selger (du eier annonsen).
+  const valgtAnnonse = annonseParam ? annonseMap.get(annonseParam) : null
+  const eierValgt = !!annonseParam && valgtAnnonse?.bruker_id === user.id
+  const valgtAnnonseSamtaler = annonseParam
+    ? samtaler.filter((s) => s.listingId === annonseParam)
+    : []
+  const drilledIn = eierValgt && valgtAnnonseSamtaler.length >= 1
+
+  // Valgt tråd (høyre).
   let traad: {
     listingId: string
     motpartId: string
@@ -119,7 +182,6 @@ export default async function MeldingerPage({ searchParams }: Props) {
   } | null = null
 
   if (annonseParam && medParam && medParam !== user.id) {
-    valgtKey = `${annonseParam}:${medParam}`
     const meldinger = alle
       .filter((m) => m.listing_id === annonseParam && motpartIdAv(m) === medParam)
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
@@ -133,6 +195,8 @@ export default async function MeldingerPage({ searchParams }: Props) {
       meldinger,
     }
   }
+
+  const tilbakeUrl = drilledIn ? `/meldinger?annonse=${annonseParam}` : '/meldinger'
 
   if (samtaler.length === 0 && !traad) {
     return (
@@ -156,17 +220,32 @@ export default async function MeldingerPage({ searchParams }: Props) {
 
   return (
     <section className="border-border flex h-[calc(100dvh-8rem)] border-b md:h-[calc(100dvh-4rem)]">
-      {/* Samtaleliste */}
+      {/* Venstre: innboks (salg/kjøp) eller samtaler innenfor en salgsannonse */}
       <aside
         className={cn(
           'border-border w-full md:w-90 md:shrink-0 md:border-r',
           traad && 'hidden md:block'
         )}
       >
-        <SamtaleListe samtaler={samtaler} activeKey={valgtKey} />
+        {drilledIn ? (
+          <SamtaleListe
+            annonse={{
+              tittel: annonseTittel(valgtAnnonse),
+              bilde: forsteBilde(valgtAnnonse?.bilder),
+            }}
+            samtaler={valgtAnnonseSamtaler}
+            activeMed={medParam ?? null}
+          />
+        ) : (
+          <InnboksListe
+            items={innboksItems}
+            activeListingId={annonseParam ?? null}
+            activeMed={medParam ?? null}
+          />
+        )}
       </aside>
 
-      {/* Tråd */}
+      {/* Høyre: tråd */}
       <div className={cn('min-w-0 flex-1', !traad && 'hidden md:flex')}>
         {traad ? (
           <MeldingTraad
@@ -179,6 +258,7 @@ export default async function MeldingerPage({ searchParams }: Props) {
             annonseTittel={traad.annonseTittel}
             currentUserId={user.id}
             initialMeldinger={traad.meldinger}
+            tilbakeUrl={tilbakeUrl}
           />
         ) : (
           <div className="text-muted-foreground hidden h-full w-full flex-col items-center justify-center gap-2 text-sm md:flex">
