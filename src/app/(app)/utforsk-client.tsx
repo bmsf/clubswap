@@ -902,14 +902,8 @@ export function UtforskClient({
         </SheetContent>
       </Sheet>
 
-      {/* ── Result count + grid ────────────────────────────────────────────── */}
+      {/* ── Grid ───────────────────────────────────────────────────────────── */}
       <div className="mx-auto w-full max-w-7xl">
-        {filteredListings.length > 0 && (
-          <p className="text-muted-foreground px-4 pt-4 pb-1 text-xs tabular-nums md:px-6">
-            {filteredListings.length} {filteredListings.length === 1 ? 'annonse' : 'annonser'}
-          </p>
-        )}
-
         {filteredListings.length === 0 ? (
           <p className="text-muted-foreground py-16 text-center text-sm">Ingen annonser funnet.</p>
         ) : (

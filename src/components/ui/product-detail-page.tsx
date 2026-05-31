@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   ChevronRight,
   Heart,
@@ -19,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { formaterKoller } from '@/components/selg-utstyr/constants'
+import { useAuthModal } from '@/store/auth-modal'
 
 const CONDITION_LABELS: Record<string, string> = {
   ny: 'Ny',
@@ -147,9 +149,11 @@ export interface ListingDetailProps {
   skoStorrelse?: string | null
   piggType?: string | null
   seller: Seller
+  currentUserId?: string | null
 }
 
 export function ProductDetailPage({
+  id,
   merke,
   modell,
   kategori,
@@ -173,8 +177,22 @@ export function ProductDetailPage({
   skoStorrelse,
   piggType,
   seller,
+  currentUserId,
 }: ListingDetailProps) {
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0)
+  const router = useRouter()
+  const { openModal } = useAuthModal()
+
+  const erEier = currentUserId != null && currentUserId === seller.id
+  const kontaktUrl = `/meldinger?annonse=${id}&med=${seller.id}`
+
+  function kontaktSelger() {
+    if (!currentUserId) {
+      openModal('logg-inn', kontaktUrl)
+      return
+    }
+    router.push(kontaktUrl)
+  }
 
   const specBadges: SpecBadge[] = [
     { label: CATEGORY_LABELS[kategori] ?? kategori },
@@ -326,12 +344,18 @@ export function ProductDetailPage({
           </div>
 
           {/* CTA */}
-          <div className="my-6 flex gap-2">
-            <Button variant="primary" size="lg" className="flex-1 gap-2">
-              <MessageSquare className="size-5" />
-              Kontakt selger
-            </Button>
-          </div>
+          {erEier ? (
+            <p className="text-muted-foreground border-border my-6 rounded-xl border px-4 py-3 text-center text-sm">
+              Dette er din annonse
+            </p>
+          ) : (
+            <div className="my-6 flex gap-2">
+              <Button variant="primary" size="lg" className="flex-1 gap-2" onClick={kontaktSelger}>
+                <MessageSquare className="size-5" />
+                Kontakt selger
+              </Button>
+            </div>
+          )}
 
           {/* Spec badges */}
           {specBadges.length > 0 && (

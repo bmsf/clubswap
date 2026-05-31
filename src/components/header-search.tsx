@@ -182,12 +182,7 @@ export function HeaderSearch() {
             submitQuery(query)
           }}
         >
-          <div
-            className={cn(
-              'bg-muted flex w-full items-center gap-2 rounded-full px-4 py-2.5 transition-shadow',
-              open && 'ring-border ring-2'
-            )}
-          >
+          <div className="flex w-full items-center gap-2 py-2.5">
             <Search className="text-muted-foreground size-3.5 shrink-0" />
             <input
               type="text"

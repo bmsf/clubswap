@@ -16,6 +16,10 @@ export default async function AnnonseDetailPage({ params }: { params: Promise<{ 
 
   if (!annonse) notFound()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   const { data: profil } = await supabase
     .from('profiles')
     .select('id, full_name, username, avatar_url, location_city')
@@ -57,6 +61,7 @@ export default async function AnnonseDetailPage({ params }: { params: Promise<{ 
       skoStorrelse={annonse.sko_storrelse}
       piggType={annonse.pigg_type}
       seller={seller}
+      currentUserId={user?.id ?? null}
     />
   )
 }

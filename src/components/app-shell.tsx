@@ -47,6 +47,19 @@ const BOTTOM_NAV_ITEMS = [
   { icon: User, label: 'Profil', href: '/profil' },
 ] as const
 
+// Antall samtaler (annonse + motpart) med uleste meldinger til brukeren.
+async function tellUlesteSamtaler(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<number> {
+  const { data } = await supabase
+    .from('messages')
+    .select('listing_id, sender_id')
+    .eq('recipient_id', userId)
+    .is('read_at', null)
+  return new Set((data ?? []).map((m) => `${m.listing_id}:${m.sender_id}`)).size
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -56,6 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [authLoaded, setAuthLoaded] = useState(false)
   const [profilMeny, setProfilMeny] = useState(false)
+  const [ulest, setUlest] = useState(0)
   const profilRef = useRef<HTMLDivElement>(null)
 
   const { openModal } = useAuthModal()
@@ -79,6 +93,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setProfilMeny(false)
   }, [pathname])
+
+  // Uleste meldinger (badge på meldingsikonet) — initial telling + realtime
+  useEffect(() => {
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUlest(0)
+      return
+    }
+    const supabase = createClient()
+    const tell = async () => setUlest(await tellUlesteSamtaler(supabase, user.id))
+    void tell()
+    const channel = supabase
+      .channel(`ulest:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        () => void tell()
+      )
+      .subscribe()
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [user])
+
+  // Oppdater tellingen ved navigasjon (f.eks. etter å ha lest i innboksen)
+  useEffect(() => {
+    if (!user) return
+    const supabase = createClient()
+    void tellUlesteSamtaler(supabase, user.id).then(setUlest)
+  }, [user, pathname])
 
   // Close profile menu on outside click
   useEffect(() => {
@@ -129,17 +178,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <>
                 <button
                   onClick={() => handleNavClick('/lagrede')}
-                  className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
+                  className="hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
                   aria-label="Lagrede"
                 >
                   <Heart className="size-4" />
                 </button>
                 <button
                   onClick={() => handleNavClick('/meldinger')}
-                  className="text-muted-foreground hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
-                  aria-label="Meldinger"
+                  className="hover:text-foreground flex size-9 items-center justify-center rounded-full transition-colors"
+                  aria-label={ulest > 0 ? `Meldinger (${ulest} uleste samtaler)` : 'Meldinger'}
                 >
-                  <MessageSquare className="size-4" />
+                  <span className="relative inline-flex">
+                    <MessageSquare className="size-4" />
+                    <span
+                      className="t-badge"
+                      data-open={ulest > 0 ? 'true' : 'false'}
+                      aria-hidden="true"
+                    >
+                      <span className="bg-primary t-badge-dot text-primary-foreground h-4 min-w-4 rounded-full px-1.5 text-[10px] leading-none font-semibold tabular-nums">
+                        {ulest > 99 ? '99+' : ulest}
+                      </span>
+                    </span>
+                  </span>
                 </button>
               </>
             )}
@@ -244,12 +304,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               ) : (
                 <>
-                  <Icon
-                    className={cn(
-                      'size-5',
-                      active ? 'dark:text-foreground text-[#1A1A18]' : 'text-[#C0BDB6]'
+                  <span className="relative">
+                    <Icon
+                      className={cn(
+                        'size-5',
+                        active ? 'dark:text-foreground text-[#1A1A18]' : 'text-[#C0BDB6]'
+                      )}
+                    />
+                    {item.href === '/meldinger' && (
+                      <span
+                        className="t-badge"
+                        data-open={ulest > 0 ? 'true' : 'false'}
+                        aria-hidden="true"
+                      >
+                        <span className="bg-primary t-badge-dot text-primary-foreground h-4 min-w-4 rounded-full px-1.5 text-[10px] leading-none font-semibold tabular-nums">
+                          {ulest > 99 ? '99+' : ulest}
+                        </span>
+                      </span>
                     )}
-                  />
+                  </span>
                   <span
                     className={cn(
                       'mt-0.5 text-[10px] font-medium',
