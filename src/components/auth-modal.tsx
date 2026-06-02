@@ -3,6 +3,7 @@
 import { useEffect, useRef, useActionState, useState } from 'react'
 import { loggInn, registrer, loggInnMedGoogle } from '@/app/(auth)/actions'
 import { useAuthModal } from '@/store/auth-modal'
+import { Input } from '@/components/ui/input'
 
 export function AuthModal() {
   const { open, fane, redirectAfter, closeModal, openModal } = useAuthModal()
@@ -213,7 +214,7 @@ function Steg1({
           </label>
           {erRegistrering && <span className="text-muted-foreground text-xs">Valgfritt</span>}
         </div>
-        <input
+        <Input
           id="steg1-epost"
           type="email"
           autoComplete="email"
@@ -221,7 +222,7 @@ function Steg1({
           placeholder="deg@eksempel.no"
           value={epost}
           onChange={(e) => setEpost(e.target.value)}
-          className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary h-10 w-full rounded-xl border px-3.5 text-sm transition-colors outline-none"
+          className="border-input bg-background placeholder:text-muted-foreground focus:border-primary h-10 w-full rounded-xl px-3.5"
         />
       </div>
 
@@ -279,7 +280,7 @@ function LoggInnSkjema({
         <label htmlFor="modal-passord" className="text-foreground text-sm font-medium">
           Passord
         </label>
-        <input
+        <Input
           id="modal-passord"
           name="passord"
           type="password"
@@ -287,7 +288,7 @@ function LoggInnSkjema({
           required
           autoFocus
           placeholder="••••••••"
-          className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary h-10 w-full rounded-xl border px-3.5 text-sm transition-colors outline-none"
+          className="border-input bg-background placeholder:text-muted-foreground focus:border-primary h-10 w-full rounded-xl px-3.5"
         />
       </div>
 
@@ -339,7 +340,7 @@ function RegistrerSkjema({
         <label htmlFor="modal-navn" className="text-foreground text-sm font-medium">
           Navn
         </label>
-        <input
+        <Input
           id="modal-navn"
           name="navn"
           type="text"
@@ -347,7 +348,7 @@ function RegistrerSkjema({
           required
           autoFocus
           placeholder="Ola Nordmann"
-          className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary h-10 w-full rounded-xl border px-3.5 text-sm transition-colors outline-none"
+          className="border-input bg-background placeholder:text-muted-foreground focus:border-primary h-10 w-full rounded-xl px-3.5"
         />
       </div>
 
@@ -355,7 +356,7 @@ function RegistrerSkjema({
         <label htmlFor="modal-reg-passord" className="text-foreground text-sm font-medium">
           Passord
         </label>
-        <input
+        <Input
           id="modal-reg-passord"
           name="passord"
           type="password"
@@ -363,7 +364,7 @@ function RegistrerSkjema({
           required
           minLength={6}
           placeholder="••••••••"
-          className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary h-10 w-full rounded-xl border px-3.5 text-sm transition-colors outline-none"
+          className="border-input bg-background placeholder:text-muted-foreground focus:border-primary h-10 w-full rounded-xl px-3.5"
         />
         <p className="text-muted-foreground text-[11px]">Minst 6 tegn</p>
       </div>

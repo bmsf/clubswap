@@ -395,6 +395,22 @@ export const SKAFT_MATERIALE_OPTIONS: { value: string; label: string }[] = [
   { value: 'steel', label: 'Stål' },
 ]
 
+/**
+ * Fast skaftmateriale for profiler der bare ett materiale er aktuelt.
+ * Driver/wood/hybrid har i praksis kun grafitt → ingen grunn til å la brukeren velge.
+ * Jern, single jern og wedge kan ha både grafitt og stål → returnerer null (brukeren velger).
+ */
+export function fastSkaftMateriale(profil: DetaljProfil): 'graphite' | 'steel' | null {
+  switch (profil) {
+    case 'driver':
+    case 'wood':
+    case 'hybrid':
+      return 'graphite'
+    default:
+      return null
+  }
+}
+
 export const HAND_OPTIONS: { value: string; label: string }[] = [
   { value: 'right', label: 'Høyre' },
   { value: 'left', label: 'Venstre' },

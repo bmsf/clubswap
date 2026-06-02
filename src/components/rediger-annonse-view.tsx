@@ -24,9 +24,12 @@ import {
   SHAFT_FLEX_OPTIONS,
   SKAFT_TYPE_OPTIONS,
   MAKS_ANTALL_BILDER,
+  fastSkaftMateriale,
 } from '@/components/selg-utstyr/constants'
 import { Felt, PillToggle } from '@/components/selg-utstyr/primitives'
 import { KategoriVelger } from '@/components/selg-utstyr/kategori-velger'
+import { AdresseVelger, type BeliggenhetPresisjon } from '@/components/selg-utstyr/adresse-velger'
+import { type Adresse } from '@/app/actions/adresser'
 import { detaljProfil, type DetaljProfil } from '@/lib/categories'
 import {
   BildeOpplaster,
@@ -50,6 +53,9 @@ export type Annonse = {
   skadebeskrivelse?: string | null
   pris: number
   selges_fra: string
+  beliggenhet_presisjon?: string | null
+  lat?: number | null
+  lng?: number | null
   tilbyr_frakt: boolean
   bilder: string[]
 }
@@ -182,7 +188,7 @@ function Forhandsvisning({
         </p>
         <p
           className={cn(
-            'font-mono text-base font-semibold',
+            'tabnum text-base font-semibold',
             pris ? 'text-primary' : 'text-muted-foreground'
           )}
         >
@@ -215,6 +221,29 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
   const [tilstand, setTilstand] = useState<Condition | null>(initTilstand)
   const [bilder, setBilder] = useState<BildeEntry[]>([])
   const [eksisterendeBilder, setEksisterendeBilder] = useState<string[]>(annonse.bilder ?? [])
+
+  // Adresse-/posisjonstilstand. Initialiseres fra eksisterende annonse slik at koordinatene
+  // bevares når brukeren ikke endrer sted; å velge ny adresse oppdaterer postnummer + koordinater.
+  const [adresse, setAdresse] = useState<Adresse | null>(
+    annonse.selges_fra
+      ? {
+          id: 'eksisterende',
+          full_address: annonse.selges_fra,
+          poststed: annonse.selges_fra,
+          er_standard: false,
+          navn: null,
+          land: 'Norge',
+          gateadresse: null,
+          gatenummer: null,
+          postnummer: null,
+          lat: annonse.lat ?? null,
+          lng: annonse.lng ?? null,
+        }
+      : null
+  )
+  const [beliggenhet, setBeliggenhet] = useState<BeliggenhetPresisjon>(
+    annonse.beliggenhet_presisjon === 'noyaktig' ? 'noyaktig' : 'generell'
+  )
 
   const {
     register,
@@ -297,16 +326,23 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
         haandighet: data.hand === 'right' ? 'Høyre' : data.hand === 'left' ? 'Venstre' : undefined,
         loft: data.loft,
         shaftFlex: data.shaftFlex,
+        // Driver/wood/hybrid har låst materiale (grafitt); ellers brukerens valg.
         skaftMateriale:
-          data.skaftType === 'steel'
-            ? 'Stål'
-            : data.skaftType === 'graphite'
-              ? 'Grafitt'
-              : undefined,
+          fastSkaftMateriale(profil) === 'graphite'
+            ? 'Grafitt'
+            : data.skaftType === 'steel'
+              ? 'Stål'
+              : data.skaftType === 'graphite'
+                ? 'Grafitt'
+                : undefined,
         tilstand: tilstandLabel,
         skadebeskrivelse: data.skadebeskrivelse,
         pris: data.pris,
-        selgesFra: data.selgesFra,
+        selgesFra: adresse?.poststed ?? data.selgesFra,
+        beliggenhet,
+        postnummer: adresse?.postnummer ?? undefined,
+        lat: adresse?.lat ?? null,
+        lng: adresse?.lng ?? null,
         tilbyrFrakt: data.tilbyrFrakt,
         bilder: [...eksisterendeBilder, ...nyeBildeUrls],
       }
@@ -391,7 +427,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
             {harSkaft && (
               <>
                 <div className="col-span-2">
-                  <Felt label="Hånd" error={errors.hand?.message}>
+                  <Felt label="Høyrehendt / Venstrehendt" error={errors.hand?.message}>
                     <Controller
                       name="hand"
                       control={control}
@@ -443,21 +479,23 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
                   </Felt>
                 </div>
 
-                <div className="col-span-2">
-                  <Felt label="Type skaft" error={errors.skaftType?.message}>
-                    <Controller
-                      name="skaftType"
-                      control={control}
-                      render={({ field }) => (
-                        <PillToggle
-                          options={SKAFT_TYPE_OPTIONS}
-                          value={field.value ?? null}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                  </Felt>
-                </div>
+                {fastSkaftMateriale(profil) === null && (
+                  <div className="col-span-2">
+                    <Felt label="Type skaft" error={errors.skaftType?.message}>
+                      <Controller
+                        name="skaftType"
+                        control={control}
+                        render={({ field }) => (
+                          <PillToggle
+                            options={SKAFT_TYPE_OPTIONS}
+                            value={field.value ?? null}
+                            onChange={field.onChange}
+                          />
+                        )}
+                      />
+                    </Felt>
+                  </div>
+                )}
               </>
             )}
 
@@ -551,8 +589,13 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
               </div>
             </Felt>
 
-            <Felt label="Selges fra" required error={errors.selgesFra?.message}>
-              <Input {...register('selgesFra')} placeholder="f.eks. Oslo" />
+            <Felt label="Sted">
+              <AdresseVelger
+                value={adresse}
+                onChange={setAdresse}
+                beliggenhet={beliggenhet}
+                onBeliggenhetChange={setBeliggenhet}
+              />
             </Felt>
 
             <div className="col-span-2">
@@ -614,7 +657,7 @@ export function RedigerAnnonseView({ annonse }: { annonse: Annonse }) {
               merke={watched.merke ?? ''}
               modell={watched.modell ?? ''}
               pris={watched.pris ?? 0}
-              selgesFra={watched.selgesFra ?? ''}
+              selgesFra={adresse?.poststed ?? ''}
               tilstand={tilstand}
               forsideBilde={forsideBilde}
             />

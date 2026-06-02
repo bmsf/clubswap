@@ -3,6 +3,7 @@ import { Geist_Mono, Mona_Sans } from 'next/font/google'
 import { Toaster } from 'sonner'
 import './globals.css'
 import { cn } from '@/lib/utils'
+import { Providers } from './providers'
 
 const monaSans = Mona_Sans({ subsets: ['latin'], variable: '--font-mona-sans' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={cn(monaSans.variable, geistMono.variable, 'font-sans')}
     >
       <body className="antialiased">
-        {children}
+        <Providers>{children}</Providers>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>

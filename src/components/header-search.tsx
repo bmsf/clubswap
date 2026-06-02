@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, LayoutGrid, Tag, Clock, ArrowRight, type LucideIcon } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import {
   SEARCH_BRANDS,
@@ -184,7 +185,7 @@ export function HeaderSearch() {
         >
           <div className="flex w-full items-center gap-2 py-2.5">
             <Search className="text-muted-foreground size-3.5 shrink-0" />
-            <input
+            <Input
               type="text"
               value={query}
               onChange={(e) => {
@@ -194,7 +195,7 @@ export function HeaderSearch() {
               onFocus={() => setOpen(true)}
               onKeyDown={onKeyDown}
               placeholder="Hva ser du etter?"
-              className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
+              className="placeholder:text-muted-foreground h-auto w-auto flex-1 rounded-none border-0 bg-transparent p-0 shadow-none"
             />
             {query && (
               <button

@@ -25,9 +25,12 @@ function leafOptionsFor(gruppeSlug: string | null) {
 export function KategoriVelger({
   value,
   onChange,
+  harFeil,
 }: {
   value: string | null
   onChange: (slug: string | null) => void
+  /** Marker det første ufullstendige nivået som feil (kun den rister). */
+  harFeil?: boolean
 }) {
   // Når `value` er en gyldig leaf styrer den visningen. Mens man velger (value=null)
   // styrer lokalt override hvilken hoved/gruppe som vises.
@@ -43,35 +46,50 @@ export function KategoriVelger({
   const grupper = gruppeOptionsFor(hoved)
   const leaves = leafOptionsFor(gruppe)
 
+  // Kun det første ufullstendige nivået skal markeres/riste ved feil.
+  const feilNivaa = !harFeil
+    ? null
+    : !hoved
+      ? 'hoved'
+      : grupper.length > 0 && !gruppe
+        ? 'gruppe'
+        : 'leaf'
+
   return (
     <div className="space-y-3">
-      <SimpleSelect
-        value={hoved ?? ''}
-        onValueChange={(v) => {
-          setOverride({ hoved: v, gruppe: null })
-          onChange(null)
-        }}
-        placeholder="Hovedkategori"
-        options={HOVEDKATEGORIER.map((h) => ({ value: h.slug, label: h.label }))}
-      />
-      {hoved && grupper.length > 0 && (
+      <div data-feil={feilNivaa === 'hoved' ? 'true' : undefined}>
         <SimpleSelect
-          value={gruppe ?? ''}
+          value={hoved ?? ''}
           onValueChange={(v) => {
-            setOverride({ hoved, gruppe: v })
+            setOverride({ hoved: v, gruppe: null })
             onChange(null)
           }}
-          placeholder="Gruppe"
-          options={grupper}
+          placeholder="Hovedkategori"
+          options={HOVEDKATEGORIER.map((h) => ({ value: h.slug, label: h.label }))}
         />
+      </div>
+      {hoved && grupper.length > 0 && (
+        <div data-feil={feilNivaa === 'gruppe' ? 'true' : undefined}>
+          <SimpleSelect
+            value={gruppe ?? ''}
+            onValueChange={(v) => {
+              setOverride({ hoved, gruppe: v })
+              onChange(null)
+            }}
+            placeholder="Underkategori"
+            options={grupper}
+          />
+        </div>
       )}
       {gruppe && leaves.length > 0 && (
-        <SimpleSelect
-          value={value ?? ''}
-          onValueChange={(v) => onChange(v)}
-          placeholder="Underkategori"
-          options={leaves}
-        />
+        <div data-feil={feilNivaa === 'leaf' ? 'true' : undefined}>
+          <SimpleSelect
+            value={value ?? ''}
+            onValueChange={(v) => onChange(v)}
+            placeholder="Underkategori"
+            options={leaves}
+          />
+        </div>
       )}
     </div>
   )

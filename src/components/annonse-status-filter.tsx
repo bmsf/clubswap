@@ -32,7 +32,7 @@ export function AnnonseStatusFilter({
             )}
           >
             {tab.label}
-            <span className="bg-foreground/10 text-foreground/70 rounded-full px-1.5 text-[11px] leading-[1.4] tabular-nums">
+            <span className="bg-foreground/10 text-foreground/70 tabnum rounded-full px-1.5 text-[11px] leading-[1.4]">
               {counts[tab.value]}
             </span>
           </Link>

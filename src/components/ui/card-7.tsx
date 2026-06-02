@@ -17,6 +17,7 @@ interface ListingCardProps extends React.HTMLAttributes<HTMLDivElement> {
   actions?: React.ReactNode
   href?: string
   flat?: boolean
+  distanceKm?: number
 }
 
 export function ListingCard({
@@ -31,6 +32,7 @@ export function ListingCard({
   actions,
   href,
   flat,
+  distanceKm,
   ...props
 }: ListingCardProps) {
   const Wrapper = href ? Link : 'div'
@@ -76,6 +78,12 @@ export function ListingCard({
             {[brand, location, posted].filter(Boolean).join(' · ')}
           </p>
 
+          {distanceKm != null && (
+            <p className="text-foreground/70 text-[10px] leading-snug font-medium">
+              {distanceKm} km unna
+            </p>
+          )}
+
           {clubsLabel && (
             <p className="text-foreground/70 text-[10px] leading-snug font-medium">
               Jern: {clubsLabel}
@@ -84,7 +92,7 @@ export function ListingCard({
 
           {/* Price + CTA */}
           <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-            <p className="text-sm font-semibold tabular-nums">
+            <p className="tabnum text-sm font-semibold">
               {price.toLocaleString('nb-NO')}{' '}
               <span className="text-muted-foreground font-normal">kr</span>
             </p>

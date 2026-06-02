@@ -195,7 +195,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       data-open={ulest > 0 ? 'true' : 'false'}
                       aria-hidden="true"
                     >
-                      <span className="bg-primary t-badge-dot text-primary-foreground h-4 min-w-4 rounded-full px-1.5 text-[10px] leading-none font-semibold tabular-nums">
+                      <span className="bg-primary t-badge-dot text-primary-foreground tabnum h-4 min-w-4 rounded-full px-1.5 text-[10px] leading-none font-semibold">
                         {ulest > 99 ? '99+' : ulest}
                       </span>
                     </span>
@@ -317,7 +317,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         data-open={ulest > 0 ? 'true' : 'false'}
                         aria-hidden="true"
                       >
-                        <span className="bg-primary t-badge-dot text-primary-foreground h-4 min-w-4 rounded-full px-1.5 text-[10px] leading-none font-semibold tabular-nums">
+                        <span className="bg-primary t-badge-dot text-primary-foreground tabnum h-4 min-w-4 rounded-full px-1.5 text-[10px] leading-none font-semibold">
                           {ulest > 99 ? '99+' : ulest}
                         </span>
                       </span>

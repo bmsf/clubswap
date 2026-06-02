@@ -180,7 +180,7 @@ export function InnboksListe({
                           {it.antallSamtaler} {it.antallSamtaler === 1 ? 'samtale' : 'samtaler'}
                         </p>
                         {it.ulest > 0 && (
-                          <span className="bg-primary text-primary-foreground flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] leading-none font-semibold tabular-nums">
+                          <span className="bg-primary text-primary-foreground tabnum flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] leading-none font-semibold">
                             {it.ulest > 99 ? '99+' : it.ulest}
                           </span>
                         )}

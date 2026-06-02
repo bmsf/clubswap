@@ -143,6 +143,14 @@
     font-feature-settings: 'tnum' 1;
   }
 
+  /* Priser og tellere: Mona Sans med tabular-justering. Geist Mono har kun
+     skråstrek-null, så disse bruker sans-fonten for en ren null mens sifrene
+     fortsatt linjeres opp. (Tidsstempler beholder Geist Mono via .tabular-nums.) */
+  .tabnum {
+    font-family: var(--font-mona-sans), system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+
   body {
     @apply text-foreground;
     background: var(--background);

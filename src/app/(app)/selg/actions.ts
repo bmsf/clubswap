@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/supabase/server'
+import { geokodPostnummer } from '@/app/actions/geokoding'
 
 export type AnnonseInput = {
   kategori: string
@@ -28,8 +29,26 @@ export type AnnonseInput = {
   skadebeskrivelse?: string
   pris: number
   selgesFra?: string
+  beliggenhet?: 'generell' | 'noyaktig'
+  postnummer?: string
+  lat?: number | null
+  lng?: number | null
   tilbyrFrakt: boolean
   bilder: string[]
+}
+
+/** Henter koordinater fra valgt adresse hvis tilgjengelig, ellers geokoder postnummer. */
+async function utledKoordinater(
+  input: Pick<AnnonseInput, 'lat' | 'lng' | 'postnummer'>
+): Promise<{ lat: number | null; lng: number | null }> {
+  if (typeof input.lat === 'number' && typeof input.lng === 'number') {
+    return { lat: input.lat, lng: input.lng }
+  }
+  if (input.postnummer) {
+    const k = await geokodPostnummer(input.postnummer)
+    if (k) return { lat: k.lat, lng: k.lng }
+  }
+  return { lat: null, lng: null }
 }
 
 export async function publiserAnnonse(
@@ -46,6 +65,7 @@ export async function publiserAnnonse(
   }
 
   const merke = input.merke === 'Annet' && input.annetMerke ? input.annetMerke : input.merke
+  const { lat, lng } = await utledKoordinater(input)
 
   const { data, error } = await supabase
     .from('annonser')
@@ -75,6 +95,9 @@ export async function publiserAnnonse(
       skadebeskrivelse: input.skadebeskrivelse ?? null,
       pris: input.pris,
       selges_fra: input.selgesFra ?? '',
+      beliggenhet_presisjon: input.beliggenhet ?? 'generell',
+      lat,
+      lng,
       tilbyr_frakt: input.tilbyrFrakt,
       bilder: input.bilder,
       status: 'aktiv',
@@ -104,6 +127,12 @@ export async function oppdaterAnnonse(
 
   const merke = input.merke === 'Annet' && input.annetMerke ? input.annetMerke : input.merke
 
+  // Posisjon/beliggenhet oppdateres kun når redigeringsflyten faktisk sender det,
+  // ellers beholdes eksisterende verdier (unngår å nullstille koordinater ved redigering).
+  const harPosisjon =
+    typeof input.lat === 'number' || typeof input.lng === 'number' || !!input.postnummer
+  const posisjonsfelt = harPosisjon ? await utledKoordinater(input) : null
+
   const { error } = await supabase
     .from('annonser')
     .update({
@@ -131,6 +160,8 @@ export async function oppdaterAnnonse(
       skadebeskrivelse: input.skadebeskrivelse ?? null,
       pris: input.pris,
       selges_fra: input.selgesFra ?? '',
+      ...(input.beliggenhet ? { beliggenhet_presisjon: input.beliggenhet } : {}),
+      ...(posisjonsfelt ? { lat: posisjonsfelt.lat, lng: posisjonsfelt.lng } : {}),
       tilbyr_frakt: input.tilbyrFrakt,
       bilder: input.bilder,
     })

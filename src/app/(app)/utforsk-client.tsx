@@ -5,9 +5,13 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ListingCard } from '@/components/ui/card-7'
 import { ListingGrid } from '@/components/listing-grid'
+import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Check, ChevronDown, ChevronRight, Filter, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Filter, MapPin, X } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/supabase/client'
+import { geokodPostnummerOffentlig } from '@/app/actions/geokoding'
 import { searchModeller, type ModellGruppe } from '@/app/actions/searchModeller'
 import { formaterKoller } from '@/components/selg-utstyr/constants'
 import {
@@ -35,9 +39,19 @@ export type Listing = {
   haandighet?: string | null
   loft?: string | null
   koller?: string[] | null
+  lat?: number | null
+  lng?: number | null
 }
 
 type SortOption = 'nyeste' | 'pris-lav' | 'pris-høy'
+
+const RADIUS_VALG: { value: number | null; label: string }[] = [
+  { value: 10, label: '10 km' },
+  { value: 25, label: '25 km' },
+  { value: 50, label: '50 km' },
+  { value: 100, label: '100 km' },
+  { value: null, label: 'Hele landet' },
+]
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -159,9 +173,7 @@ function CheckOption({
         </div>
         <span className="text-sm">{label}</span>
       </div>
-      {count !== undefined && (
-        <span className="text-muted-foreground text-xs tabular-nums">{count}</span>
-      )}
+      {count !== undefined && <span className="text-muted-foreground tabnum text-xs">{count}</span>}
     </button>
   )
 }
@@ -225,7 +237,7 @@ function CategoryTree({
               <span className="text-sm font-medium">{hoved.label}</span>
               <div className="flex items-center gap-2">
                 {selectedCount > 0 && (
-                  <span className="bg-foreground text-background flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums">
+                  <span className="bg-foreground text-background tabnum flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold">
                     {selectedCount}
                   </span>
                 )}
@@ -269,7 +281,7 @@ function CategoryTree({
                           </span>
                           <div className="flex items-center gap-2">
                             {gCount > 0 && (
-                              <span className="bg-foreground/80 text-background flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-semibold tabular-nums">
+                              <span className="bg-foreground/80 text-background tabnum flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-semibold">
                                 {gCount}
                               </span>
                             )}
@@ -367,12 +379,12 @@ function ModellFilterRow({
 
   return (
     <div className="flex flex-col gap-2">
-      <input
+      <Input
         type="text"
         value={query}
         onChange={handleInput}
         placeholder="Søk, f.eks. Stealth 2…"
-        className="bg-muted w-full rounded-lg px-3 py-2 text-sm outline-none"
+        className="bg-muted h-auto w-full rounded-lg border-0 px-3 py-2"
       />
       {results.length > 0 && (
         <div className="flex flex-col">
@@ -391,7 +403,7 @@ function ModellFilterRow({
                 {r.year ? ` (${r.year})` : ''}
               </span>
               {r.variants.some((v) => v.count > 0) && (
-                <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                <span className="text-muted-foreground tabnum shrink-0 text-xs">
                   {r.variants.reduce((s, v) => s + v.count, 0)} annonser
                 </span>
               )}
@@ -432,7 +444,7 @@ function FilterRow({
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium">{label}</span>
           {count != null && count > 0 && (
-            <span className="bg-foreground text-background flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums">
+            <span className="bg-foreground text-background tabnum flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold">
               {count}
             </span>
           )}
@@ -560,6 +572,74 @@ export function UtforskClient({
   const [skaft, setSkaft] = useState<string[]>([])
   const [sortering, setSortering] = useState<SortOption>('nyeste')
 
+  // ── Nærhet / posisjon ───────────────────────────────────────────────────────
+  const [posisjon, setPosisjon] = useState<{ lat: number; lng: number } | null>(null)
+  const [radiusKm, setRadiusKm] = useState<number | null>(25)
+  const [postnummerInput, setPostnummerInput] = useState('')
+  const [posisjonsfeil, setPosisjonsfeil] = useState<string | null>(null)
+  const [henterPosisjon, setHenterPosisjon] = useState(false)
+
+  const supabase = useMemo(() => createClient(), [])
+  const radiusM = radiusKm ? radiusKm * 1000 : 100_000_000
+
+  const { data: naerhetData } = useQuery({
+    queryKey: ['naerheten', posisjon?.lat, posisjon?.lng, radiusM],
+    enabled: !!posisjon,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('annonser_i_naerheten', {
+        inn_lng: posisjon!.lng,
+        inn_lat: posisjon!.lat,
+        radius_m: radiusM,
+        maks: 500,
+      })
+      if (error) throw error
+      return (data ?? []) as { id: string; distance_m: number }[]
+    },
+  })
+
+  const avstandKart = useMemo(() => {
+    if (!posisjon || !naerhetData) return null
+    return new Map(naerhetData.map((r) => [r.id, r.distance_m]))
+  }, [posisjon, naerhetData])
+
+  function brukMinPosisjon() {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setPosisjonsfeil('Posisjon støttes ikke i denne nettleseren.')
+      return
+    }
+    setHenterPosisjon(true)
+    setPosisjonsfeil(null)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPosisjon({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setHenterPosisjon(false)
+      },
+      () => {
+        setPosisjonsfeil('Fant ikke posisjonen din. Skriv inn postnummer i stedet.')
+        setHenterPosisjon(false)
+      },
+      { timeout: 10000 }
+    )
+  }
+
+  async function brukPostnummer() {
+    const pnr = postnummerInput.trim()
+    if (!pnr) return
+    const k = await geokodPostnummerOffentlig(pnr)
+    if (!k) {
+      setPosisjonsfeil('Ukjent postnummer.')
+      return
+    }
+    setPosisjon(k)
+    setPosisjonsfeil(null)
+  }
+
+  function nullstillPosisjon() {
+    setPosisjon(null)
+    setPostnummerInput('')
+    setPosisjonsfeil(null)
+  }
+
   function handleMerkeToggle(value: string) {
     const next = toggleItem(merke, value)
     setMerke(next)
@@ -583,6 +663,7 @@ export function UtforskClient({
     setTilstand([])
     setPrisRange([])
     setSkaft([])
+    nullstillPosisjon()
     // Tøm også søkeordet (og evt. stale kategori-param) fra URL-en.
     if (searchParams.toString()) router.push(pathname)
   }
@@ -603,6 +684,11 @@ export function UtforskClient({
 
   const filteredListings = useMemo(() => {
     let result = [...listings]
+
+    // Nærhetsfilter: behold kun annonser RPC-en returnerte innenfor radius.
+    if (posisjon && avstandKart) {
+      result = result.filter((l) => avstandKart.has(l.id))
+    }
 
     if (sokTerm) {
       const tokens = sokTerm.toLowerCase().split(/\s+/)
@@ -661,18 +747,25 @@ export function UtforskClient({
       result = result.filter((l) => l.skaft_materiale != null && skaft.includes(l.skaft_materiale))
     }
 
-    switch (sortering) {
-      case 'nyeste':
-        result.sort(
-          (a, b) => new Date(b.opprettet_at).getTime() - new Date(a.opprettet_at).getTime()
-        )
-        break
-      case 'pris-lav':
-        result.sort((a, b) => a.pris - b.pris)
-        break
-      case 'pris-høy':
-        result.sort((a, b) => b.pris - a.pris)
-        break
+    // Når posisjon er aktiv styrer avstand sorteringen (nærmest først).
+    if (posisjon && avstandKart) {
+      result.sort(
+        (a, b) => (avstandKart.get(a.id) ?? Infinity) - (avstandKart.get(b.id) ?? Infinity)
+      )
+    } else {
+      switch (sortering) {
+        case 'nyeste':
+          result.sort(
+            (a, b) => new Date(b.opprettet_at).getTime() - new Date(a.opprettet_at).getTime()
+          )
+          break
+        case 'pris-lav':
+          result.sort((a, b) => a.pris - b.pris)
+          break
+        case 'pris-høy':
+          result.sort((a, b) => b.pris - a.pris)
+          break
+      }
     }
 
     return result
@@ -687,6 +780,8 @@ export function UtforskClient({
     prisRange,
     skaft,
     sortering,
+    posisjon,
+    avstandKart,
   ])
 
   const totalActiveFilters =
@@ -697,7 +792,8 @@ export function UtforskClient({
     modell.length +
     tilstand.length +
     prisRange.length +
-    skaft.length
+    skaft.length +
+    (posisjon ? 1 : 0)
 
   const showModell = merke.length === 1 && availableModels.length > 0
 
@@ -757,6 +853,81 @@ export function UtforskClient({
               }
             >
               <ModellFilterRow value={valgtModellFilter} onChange={setValgtModellFilter} />
+            </FilterRow>
+
+            {/* Avstand — finn annonser i nærheten */}
+            <FilterRow
+              label="Avstand"
+              count={posisjon ? 1 : undefined}
+              open={openRows.has('avstand')}
+              onToggle={() => toggleRow('avstand')}
+              summary={posisjon ? (radiusKm ? `Innen ${radiusKm} km` : 'Hele landet') : undefined}
+            >
+              <div className="space-y-3">
+                {!posisjon ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={brukMinPosisjon}
+                      disabled={henterPosisjon}
+                      className="border-border hover:border-foreground/40 flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors disabled:opacity-60"
+                    >
+                      <MapPin className="size-4" />
+                      {henterPosisjon ? 'Henter posisjon…' : 'Bruk min posisjon'}
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={postnummerInput}
+                        onChange={(e) => setPostnummerInput(e.target.value.replace(/\D/g, ''))}
+                        onKeyDown={(e) => e.key === 'Enter' && brukPostnummer()}
+                        placeholder="Eller skriv postnummer"
+                        inputMode="numeric"
+                        maxLength={4}
+                        className="h-auto w-full rounded-lg bg-transparent px-3 py-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={brukPostnummer}
+                        className="bg-foreground text-background rounded-lg px-3 py-2 text-sm font-medium"
+                      >
+                        Bruk
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-xs">Posisjon valgt</span>
+                    <button
+                      type="button"
+                      onClick={nullstillPosisjon}
+                      className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
+                    >
+                      Fjern
+                    </button>
+                  </div>
+                )}
+
+                {posisjonsfeil && <p className="text-destructive text-xs">{posisjonsfeil}</p>}
+
+                <div className="flex flex-wrap gap-1.5">
+                  {RADIUS_VALG.map((r) => (
+                    <button
+                      key={r.label}
+                      type="button"
+                      onClick={() => setRadiusKm(r.value)}
+                      disabled={!posisjon}
+                      className={cn(
+                        'rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50',
+                        radiusKm === r.value
+                          ? 'border-foreground bg-foreground text-background'
+                          : 'border-border hover:border-foreground/40'
+                      )}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </FilterRow>
 
             {/* Kategori — tree with inline subcategories */}
@@ -926,6 +1097,11 @@ export function UtforskClient({
                 posted={relativTid(listing.opprettet_at)}
                 imageUrl={forsideBilde(listing.bilder)}
                 href={`/annonser/${listing.id}`}
+                distanceKm={
+                  avstandKart?.has(listing.id)
+                    ? Math.round((avstandKart.get(listing.id) ?? 0) / 1000)
+                    : undefined
+                }
                 clubsLabel={
                   detaljProfil(listing.kategori) === 'iron_set' &&
                   listing.koller &&

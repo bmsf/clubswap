@@ -53,6 +53,7 @@ import {
   SKAFT_MATERIALE_OPTIONS,
   SKAFT_LENGDE_OPTIONS,
   HAND_OPTIONS,
+  fastSkaftMateriale,
   loftOptionerForProfil,
   formaterKoller,
 } from './selg-utstyr/constants'
@@ -61,7 +62,6 @@ import {
   detaljProfil,
   shaftKategoriForProfil,
   legacyKategoriTilLeaf,
-  PRIS_ANBEFALING,
   type DetaljProfil,
 } from '@/lib/categories'
 import { KategoriVelger } from './selg-utstyr/kategori-velger'
@@ -75,7 +75,7 @@ import { Felt, PillToggle, AiBadge } from './selg-utstyr/primitives'
 import { Fremdrift } from './selg-utstyr/fremdrift'
 import { ModellVelger, type ValgtModell } from './selg-utstyr/modell-velger'
 import { SkaftVelger, type ValgtSkaft } from './selg-utstyr/skaft-velger'
-import { AdresseVelger } from './selg-utstyr/adresse-velger'
+import { AdresseVelger, type BeliggenhetPresisjon } from './selg-utstyr/adresse-velger'
 import { type Adresse } from '@/app/actions/adresser'
 
 // ── Animation ─────────────────────────────────────────────────────────────────
@@ -184,7 +184,6 @@ export function SelgUtstyrView({
 
   const [kategoriSlug, setKategoriSlug] = useState<string | null>(initialKategori ?? null)
   const profil = detaljProfil(kategoriSlug)
-  const hovedSlug = finnLeaf(kategoriSlug)?.hoved.slug ?? null
 
   // ── New create mode state ─────────────────────────────────────────────────
 
@@ -213,6 +212,7 @@ export function SelgUtstyrView({
   const [nyTilstand, setNyTilstand] = useState<NyTilstand | null>(null)
   const [beskrivelse, setBeskrivelse] = useState('')
   const [adresseCreate, setAdresseCreate] = useState<Adresse | null>(null)
+  const [beliggenhet, setBeliggenhet] = useState<BeliggenhetPresisjon>('generell')
   const [pris, setPris] = useState('')
   const [kanSendes, setKanSendes] = useState(false)
   const [kanMotes, setKanMotes] = useState(false)
@@ -302,6 +302,8 @@ export function SelgUtstyrView({
       if (typeof d.beskrivelse === 'string') setBeskrivelse(d.beskrivelse)
       if (d.adresseCreate && typeof d.adresseCreate === 'object')
         setAdresseCreate(d.adresseCreate as Adresse)
+      if (d.beliggenhet === 'generell' || d.beliggenhet === 'noyaktig')
+        setBeliggenhet(d.beliggenhet)
     } catch {
       // ignore
     }
@@ -337,6 +339,7 @@ export function SelgUtstyrView({
       nyTilstand,
       beskrivelse,
       adresseCreate,
+      beliggenhet,
       pris,
       kanSendes,
       kanMotes,
@@ -366,6 +369,7 @@ export function SelgUtstyrView({
       nyTilstand,
       beskrivelse,
       adresseCreate,
+      beliggenhet,
       pris,
       kanSendes,
       kanMotes,
@@ -561,10 +565,15 @@ export function SelgUtstyrView({
         if (tittel.trim().length < 3 || !merke.trim()) return false
         if (!nyTilstand) return false
         const harSkaft = harSkaftFor(profil)
+        const krevMateriale = fastSkaftMateriale(profil) === null
         const loftKreves = loftOptionerForProfil(profil) !== null
-        if (harSkaft && skaftValg !== 'uten' && (!nySkaftMateriale || !flex)) return false
+        if (harSkaft && skaftValg !== 'uten' && krevMateriale && !nySkaftMateriale) return false
+        if (harSkaft && skaftValg !== 'uten' && !flex) return false
         if (harHaandighetFor(profil) && !nyHaandighet) return false
         if (loftKreves && !loft) return false
+        const krevHeadcover =
+          profil === 'driver' || profil === 'wood' || profil === 'hybrid' || profil === 'putter'
+        if (krevHeadcover && headcover === null) return false
         return true
       }
       case 'pris':
@@ -593,9 +602,18 @@ export function SelgUtstyrView({
         const loftKreves = loftOptionerForProfil(profil) !== null
         if (harHaandighetFor(profil) && !nyHaandighet) f.handighet = 'Velg håndighet'
         if (loftKreves && !loft) f.loft = 'Velg loft / type'
-        if (harSkaft && skaftValg !== 'uten' && !nySkaftMateriale)
+        if (
+          harSkaft &&
+          skaftValg !== 'uten' &&
+          fastSkaftMateriale(profil) === null &&
+          !nySkaftMateriale
+        )
           f.skaftmateriale = 'Velg skaftmateriale'
         if (harSkaft && skaftValg !== 'uten' && !flex) f.flex = 'Velg flex'
+        const krevHeadcover =
+          profil === 'driver' || profil === 'wood' || profil === 'hybrid' || profil === 'putter'
+        if (krevHeadcover && headcover === null)
+          f.headcover = 'Velg om original headcover følger med'
         if (!nyTilstand) f.tilstand = 'Velg tilstand'
         break
       }
@@ -759,6 +777,9 @@ export function SelgUtstyrView({
       nyeBildeUrls.push(urlData.publicUrl)
     }
 
+    // Driver/wood/hybrid: materialet er låst (grafitt); ellers brukerens valg.
+    const effektivtMateriale = fastSkaftMateriale(profil) ?? nySkaftMateriale
+
     const skaftLengdeVerdi =
       skaftValg !== 'uten'
         ? skaftLengde === 'custom'
@@ -774,6 +795,10 @@ export function SelgUtstyrView({
       beskrivelse: beskrivelse.trim() || undefined,
       pris: parseInt(pris),
       selgesFra: adresseCreate?.poststed ?? '',
+      beliggenhet,
+      postnummer: adresseCreate?.postnummer ?? undefined,
+      lat: adresseCreate?.lat ?? null,
+      lng: adresseCreate?.lng ?? null,
       tilbyrFrakt: kanSendes,
       bilder: nyeBildeUrls,
       ...(skaftValg !== 'uten' && flex ? { shaftFlex: flex } : {}),
@@ -785,7 +810,8 @@ export function SelgUtstyrView({
       ...(headcover !== null ? { headcover } : {}),
       ...(valgteKoller.length > 0 ? { koller: valgteKoller } : {}),
       ...(nyHaandighet ? { haandighet: nyHaandighet } : {}),
-      ...(nySkaftMateriale ? { skaftMateriale: nySkaftMateriale } : {}),
+      // Driver/wood/hybrid har låst materiale (grafitt) selv om brukeren ikke velger noe.
+      ...(effektivtMateriale ? { skaftMateriale: effektivtMateriale } : {}),
       ...(nyAarsmodell ? { aarsmodell: nyAarsmodell } : {}),
       ...(putterLengde ? { putterLengde } : {}),
       ...(hoselType ? { hoselType } : {}),
@@ -959,12 +985,6 @@ export function SelgUtstyrView({
       <>
         <CardHeader>
           <CardTitle>Hva selger du?</CardTitle>
-          <CardDescription>
-            {manuellModell
-              ? 'Velg kategori for det du selger.'
-              : 'Søk opp en kjent modell, eller registrer manuelt.'}{' '}
-            <span className="text-destructive">*</span> = påkrevd
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           {!manuellModell ? (
@@ -978,7 +998,13 @@ export function SelgUtstyrView({
                   setKategoriSlug(null)
                   setManuellModell(true)
                 }}
+                harFeil={Boolean(aktiveFeil.kategori) && !valgtModell}
               />
+              {aktiveFeil.kategori && !valgtModell && (
+                <p className="text-destructive text-xs">
+                  Søk opp og velg en modell, eller legg til informasjon manuelt.
+                </p>
+              )}
 
               {/* Når en modell er valgt: vis ferdig utfylt kategori (ikke velgeren) */}
               {valgtModell && kategoriSti && (
@@ -1002,15 +1028,17 @@ export function SelgUtstyrView({
                   }}
                   className="text-muted-foreground hover:text-foreground cursor-pointer text-xs underline underline-offset-2 transition-colors"
                 >
-                  Søk i modellbase
+                  Søk etter hva du skal selge
                 </button>
               </div>
               {aktiveFeil.kategori && (
                 <p className="text-destructive text-xs">{aktiveFeil.kategori}</p>
               )}
-              <div data-feil={aktiveFeil.kategori ? 'true' : undefined}>
-                <KategoriVelger value={kategoriSlug} onChange={setKategoriSlug} />
-              </div>
+              <KategoriVelger
+                value={kategoriSlug}
+                onChange={setKategoriSlug}
+                harFeil={Boolean(aktiveFeil.kategori)}
+              />
             </div>
           )}
         </CardContent>
@@ -1026,7 +1054,8 @@ export function SelgUtstyrView({
   }
 
   function renderDetaljerFase() {
-    const showMerke = tittel.trim().length > 0
+    // Når modell er valgt fra modelldatabasen er merket allerede låst → ikke vis input
+    const showMerke = valgtModell === null && tittel.trim().length > 0
     const showCatFields = merke.trim().length > 0
     const showTilstand = merke.trim().length > 0
     const showBilder = merke.trim().length > 0
@@ -1043,7 +1072,8 @@ export function SelgUtstyrView({
     const loftOpts = loftOptionerForProfil(profil)
     // Årsmodell vises for generiske varer (baller, tilbehør, elektronikk osv.)
     const visAarsmodell = profil === 'generic'
-    const visHeadcover = profil === 'driver' || profil === 'wood' || profil === 'hybrid'
+    const visHeadcover =
+      profil === 'driver' || profil === 'wood' || profil === 'hybrid' || profil === 'putter'
     const aktiveFeil = feilFor('detaljer')
 
     const filteredMerker = GOLF_MERKER.filter(
@@ -1185,7 +1215,7 @@ export function SelgUtstyrView({
                   </Felt>
                 )}
                 {harHaandighet && (
-                  <Felt label="Håndighet" required error={aktiveFeil.handighet}>
+                  <Felt label="Høyrehendt / Venstrehendt" required error={aktiveFeil.handighet}>
                     <PillToggle
                       options={HAND_OPTIONS}
                       value={nyHaandighet}
@@ -1225,7 +1255,7 @@ export function SelgUtstyrView({
                   </Felt>
                 )}
                 {visHeadcover && (
-                  <Felt label="Original headcover">
+                  <Felt label="Original headcover" required error={aktiveFeil.headcover}>
                     <PillToggle
                       options={[
                         { value: 'true', label: 'Ja' },
@@ -1309,13 +1339,15 @@ export function SelgUtstyrView({
 
                   {skaftValg !== 'uten' && (
                     <>
-                      <Felt label="Skaftmateriale" required error={aktiveFeil.skaftmateriale}>
-                        <PillToggle
-                          options={SKAFT_MATERIALE_OPTIONS}
-                          value={nySkaftMateriale}
-                          onChange={(v) => setNySkaftMateriale(v as 'graphite' | 'steel' | null)}
-                        />
-                      </Felt>
+                      {fastSkaftMateriale(profil) === null && (
+                        <Felt label="Skaftmateriale" required error={aktiveFeil.skaftmateriale}>
+                          <PillToggle
+                            options={SKAFT_MATERIALE_OPTIONS}
+                            value={nySkaftMateriale}
+                            onChange={(v) => setNySkaftMateriale(v as 'graphite' | 'steel' | null)}
+                          />
+                        </Felt>
+                      )}
 
                       <div className="grid grid-cols-2 gap-3">
                         <Felt label="Flex" required error={aktiveFeil.flex}>
@@ -1402,7 +1434,7 @@ export function SelgUtstyrView({
                     className=""
                   />
                 </Felt>
-                <Felt label="Original headcover">
+                <Felt label="Original headcover" required error={aktiveFeil.headcover}>
                   <PillToggle
                     options={[
                       { value: 'true', label: 'Ja' },
@@ -1655,15 +1687,15 @@ export function SelgUtstyrView({
                   NOK
                 </span>
               </div>
-              {hovedSlug && PRIS_ANBEFALING[hovedSlug] && (
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  Typisk: {PRIS_ANBEFALING[hovedSlug]}
-                </p>
-              )}
             </Felt>
 
             <Felt label="Sted">
-              <AdresseVelger value={adresseCreate} onChange={setAdresseCreate} />
+              <AdresseVelger
+                value={adresseCreate}
+                onChange={setAdresseCreate}
+                beliggenhet={beliggenhet}
+                onBeliggenhetChange={setBeliggenhet}
+              />
             </Felt>
 
             <div className="border-border flex items-center justify-between rounded-xl border px-4 py-3.5">
@@ -1789,7 +1821,7 @@ export function SelgUtstyrView({
               <>
                 <div className="col-span-2">
                   <Felt
-                    label="Hånd"
+                    label="Høyrehendt / Venstrehendt"
                     required
                     error={errors.hand?.message}
                     aiBadge={aiFields.has('hand')}

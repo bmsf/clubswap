@@ -59,7 +59,7 @@ export function AnnonseRad({ annonse }: { annonse: AnnonseRadData }) {
           <p className="text-muted-foreground mt-0.5 truncate text-xs">
             {[annonse.merke, annonse.selges_fra].filter(Boolean).join(' · ')}
           </p>
-          <p className="text-foreground mt-1 text-sm font-semibold tabular-nums">
+          <p className="tabnum text-foreground mt-1 text-sm font-semibold">
             {annonse.pris.toLocaleString('nb-NO')}{' '}
             <span className="text-muted-foreground font-normal">kr</span>
           </p>

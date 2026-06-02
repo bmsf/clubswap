@@ -344,7 +344,7 @@ export function ProductDetailPage({
           </div>
 
           <div className="mt-3">
-            <span className="text-4xl font-bold">{pris.toLocaleString('nb-NO')} kr</span>
+            <span className="tabnum text-4xl font-bold">{pris.toLocaleString('nb-NO')} kr</span>
             {tilbyrFrakt && (
               <span className="text-muted-foreground ml-2 inline-flex items-center gap-1 text-sm">
                 <Truck className="size-3.5" />

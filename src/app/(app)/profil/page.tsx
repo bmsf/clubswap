@@ -1,6 +1,6 @@
 import { createClient } from '@/supabase/server'
 import Link from 'next/link'
-import { Tag, Heart, MessageSquare, ChevronRight, LogOut } from 'lucide-react'
+import { Tag, Heart, MessageSquare, MapPin, ChevronRight, LogOut } from 'lucide-react'
 import { loggUt } from '@/app/(auth)/actions'
 
 export default async function ProfilPage() {
@@ -34,6 +34,7 @@ export default async function ProfilPage() {
     { href: '/annonser', label: 'Mine annonser', icon: Tag, badge: antallAnnonser ?? undefined },
     { href: '/lagrede', label: 'Lagrede', icon: Heart },
     { href: '/meldinger', label: 'Meldinger', icon: MessageSquare },
+    { href: '/profil/adresser', label: 'Adresser', icon: MapPin },
   ]
 
   return (
@@ -63,7 +64,7 @@ export default async function ProfilPage() {
             </span>
             <span className="flex items-center gap-2">
               {badge != null && badge > 0 && (
-                <span className="text-muted-foreground text-xs tabular-nums">{badge}</span>
+                <span className="text-muted-foreground tabnum text-xs">{badge}</span>
               )}
               <ChevronRight className="text-muted-foreground size-4 shrink-0" />
             </span>

@@ -91,9 +91,11 @@ interface Props {
   value: ValgtModell | null
   onChange: (val: ValgtModell | null) => void
   onManuell: () => void
+  /** Marker søkefeltet som feil (rister kun selve inputen, ikke teksten rundt). */
+  harFeil?: boolean
 }
 
-export function ModellVelger({ value, onChange, onManuell }: Props) {
+export function ModellVelger({ value, onChange, onManuell, harFeil }: Props) {
   const [query, setQuery] = useState('')
   const [resultater, setResultater] = useState<ModellGruppe[]>([])
   const [harSokt, setHarSokt] = useState(false)
@@ -163,7 +165,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
             onClick={onManuell}
             className="text-foreground cursor-pointer underline underline-offset-2"
           >
-            fyll inn manuelt
+            legg til informasjon manuelt
           </button>
         </p>
       </div>
@@ -172,8 +174,8 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Search input */}
-      <div className="relative">
+      {/* Search input — kun denne rister ved feil */}
+      <div className="relative" data-feil={harFeil ? 'true' : undefined}>
         <MagnifyingGlassIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
         <Input
           value={query}
@@ -246,7 +248,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
               >
                 Finner du ikke modellen din?{' '}
                 <span className="text-foreground underline underline-offset-2">
-                  Legg inn manuelt
+                  Legg til informasjon manuelt
                 </span>
               </button>
             </div>
@@ -262,7 +264,7 @@ export function ModellVelger({ value, onChange, onManuell }: Props) {
             onClick={onManuell}
             className="text-foreground cursor-pointer underline underline-offset-2"
           >
-            Gå til manuell registrering
+            Legg til informasjon manuelt
           </button>
         </p>
       )}
